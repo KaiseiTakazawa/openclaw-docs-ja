@@ -1,0 +1,51 @@
+---
+title: "OpenClaw ドキュメント 日本語版"
+---
+
+# OpenClaw ドキュメント 日本語版
+
+OpenClaw の公式ドキュメントを日本語に翻訳したサイトです。
+
+## OpenClaw とは？
+
+OpenClaw は **セルフホスト型ゲートウェイ** で、WhatsApp、Telegram、Discord、iMessage などのチャットアプリを AI エージェントに接続します。1つのゲートウェイプロセスを自分のマシン（またはサーバー）で実行し、メッセージングアプリと常時利用可能な AI アシスタントの橋渡しをします。
+
+## セクション一覧
+
+| セクション | 説明 |
+|-----------|------|
+| [はじめに](/start/getting-started) | インストールからセットアップまで |
+| [ゲートウェイ](/gateway) | ゲートウェイの設定と運用 |
+| [チャネル](/channels) | LINE, Slack, Discord 等の連携 |
+| [コンセプト](/concepts) | エージェント、セッション、マルチエージェント等 |
+| [ツール](/tools) | ビルトインツールとカスタムツール |
+| [自動化](/automation) | cron ジョブ、ワークフロー |
+| [CLI リファレンス](/cli) | コマンドラインインターフェース |
+| [インストール](/install) | 各プラットフォームのインストール手順 |
+| [プラットフォーム](/platforms) | Mac, Linux, Docker, Cloud |
+| [ノード](/nodes) | ノードの設定と管理 |
+| [Web UI](/web) | ウェブインターフェース |
+| [プラグイン](/plugins) | プラグインの開発と利用 |
+| [モデルプロバイダー](/providers) | Anthropic, OpenAI, Google 等 |
+| [リファレンス](/reference) | API リファレンス、テンプレート |
+| [ヘルプ](/help) | FAQ、トラブルシューティング |
+| [セキュリティ](/security) | セキュリティガイドライン |
+| [実験的機能](/experiments) | ベータ機能 |
+
+## クイックスタート
+
+```bash
+# OpenClaw をインストール
+npm install -g openclaw@latest
+
+# オンボード＆サービスインストール
+openclaw onboard --install-daemon
+
+# チャネル設定＆ゲートウェイ起動
+openclaw channels login
+openclaw gateway --port 18789
+```
+
+---
+
+> 原文: [docs.openclaw.ai](https://docs.openclaw.ai) | 翻訳: Michibiku Group
