@@ -8,7 +8,7 @@ title: "qr"
 
 Generate an iOS pairing QR and setup code from your current Gateway configuration.
 
-## Usage
+## 使い方
 
 ```bash
 openclaw qr
@@ -18,7 +18,7 @@ openclaw qr --remote
 openclaw qr --url wss://gateway.example/ws --token '<token>'
 ```
 
-## Options
+## オプション
 
 * `--remote`: use `gateway.remote.url` plus remote token/password from config
 * `--url <url>`: override gateway URL used in payload
@@ -29,7 +29,7 @@ openclaw qr --url wss://gateway.example/ws --token '<token>'
 * `--no-ascii`: skip ASCII QR rendering
 * `--json`: emit JSON (`setupCode`, `gatewayUrl`, `auth`, `urlSource`)
 
-## Notes
+## 注意事項
 
 * `--token` and `--password` are mutually exclusive.
 * After scanning, approve device pairing with:

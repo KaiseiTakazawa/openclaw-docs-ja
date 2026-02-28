@@ -8,13 +8,13 @@ title: "directory"
 
 Directory lookups for channels that support it (contacts/peers, groups, and “me”).
 
-## Common flags
+## 共通フラグ
 
 * `--channel <name>`: channel id/alias (required when multiple channels are configured; auto when only one is configured)
 * `--account <id>`: account id (default: channel default)
 * `--json`: output JSON
 
-## Notes
+## 注意事項
 
 * `directory` is meant to help you find IDs you can paste into other commands (especially `openclaw message send --target ...`).
 * For many channels, results are config-backed (allowlists / configured groups) rather than a live provider directory.
@@ -52,7 +52,7 @@ openclaw directory peers list --channel zalouser --query "name"
 openclaw directory peers list --channel zalouser --limit 50
 ```
 
-## Groups
+## グループ
 
 ```bash
 openclaw directory groups list --channel zalouser

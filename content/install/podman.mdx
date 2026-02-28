@@ -8,12 +8,12 @@ title: "Podman"
 
 Run the OpenClaw gateway in a **rootless** Podman container. Uses the same image as Docker (build from the repo [Dockerfile](https://github.com/openclaw/openclaw/blob/main/Dockerfile)).
 
-## Requirements
+## 要件
 
 * Podman (rootless)
 * Sudo for one-time setup (create user, build image)
 
-## Quick start
+## クイックスタート
 
 **1. One-time setup** (from repo root; creates user, builds image, installs launch script):
 
@@ -96,7 +96,7 @@ To add quadlet **after** an initial setup that did not use it, re-run: `./setup-
 * **Start again:** With quadlet: `sudo systemctl --machine openclaw@ --user start openclaw.service`. With script: re-run the launch script or `podman start openclaw`
 * **Remove container:** `sudo -u openclaw podman rm -f openclaw` — config and workspace on the host are kept
 
-## Troubleshooting
+## トラブルシューティング
 
 * **Permission denied (EACCES) on config or auth-profiles:** The container defaults to `--userns=keep-id` and runs as the same uid/gid as the host user running the script. Ensure your host `OPENCLAW_CONFIG_DIR` and `OPENCLAW_WORKSPACE_DIR` are owned by that user.
 * **Gateway start blocked (missing `gateway.mode=local`):** Ensure `~openclaw/.openclaw/openclaw.json` exists and sets `gateway.mode="local"`. `setup-podman.sh` creates this file if missing.

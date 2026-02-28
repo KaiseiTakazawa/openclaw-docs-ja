@@ -1,8 +1,8 @@
 ---
-title: "Command Queue"
+title: "コマンドキュー"
 ---
 
-# Command Queue
+# コマンドキュー
 
 # Command Queue (2026-01-16)
 
@@ -13,7 +13,7 @@ We serialize inbound auto-reply runs (all channels) through a tiny in-process qu
 * Auto-reply runs can be expensive (LLM calls) and can collide when multiple inbound messages arrive close together.
 * Serializing avoids competing for shared resources (session files, logs, CLI stdin) and reduces the chance of upstream rate limits.
 
-## How it works
+## 仕組み
 
 * A lane-aware FIFO queue drains each lane with a configurable concurrency cap (default 1 for unconfigured lanes; main defaults to 4, subagent to 8).
 * `runEmbeddedPiAgent` enqueues by **session key** (lane `session:<key>`) to guarantee only one active run per session.
@@ -82,7 +82,7 @@ Defaults: `debounceMs: 1000`, `cap: 20`, `drop: summarize`.
 * Per-session lanes guarantee that only one agent run touches a given session at a time.
 * No external dependencies or background worker threads; pure TypeScript + promises.
 
-## Troubleshooting
+## トラブルシューティング
 
 * If commands seem stuck, enable verbose logs and look for “queued for …ms” lines to confirm the queue is draining.
 * If you need queue depth, enable verbose logs and watch for queue timing lines.

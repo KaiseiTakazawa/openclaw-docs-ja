@@ -1,12 +1,12 @@
 ---
-title: "Multi-Agent Sandbox & Tools"
+title: "マルチエージェントサンドボックス & ツール"
 ---
 
-# Multi-Agent Sandbox & Tools
+# マルチエージェントサンドボックス & ツール
 
 # Multi-Agent Sandbox & Tools Configuration
 
-## Overview
+## 概要
 
 Each agent in a multi-agent setup can now have its own:
 
@@ -36,7 +36,7 @@ For debugging “why is this blocked?”, see [Sandbox vs Tool Policy vs Elevate
 
 ***
 
-## Configuration Examples
+## 設定例
 
 ### Example 1: Personal + Restricted Family Agent
 
@@ -235,7 +235,7 @@ Tool policies (global, agent, sandbox) support `group:*` entries that expand to 
 * `group:nodes`: `nodes`
 * `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
 
-### Elevated Mode
+### Elevated モード
 
 `tools.elevated` is the global baseline (sender-based allowlist). `agents.list[].tools.elevated` can further restrict elevated for specific agents (both must allow).
 
@@ -341,7 +341,7 @@ sandbox, set `agents.list[].sandbox.mode: "off"`.
 
 ***
 
-## Testing
+## テスト
 
 After configuring multi-agent sandbox and tools:
 
@@ -369,7 +369,7 @@ After configuring multi-agent sandbox and tools:
 
 ***
 
-## Troubleshooting
+## トラブルシューティング
 
 ### Agent not sandboxed despite `mode: "all"`
 

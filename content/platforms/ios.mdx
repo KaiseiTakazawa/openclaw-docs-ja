@@ -1,8 +1,8 @@
 ---
-title: "iOS App"
+title: "iOS アプリ"
 ---
 
-# iOS App
+# iOS アプリ
 
 # iOS App (Node)
 
@@ -14,7 +14,7 @@ Availability: internal preview. The iOS app is not publicly distributed yet.
 * Exposes node capabilities: Canvas, Screen snapshot, Camera capture, Location, Talk mode, Voice wake.
 * Receives `node.invoke` commands and reports node status events.
 
-## Requirements
+## 要件
 
 * Gateway running on another device (macOS, Linux, or Windows via WSL2).
 * Network path:
@@ -98,7 +98,7 @@ openclaw nodes invoke --node "iOS Node" --command canvas.snapshot --params '{"ma
 * Pairing prompt never appears: run `openclaw nodes pending` and approve manually.
 * Reconnect fails after reinstall: the Keychain pairing token was cleared; re-pair the node.
 
-## Related docs
+## 関連ドキュメント
 
 * [Pairing](/gateway/pairing)
 * [Discovery](/gateway/discovery)

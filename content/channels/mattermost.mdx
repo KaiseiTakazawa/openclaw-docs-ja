@@ -20,7 +20,7 @@ openclaw plugins install ./extensions/mattermost
 If you choose Mattermost during configure/onboarding and a git checkout is detected,
 OpenClaw will offer the local install path automatically.
 Details: [Plugins](/tools/plugin)
-## Quick setup
+## クイックセットアップ
 1. Install the Mattermost plugin.
 2. Create a Mattermost bot account and copy the \*\*bot token\*\*.
 3. Copy the Mattermost \*\*base URL\*\* (e.g., `https://chat.example.com`).
@@ -108,7 +108,7 @@ alerts: { name: "Alerts", botToken: "mm-token-2", baseUrl: "https://alerts.examp
 },
 }
 ```
-## Troubleshooting
+## トラブルシューティング
 * No replies in channels: ensure the bot is in the channel and mention it (oncall), use a trigger prefix (onchar), or set `chatmode: "onmessage"`.
 * Auth errors: check the bot token, base URL, and whether the account is enabled.
 * Multi-account issues: env vars only apply to the `default` account. ````

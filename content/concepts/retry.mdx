@@ -1,8 +1,8 @@
 ---
-title: "Retry Policy"
+title: "リトライポリシー"
 ---
 
-# Retry Policy
+# リトライポリシー
 
 # Retry policy
 
@@ -34,7 +34,7 @@ title: "Retry Policy"
 * Uses `retry_after` when available, otherwise exponential backoff.
 * Markdown parse errors are not retried; they fall back to plain text.
 
-## Configuration
+## 設定
 
 Set retry policy per provider in `~/.openclaw/openclaw.json`:
 
@@ -61,7 +61,7 @@ Set retry policy per provider in `~/.openclaw/openclaw.json`:
 }
 ```
 
-## Notes
+## 注意事項
 
 * Retries apply per request (message send, media upload, reaction, poll, sticker).
 * Composite flows do not retry completed steps.

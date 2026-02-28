@@ -1,8 +1,8 @@
 ---
-title: "Sub-Agents"
+title: "サブエージェント"
 ---
 
-# Sub-Agents
+# サブエージェント
 
 # Sub-agents
 
@@ -191,7 +191,7 @@ Stopping a depth-1 orchestrator automatically stops all its depth-2 children:
 * `/subagents kill <id>` stops a specific sub-agent and cascades to its children.
 * `/subagents kill all` stops all sub-agents for the requester and cascades.
 
-## Authentication
+## 認証
 
 Sub-agent auth is resolved by **agent id**, not by session type:
 
@@ -269,7 +269,7 @@ Sub-agents use a dedicated in-process queue lane:
 * Sending `/stop` in the requester chat aborts the requester session and stops any active sub-agent runs spawned from it, cascading to nested children.
 * `/subagents kill <id>` stops a specific sub-agent and cascades to its children.
 
-## Limitations
+## 制限事項
 
 * Sub-agent announce is **best-effort**. If the gateway restarts, pending "announce back" work is lost.
 * Sub-agents still share the same gateway process resources; treat `maxConcurrent` as a safety valve.

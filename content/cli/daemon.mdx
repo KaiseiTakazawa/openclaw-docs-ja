@@ -10,7 +10,7 @@ Legacy alias for Gateway service management commands.
 
 `openclaw daemon ...` maps to the same service control surface as `openclaw gateway ...` service commands.
 
-## Usage
+## 使い方
 
 ```bash
 openclaw daemon status
@@ -21,7 +21,7 @@ openclaw daemon restart
 openclaw daemon uninstall
 ```
 
-## Subcommands
+## サブコマンド
 
 * `status`: show service install state and probe Gateway health
 * `install`: install service (`launchd`/`systemd`/`schtasks`)
@@ -30,12 +30,12 @@ openclaw daemon uninstall
 * `stop`: stop service
 * `restart`: restart service
 
-## Common options
+## 共通オプション
 
 * `status`: `--url`, `--token`, `--password`, `--timeout`, `--no-probe`, `--deep`, `--json`
 * `install`: `--port`, `--runtime <node|bun>`, `--token`, `--force`, `--json`
 * lifecycle (`uninstall|start|stop|restart`): `--json`
 
-## Prefer
+## 推奨
 
 Use [`openclaw gateway`](/cli/gateway) for current docs and examples.

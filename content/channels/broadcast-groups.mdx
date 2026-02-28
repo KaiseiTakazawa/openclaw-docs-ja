@@ -1,12 +1,12 @@
 ---
-title: "Broadcast Groups"
+title: "ブロードキャストグループ"
 ---
 
-# Broadcast Groups
-# Broadcast Groups
+# ブロードキャストグループ
+# ブロードキャストグループ
 \*\*Status:\*\* Experimental\
 \*\*Version:\*\* Added in 2026.1.9
-## Overview
+## 概要
 Broadcast Groups enable multiple agents to process and respond to the same message simultaneously. This allows you to create specialized agent teams that work together in a single WhatsApp group or DM — all using one phone number.
 Current scope: \*\*WhatsApp only\*\* (web channel).
 Broadcast groups are evaluated after channel allowlists and group activation rules. In WhatsApp groups, this means broadcasts happen when OpenClaw would normally reply (for example: on mention, depending on your group settings).
@@ -45,7 +45,7 @@ Agents:
 - TimeLogger (logs time spent)
 - ReportGenerator (creates summaries)
 ```
-## Configuration
+## 設定
 ### Basic Setup
 Add a top-level `broadcast` section (next to `bindings`). Keys are WhatsApp peer ids:
 \* group chats: group JID (e.g. `120363403215116621@g.us`)
@@ -226,7 +226,7 @@ Broadcast groups work alongside existing routing:
 \* `GROUP\_A`: Only alfred responds (normal routing)
 \* `GROUP\_B`: agent1 AND agent2 respond (broadcast)
 \*\*Precedence:\*\* `broadcast` takes priority over `bindings`.
-## Troubleshooting
+## トラブルシューティング
 ### Agents Not Responding
 \*\*Check:\*\*
 1. Agent IDs exist in `agents.list`
@@ -244,7 +244,7 @@ tail -f ~/.openclaw/logs/gateway.log | grep broadcast
 \* Reduce number of agents per group
 \* Use lighter models (sonnet instead of opus)
 \* Check sandbox startup time
-## Examples
+## 例
 ### Example 1: Code Review Team
 ```json
 {
@@ -317,7 +317,7 @@ strategy?: "parallel" | "sequential";
 \* `"sequential"`: Agents process in array order
 \* `[peerId]`: WhatsApp group JID, E.164 number, or other peer ID
 \* Value: Array of agent IDs that should process messages
-## Limitations
+## 制限事項
 1. \*\*Max agents:\*\* No hard limit, but 10+ agents may be slow
 2. \*\*Shared context:\*\* Agents don't see each other's responses (by design)
 3. \*\*Message ordering:\*\* Parallel responses may arrive in any order

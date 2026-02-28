@@ -13,7 +13,7 @@ Related docs:
 * Channel guides: [Channels](/channels/index)
 * Gateway configuration: [Configuration](/gateway/configuration)
 
-## Common commands
+## よく使うコマンド
 
 ```bash
 openclaw channels list
@@ -24,7 +24,7 @@ openclaw channels resolve --channel slack "#general" "@jane"
 openclaw channels logs --channel all
 ```
 
-## Add / remove accounts
+## アカウントの追加/削除
 
 ```bash
 openclaw channels add --channel telegram --token <bot-token>
@@ -53,20 +53,20 @@ Routing behavior stays consistent:
 
 If your config was already in a mixed state (named accounts present, missing `default`, and top-level single-account values still set), run `openclaw doctor --fix` to move account-scoped values into `accounts.default`.
 
-## Login / logout (interactive)
+## ログイン/ログアウト (対話式)
 
 ```bash
 openclaw channels login --channel whatsapp
 openclaw channels logout --channel whatsapp
 ```
 
-## Troubleshooting
+## トラブルシューティング
 
 * Run `openclaw status --deep` for a broad probe.
 * Use `openclaw doctor` for guided fixes.
 * `openclaw channels list` prints `Claude: HTTP 403 ... user:profile` → usage snapshot needs the `user:profile` scope. Use `--no-usage`, or provide a claude.ai session key (`CLAUDE_WEB_SESSION_KEY` / `CLAUDE_WEB_COOKIE`), or re-auth via Claude Code CLI.
 
-## Capabilities probe
+## ケーパビリティプローブ
 
 Fetch provider capability hints (intents/scopes where available) plus static feature support:
 
@@ -81,7 +81,7 @@ Notes:
 * `--target` accepts `channel:<id>` or a raw numeric channel id and only applies to Discord.
 * Probes are provider-specific: Discord intents + optional channel permissions; Slack bot + user scopes; Telegram bot flags + webhook; Signal daemon version; MS Teams app token + Graph roles/scopes (annotated where known). Channels without probes report `Probe: unavailable`.
 
-## Resolve names to IDs
+## 名前からIDへの解決
 
 Resolve channel/user names to IDs using the provider directory:
 

@@ -37,7 +37,7 @@ openclaw onboard --anthropic-api-key "$ANTHROPIC_API_KEY"
 
 OpenClaw supports Anthropic's prompt caching feature. This is **API-only**; subscription auth does not honor cache settings.
 
-### Configuration
+### 設定
 
 Use the `cacheRetention` parameter in your model config:
 
@@ -178,13 +178,13 @@ openclaw onboard --auth-choice setup-token
 }
 ```
 
-## Notes
+## 注意事項
 
 * Generate the setup-token with `claude setup-token` and paste it, or run `openclaw models auth setup-token` on the gateway host.
 * If you see “OAuth token refresh failed …” on a Claude subscription, re-auth with a setup-token. See [/gateway/troubleshooting#oauth-token-refresh-failed-anthropic-claude-subscription](/gateway/troubleshooting#oauth-token-refresh-failed-anthropic-claude-subscription).
 * Auth details + reuse rules are in [/concepts/oauth](/concepts/oauth).
 
-## Troubleshooting
+## トラブルシューティング
 
 **401 errors / token suddenly invalid**
 

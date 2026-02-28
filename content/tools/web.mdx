@@ -1,8 +1,8 @@
 ---
-title: "Web Tools"
+title: "Web ツール"
 ---
 
-# Web Tools
+# Web ツール
 
 # Web tools
 
@@ -14,7 +14,7 @@ OpenClaw ships two lightweight web tools:
 These are **not** browser automation. For JS-heavy sites or logins, use the
 [Browser tool](/tools/browser).
 
-## How it works
+## 仕組み
 
 * `web_search` calls your configured provider and returns results.
   * **Brave** (default): returns structured results (title, URL, snippet).
@@ -185,7 +185,7 @@ which returns AI-synthesized answers backed by live Google Search results with c
 **Environment alternative:** set `GEMINI_API_KEY` in the Gateway environment.
 For a gateway install, put it in `~/.openclaw/.env`.
 
-### Notes
+### 注意事項
 
 * Citation URLs from Gemini grounding are automatically resolved from Google's
   redirect URLs to direct URLs.
@@ -198,7 +198,7 @@ For a gateway install, put it in `~/.openclaw/.env`.
 
 Search the web using your configured provider.
 
-### Requirements
+### 要件
 
 * `tools.web.search.enabled` must not be `false` (default: enabled)
 * API key for your chosen provider:

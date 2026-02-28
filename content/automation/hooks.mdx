@@ -1,9 +1,9 @@
 ---
-title: "Hooks"
+title: "フック"
 ---
 
-# Hooks
-# Hooks
+# フック
+# フック
 Hooks provide an extensible event-driven system for automating actions in response to agent commands and events. Hooks are automatically discovered from directories and can be managed via CLI commands, similar to how skills work in OpenClaw.
 ## Getting Oriented
 Hooks are small scripts that run when something happens. There are two kinds:
@@ -16,13 +16,13 @@ Common uses:
 \* Trigger follow-up automation when a session starts or ends
 \* Write files into the agent workspace or call external APIs when events fire
 If you can write a small TypeScript function, you can write a hook. Hooks are discovered automatically, and you enable or disable them via the CLI.
-## Overview
+## 概要
 The hooks system allows you to:
 \* Save session context to memory when `/new` is issued
 \* Log all commands for auditing
 \* Trigger custom automations on agent lifecycle events
 \* Extend OpenClaw's behavior without modifying core code
-## Getting Started
+## はじめに
 ### Bundled Hooks
 OpenClaw ships with four bundled hooks that are automatically discovered:
 \* \*\*💾 session-memory\*\*: Saves session context to your agent workspace (default `~/.openclaw/workspace/memory/`) when you issue `/new`
@@ -279,7 +279,7 @@ openclaw hooks enable my-hook
 # Trigger the event
 # Send /new via your messaging channel
 ```
-## Configuration
+## 設定
 ### New Config Format (Recommended)
 ```json
 {
@@ -522,7 +522,7 @@ Rather than:
 ```yaml
 metadata: { "openclaw": { "events": ["command"] } } # General - more overhead
 ```
-## Debugging
+## デバッグ
 ### Enable Hook Logging
 The gateway logs hook loading at startup:
 ```
@@ -550,7 +550,7 @@ Check why a hook isn't eligible:
 openclaw hooks info my-hook
 ```
 Look for missing requirements in the output.
-## Testing
+## テスト
 ### Gateway Logs
 Monitor gateway logs to see hook execution:
 ```bash
@@ -577,7 +577,7 @@ await myHandler(event);
 // Assert side effects
 });
 ```
-## Architecture
+## アーキテクチャ
 ### Core Components
 \* \*\*`src/hooks/types.ts`\*\*: Type definitions
 \* \*\*`src/hooks/workspace.ts`\*\*: Directory scanning and loading
@@ -616,7 +616,7 @@ Command processing continues
 ↓
 Session reset
 ```
-## Troubleshooting
+## トラブルシューティング
 ### Hook Not Discovered
 1. Check directory structure:
 ```bash
@@ -659,7 +659,7 @@ Check for TypeScript/import errors:
 # Test import directly
 node -e "import('./path/to/handler.ts').then(console.log)"
 ```
-## Migration Guide
+## 移行ガイド
 ### From Legacy Config to Discovery
 \*\*Before\*\*:
 ```json

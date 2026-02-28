@@ -9,7 +9,7 @@ title: "config"
 Config helpers: get/set/unset values by path. Run without a subcommand to open
 the configure wizard (same as `openclaw configure`).
 
-## Examples
+## 例
 
 ```bash
 openclaw config get browser.executablePath
@@ -19,7 +19,7 @@ openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
 openclaw config unset tools.web.search.apiKey
 ```
 
-## Paths
+## パス
 
 Paths use dot or bracket notation:
 
@@ -35,7 +35,7 @@ openclaw config get agents.list
 openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
 ```
 
-## Values
+## 値
 
 Values are parsed as JSON5 when possible; otherwise they are treated as strings.
 Use `--strict-json` to require JSON5 parsing. `--json` remains supported as a legacy alias.

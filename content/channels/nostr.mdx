@@ -23,7 +23,7 @@ Use a local checkout (dev workflows):
 openclaw plugins install --link /extensions/nostr
 ```
 Restart the Gateway after installing or enabling plugins.
-## Quick setup
+## クイックセットアップ
 1. Generate a Nostr keypair (if needed):
 ```bash
 # Using nak
@@ -125,7 +125,7 @@ Tips:
 | NIP-04 | Supported | Encrypted DMs (`kind:4`) |
 | NIP-17 | Planned | Gift-wrapped DMs |
 | NIP-44 | Planned | Versioned encryption |
-## Testing
+## テスト
 ### Local relay
 ```bash
 # Start strfry
@@ -146,7 +146,7 @@ docker run -p 7777:7777 ghcr.io/hoytech/strfry
 2. Open a Nostr client (Damus, Amethyst, etc.).
 3. DM the bot pubkey.
 4. Verify the response.
-## Troubleshooting
+## トラブルシューティング
 ### Not receiving messages
 \* Verify the private key is valid.
 \* Ensure relay URLs are reachable and use `wss://` (or `ws://` for local).
@@ -159,7 +159,7 @@ docker run -p 7777:7777 ghcr.io/hoytech/strfry
 ### Duplicate responses
 \* Expected when using multiple relays.
 \* Messages are deduplicated by event ID; only the first delivery triggers a response.
-## Security
+## セキュリティ
 \* Never commit private keys.
 \* Use environment variables for keys.
 \* Consider `allowlist` for production bots.

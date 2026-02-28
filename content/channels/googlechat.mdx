@@ -100,7 +100,7 @@ With this config, any request to `your-domain.com/` will be ignored or returned 
 Configure your tunnel's ingress rules to only route the webhook path:
 \* \*\*Path\*\*: `/googlechat` -> `http://localhost:18789/googlechat`
 \* \*\*Default Rule\*\*: HTTP 404 (Not Found)
-## How it works
+## 仕組み
 1. Google Chat sends webhook POSTs to the gateway. Each request includes an `Authorization: Bearer ` header.
 2. OpenClaw verifies the token against the configured `audienceType` + `audience`:
 \* `audienceType: "app-url"` → audience is your HTTPS webhook URL.
@@ -158,7 +158,7 @@ Notes:
 * `typingIndicator` supports `none`, `message` (default), and `reaction` (reaction requires user OAuth).
 * Attachments are downloaded through the Chat API and stored in the media pipeline (size capped by `mediaMaxMb`).
 Secrets reference details: [Secrets Management](/gateway/secrets).
-## Troubleshooting
+## トラブルシューティング
 ### 405 Method Not Allowed
 If Google Cloud Logs Explorer shows errors like:
 ```

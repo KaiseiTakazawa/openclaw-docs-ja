@@ -7,7 +7,7 @@ title: "acp"
 Run the [Agent Client Protocol (ACP)](https://agentclientprotocol.com/) bridge that talks to a OpenClaw Gateway.
 This command speaks ACP over stdio for IDEs and forwards prompts to the Gateway
 over WebSocket. It keeps ACP sessions mapped to Gateway session keys.
-## Usage
+## 使い方
 ```bash
 openclaw acp
 # Remote Gateway
@@ -117,7 +117,7 @@ If your ACP client supports metadata, you can override per session:
 }
 ```
 Learn more about session keys at [/concepts/session](/concepts/session).
-## Options
+## オプション
 \* `--url `: Gateway WebSocket URL (defaults to gateway.remote.url when configured).
 \* `--token `: Gateway auth token.
 \* `--token-file `: read Gateway auth token from file.

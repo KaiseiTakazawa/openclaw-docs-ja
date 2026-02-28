@@ -1,8 +1,8 @@
 ---
-title: "CLI Backends"
+title: "CLI バックエンド"
 ---
 
-# CLI Backends
+# CLI バックエンド
 
 # CLI backends (fallback runtime)
 
@@ -129,7 +129,7 @@ The provider id becomes the left side of your model ref:
 }
 ```
 
-## How it works
+## 仕組み
 
 1. **Selects a backend** based on the provider prefix (`claude-cli/...`).
 2. **Builds a system prompt** using the same OpenClaw prompt + workspace context.
@@ -137,7 +137,7 @@ The provider id becomes the left side of your model ref:
 4. **Parses output** (JSON or plain text) and returns the final text.
 5. **Persists session ids** per backend, so follow-ups reuse the same CLI session.
 
-## Sessions
+## セッション
 
 * If the CLI supports sessions, set `sessionArg` (e.g. `--session-id`) or
   `sessionArgs` (placeholder `{sessionId}`) when the ID needs to be inserted
@@ -203,7 +203,7 @@ OpenClaw also ships a default for `codex-cli`:
 
 Override only if needed (common: absolute `command` path).
 
-## Limitations
+## 制限事項
 
 * **No OpenClaw tools** (the CLI backend never receives tool calls). Some CLIs
   may still run their own agent tooling.
@@ -213,7 +213,7 @@ Override only if needed (common: absolute `command` path).
   structured than the initial `--json` run. OpenClaw sessions still work
   normally.
 
-## Troubleshooting
+## トラブルシューティング
 
 * **CLI not found**: set `command` to a full path.
 * **Wrong model name**: use `modelAliases` to map `provider/model` → CLI model.

@@ -241,7 +241,7 @@ fly logs --no-tail    # Recent logs
 fly ssh console
 ```
 
-## Troubleshooting
+## トラブルシューティング
 
 ### "App is not listening on expected address"
 
@@ -368,7 +368,7 @@ For a hardened deployment with **no public exposure**, use the private template.
 * You access the gateway via **SSH, proxy, or WireGuard** instead of browser
 * You want the deployment **hidden from internet scanners**
 
-### Setup
+### セットアップ
 
 Use `fly.private.toml` instead of the standard config:
 
@@ -471,7 +471,7 @@ The ngrok tunnel runs inside the container and provides a public webhook URL wit
 | Control UI access | Browser      | Proxy/VPN  |
 | Webhook delivery  | Direct       | Via tunnel |
 
-## Notes
+## 注意事項
 
 * Fly.io uses **x86 architecture** (not ARM)
 * The Dockerfile is compatible with both architectures

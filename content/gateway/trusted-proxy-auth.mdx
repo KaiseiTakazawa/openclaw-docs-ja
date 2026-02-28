@@ -44,7 +44,7 @@ Implications:
 * Your reverse proxy auth policy and `allowUsers` become the effective access control.
 * Keep gateway ingress locked to trusted proxy IPs only (`gateway.trustedProxies` + firewall).
 
-## Configuration
+## 設定
 
 ```json5
 {
@@ -75,7 +75,7 @@ Implications:
 If `gateway.bind` is `loopback`, include a loopback proxy address in
 `gateway.trustedProxies` (`127.0.0.1`, `::1`, or an equivalent loopback CIDR).
 
-### Configuration Reference
+### 設定リファレンス
 
 | Field                                       | Required | Description                                                                 |
 | ------------------------------------------- | -------- | --------------------------------------------------------------------------- |
@@ -270,7 +270,7 @@ The audit checks for:
 * Missing `userHeader` configuration
 * Empty `allowUsers` (allows any authenticated user)
 
-## Troubleshooting
+## トラブルシューティング
 
 ### "trusted\_proxy\_untrusted\_source"
 
@@ -318,7 +318,7 @@ If you're moving from token auth to trusted-proxy:
 5. Test WebSocket connections from the Control UI
 6. Run `openclaw security audit` and review findings
 
-## Related
+## 関連
 
 * [Security](/gateway/security) — full security guide
 * [Configuration](/gateway/configuration) — config reference

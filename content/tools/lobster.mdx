@@ -32,7 +32,7 @@ Lobster is intentionally small. The goal is not "a new language," it's a predict
 * **Safety policy baked in**: Timeouts, output caps, sandbox checks, and allowlists are enforced by the runtime, not each script.
 * **Still programmable**: Each step can call any CLI or script. If you want JS/TS, generate `.lobster` files from code.
 
-## How it works
+## 仕組み
 
 OpenClaw launches the local `lobster` CLI in **tool mode** and parses a JSON envelope from stdout.
 If the pipeline pauses for approval, the tool returns a `resumeToken` so you can continue later.
@@ -319,14 +319,14 @@ OpenProse pairs well with Lobster: use `/prose` to orchestrate multi-agent prep,
 * **Sandbox-aware** — disabled when the tool context is sandboxed.
 * **Hardened** — fixed executable name (`lobster`) on `PATH`; timeouts and output caps enforced.
 
-## Troubleshooting
+## トラブルシューティング
 
 * **`lobster subprocess timed out`** → increase `timeoutMs`, or split a long pipeline.
 * **`lobster output exceeded maxStdoutBytes`** → raise `maxStdoutBytes` or reduce output size.
 * **`lobster returned invalid JSON`** → ensure the pipeline runs in tool mode and prints only JSON.
 * **`lobster failed (code …)`** → run the same pipeline in a terminal to inspect stderr.
 
-## Learn more
+## 詳しくはこちら
 
 * [Plugins](/tools/plugin)
 * [Plugin tool authoring](/plugins/agent-tools)

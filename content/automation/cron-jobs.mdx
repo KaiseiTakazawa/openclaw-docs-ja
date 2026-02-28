@@ -1,8 +1,8 @@
 ---
-title: "Cron Jobs"
+title: "Cron ジョブ"
 ---
 
-# Cron Jobs
+# Cron ジョブ
 # Cron jobs (Gateway scheduler)
 > \*\*Cron vs Heartbeat?\*\* See [Cron vs Heartbeat](/automation/cron-vs-heartbeat) for guidance on when to use each.
 Cron is the Gateway’s built-in scheduler. It persists jobs, wakes the agent at
@@ -251,7 +251,7 @@ Notes:
 \* Run history: `~/.openclaw/cron/runs/.jsonl` (JSONL, auto-pruned by size and line count).
 \* Isolated cron run sessions in `sessions.json` are pruned by `cron.sessionRetention` (default `24h`; set `false` to disable).
 \* Override store path: `cron.store` in config.
-## Configuration
+## 設定
 ```json5
 {
 cron: {
@@ -288,7 +288,7 @@ Cron has two built-in maintenance paths: isolated run-session retention and run-
 \* `cron.sessionRetention`: `24h` (set `false` to disable run-session pruning)
 \* `cron.runLog.maxBytes`: `2\_000\_000` bytes
 \* `cron.runLog.keepLines`: `2000`
-### How it works
+### 仕組み
 \* Isolated runs create session entries (`...:cron::run:`) and transcript files.
 \* The reaper removes expired run-session entries older than `cron.sessionRetention`.
 \* For removed run sessions no longer referenced by the session store, OpenClaw archives transcript files and purges old deleted archives on the same retention window.
@@ -447,7 +447,7 @@ openclaw system event --mode now --text "Next heartbeat: check battery."
 \* `cron.list`, `cron.status`, `cron.add`, `cron.update`, `cron.remove`
 \* `cron.run` (force or due), `cron.runs`
 For immediate system events without a job, use [`openclaw system event`](/cli/system).
-## Troubleshooting
+## トラブルシューティング
 ### “Nothing runs”
 \* Check cron is enabled: `cron.enabled` and `OPENCLAW\_SKIP\_CRON`.
 \* Check the Gateway is running continuously (cron runs inside the Gateway process).

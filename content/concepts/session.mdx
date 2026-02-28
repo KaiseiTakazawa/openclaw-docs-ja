@@ -1,10 +1,10 @@
 ---
-title: "Session Management"
+title: "セッション管理"
 ---
 
-# Session Management
+# セッション管理
 
-# Session Management
+# セッション管理
 
 OpenClaw treats **one direct-chat session per agent** as primary. Direct chats collapse to `agent:<agentId>:<mainKey>` (default `main`), while group/channel chats get their own keys. `session.mainKey` is honored.
 
@@ -84,7 +84,7 @@ OpenClaw applies session-store maintenance to keep `sessions.json` and transcrip
 * `session.maintenance.maxDiskBytes`: unset (disabled)
 * `session.maintenance.highWaterBytes`: defaults to `80%` of `maxDiskBytes` when budgeting is enabled
 
-### How it works
+### 仕組み
 
 Maintenance runs during session-store writes, and you can trigger it on demand with `openclaw sessions cleanup`.
 

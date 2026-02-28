@@ -1,8 +1,8 @@
 ---
-title: "CLI Reference"
+title: "CLI リファレンス"
 ---
 
-# CLI Reference
+# CLI リファレンス
 
 # CLI reference
 
@@ -259,7 +259,7 @@ openclaw [--dev] [--profile <name>] <command>
 
 Note: plugins can add additional top-level commands (for example `openclaw voicecall`).
 
-## Security
+## セキュリティ
 
 * `openclaw security audit` — audit config + local state for common security foot-guns.
 * `openclaw security audit --deep` — best-effort live Gateway probe.
@@ -272,7 +272,7 @@ Note: plugins can add additional top-level commands (for example `openclaw voice
 * `openclaw secrets configure` — interactive helper for provider setup + SecretRef mapping + preflight/apply.
 * `openclaw secrets apply --from <plan.json>` — apply a previously generated plan (`--dry-run` supported).
 
-## Plugins
+## プラグイン
 
 Manage extensions and their config:
 
@@ -284,7 +284,7 @@ Manage extensions and their config:
 
 Most plugin changes require a gateway restart. See [/plugin](/tools/plugin).
 
-## Memory
+## メモリ
 
 Vector search over `MEMORY.md` + `memory/*.md`:
 
@@ -1000,7 +1000,7 @@ Subcommands:
 * `node stop`
 * `node restart`
 
-## Nodes
+## ノード
 
 `nodes` talks to the Gateway and targets paired nodes. See [/nodes](/nodes).
 
@@ -1042,7 +1042,7 @@ Location:
 
 * `nodes location get --node <id|name|ip> [--max-age <ms>] [--accuracy <coarse|balanced|precise>] [--location-timeout <ms>] [--invoke-timeout <ms>]`
 
-## Browser
+## ブラウザ
 
 Browser control CLI (dedicated Chrome/Brave/Edge/Chromium). See [`openclaw browser`](/cli/browser) and the [Browser tool](/tools/browser).
 

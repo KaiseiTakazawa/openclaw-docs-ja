@@ -16,7 +16,7 @@ title: "null"
 * **Logging** — Full request/response logs for debugging
 * **Fallbacks** — Automatic failover if your primary provider is down
 
-## Quick start
+## クイックスタート
 
 ### Via onboarding
 
@@ -43,7 +43,7 @@ openclaw
 
 That's it. OpenClaw now routes through LiteLLM.
 
-## Configuration
+## 設定
 
 ### Environment variables
 
@@ -140,13 +140,13 @@ curl "http://localhost:4000/spend/logs" \
   -H "Authorization: Bearer $LITELLM_MASTER_KEY"
 ```
 
-## Notes
+## 注意事項
 
 * LiteLLM runs on `http://localhost:4000` by default
 * OpenClaw connects via the OpenAI-compatible `/v1/chat/completions` endpoint
 * All OpenClaw features work through LiteLLM — no limitations
 
-## See also
+## 関連項目
 
 * [LiteLLM Docs](https://docs.litellm.ai)
 * [Model Providers](/concepts/model-providers)

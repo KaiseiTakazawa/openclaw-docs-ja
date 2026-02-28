@@ -5,7 +5,7 @@ title: "Signal"
 # Signal
 # Signal (signal-cli)
 Status: external CLI integration. Gateway talks to `signal-cli` over HTTP JSON-RPC + SSE.
-## Prerequisites
+## 前提条件
 \* OpenClaw installed on your server (Linux flow below tested on Ubuntu 24).
 \* `signal-cli` available on the host where the gateway runs.
 \* A phone number that can receive one verification SMS (for SMS registration path).
@@ -182,7 +182,7 @@ Config:
 * UUID DMs: `uuid:` (or bare UUID).
 * Groups: `signal:group:`.
 * Usernames: `username:` (if supported by your Signal account).
-## Troubleshooting
+## トラブルシューティング
 Run this ladder first:
 ```bash
 openclaw status

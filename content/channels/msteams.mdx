@@ -101,7 +101,7 @@ General: { requireMention: true },
 },
 }
 ```
-## How it works
+## 仕組み
 1. Install the Microsoft Teams plugin.
 2. Create an \*\*Azure Bot\*\* (App ID + secret + tenant ID).
 3. Build a \*\*Teams app package\*\* that references the bot and includes the RSC permissions below.
@@ -330,7 +330,7 @@ Teams markdown is more limited than Slack or Discord:
 \* Basic formatting works: \*\*bold\*\*, \*italic\*, `code`, links
 \* Complex markdown (tables, nested lists) may not render correctly
 \* Adaptive Cards are supported for polls and arbitrary card sends (see below)
-## Configuration
+## 設定
 Key settings (see `/gateway/configuration` for shared channel patterns):
 \* `channels.msteams.enabled`: enable/disable the channel.
 \* `channels.msteams.appId`, `channels.msteams.appPassword`, `channels.msteams.tenantId`: bot credentials.
@@ -404,7 +404,7 @@ Bots can send files in DMs using the FileConsentCard flow (built-in). However, \
 | \*\*Images (any context)\*\* | Base64-encoded inline | Works out of the box |
 ### Why group chats need SharePoint
 Bots don't have a personal OneDrive drive (the `/me/drive` Graph API endpoint doesn't work for application identities). To send files in group chats/channels, the bot uploads to a \*\*SharePoint site\*\* and creates a sharing link.
-### Setup
+### セットアップ
 1. \*\*Add Graph API permissions\*\* in Entra ID (Azure AD) → App Registration:
 \* `Sites.ReadWrite.All` (Application) - upload files to SharePoint
 \* `Chat.Read.All` (Application) - optional, enables per-user sharing links
@@ -550,7 +550,7 @@ Bots have limited support in private channels:
 1. Use standard channels for bot interactions
 2. Use DMs - users can always message the bot directly
 3. Use Graph API for historical access (requires `ChannelMessage.Read.All`)
-## Troubleshooting
+## トラブルシューティング
 ### Common issues
 \* \*\*Images not showing in channels:\*\* Graph permissions or admin consent missing. Reinstall the Teams app and fully quit/reopen Teams.
 \* \*\*No responses in channel:\*\* mentions are required by default; set `channels.msteams.requireMention=false` or configure per team/channel.

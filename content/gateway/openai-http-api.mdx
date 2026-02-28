@@ -15,7 +15,7 @@ This endpoint is **disabled by default**. Enable it in config first.
 
 Under the hood, requests are executed as a normal Gateway agent run (same codepath as `openclaw agent`), so routing/permissions/config match your Gateway.
 
-## Authentication
+## 認証
 
 Uses the Gateway auth configuration. Send a bearer token:
 
@@ -88,7 +88,7 @@ Set `stream: true` to receive Server-Sent Events (SSE):
 * Each event line is `data: <json>`
 * Stream ends with `data: [DONE]`
 
-## Examples
+## 例
 
 Non-streaming:
 

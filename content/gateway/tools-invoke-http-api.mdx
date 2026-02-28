@@ -13,7 +13,7 @@ OpenClaw’s Gateway exposes a simple HTTP endpoint for invoking a single tool d
 
 Default max payload size is 2 MB.
 
-## Authentication
+## 認証
 
 Uses the Gateway auth configuration. Send a bearer token:
 
@@ -94,7 +94,7 @@ To help group policies resolve context, you can optionally set:
 * `405` → method not allowed
 * `500` → `{ ok: false, error: { type, message } }` (unexpected tool execution error; sanitized message)
 
-## Example
+## 例
 
 ```bash
 curl -sS http://127.0.0.1:18789/tools/invoke \

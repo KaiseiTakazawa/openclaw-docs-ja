@@ -1,10 +1,10 @@
 ---
-title: "Session Pruning"
+title: "セッションプルーニング"
 ---
 
-# Session Pruning
+# セッションプルーニング
 
-# Session Pruning
+# セッションプルーニング
 
 Session pruning trims **old tool results** from the in-memory context right before each LLM call. It does **not** rewrite the on-disk session history (`*.jsonl`).
 
@@ -83,7 +83,7 @@ If `agents.defaults.contextTokens` is set, it is treated as a cap (min) on the r
 * `softTrim`: `{ maxChars: 4000, headChars: 1500, tailChars: 1500 }`
 * `hardClear`: `{ enabled: true, placeholder: "[Old tool result content cleared]" }`
 
-## Examples
+## 例
 
 Default (off):
 

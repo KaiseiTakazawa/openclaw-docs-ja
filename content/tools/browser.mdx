@@ -1,8 +1,8 @@
 ---
-title: "Browser (OpenClaw-managed)"
+title: "ブラウザ (OpenClaw 管理)"
 ---
 
-# Browser (OpenClaw-managed)
+# ブラウザ (OpenClaw 管理)
 
 # Browser (openclaw-managed)
 
@@ -28,7 +28,7 @@ Beginner view:
 This browser is **not** your daily driver. It is a safe, isolated surface for
 agent automation and verification.
 
-## Quick start
+## クイックスタート
 
 ```bash
 openclaw browser --browser-profile openclaw status
@@ -48,7 +48,7 @@ Gateway.
 
 Set `browser.defaultProfile: "openclaw"` if you want managed mode by default.
 
-## Configuration
+## 設定
 
 Browser settings live in `~/.openclaw/openclaw.json`.
 
@@ -193,7 +193,7 @@ Notes:
 * Replace `<BROWSERLESS_API_KEY>` with your real Browserless token.
 * Choose the region endpoint that matches your Browserless account (see their docs).
 
-## Security
+## セキュリティ
 
 Key ideas:
 
@@ -247,7 +247,7 @@ Chrome extension relay takeover requires host browser control, so either:
 * run the session unsandboxed, or
 * set `agents.defaults.sandbox.browser.allowHostControl: true` and use `target="host"` when calling the tool.
 
-### Setup
+### セットアップ
 
 1. Load the extension (dev/unpacked):
 
@@ -581,7 +581,7 @@ Strict-mode example (block private/internal destinations by default):
 }
 ```
 
-## Troubleshooting
+## トラブルシューティング
 
 For Linux-specific issues (especially snap Chromium), see
 [Browser troubleshooting](/tools/browser-linux-troubleshooting).

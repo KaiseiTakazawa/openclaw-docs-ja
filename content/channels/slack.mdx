@@ -8,7 +8,7 @@ Status: production-ready for DMs + channels via Slack app integrations. Default 
 Slack DMs default to pairing mode.
 Native command behavior and command catalog.
 Cross-channel diagnostics and repair playbooks.
-## Quick setup
+## クイックセットアップ
 In Slack app settings:
 \* enable \*\*Socket Mode\*\*
 \* create \*\*App Token\*\* (`xapp-...`) with `connections:write`
@@ -260,7 +260,7 @@ If you configure `channels.slack.userToken`, typical read scopes are:
 \* `pins:read`
 \* `emoji:read`
 \* `search:read` (if you depend on Slack search reads)
-## Troubleshooting
+## トラブルシューティング
 Check, in order:
 \* `groupPolicy`
 \* channel allowlist (`channels.slack.channels`)
@@ -307,7 +307,7 @@ nativeStreaming: false
 Legacy keys:
 \* `channels.slack.streamMode` (`replace | status\_final | append`) is auto-migrated to `channels.slack.streaming`.
 \* boolean `channels.slack.streaming` is auto-migrated to `channels.slack.nativeStreaming`.
-### Requirements
+### 要件
 1. Enable \*\*Agents and AI Apps\*\* in your Slack app settings.
 2. Ensure the app has the `assistant:write` scope.
 3. A reply thread must be available for that message. Thread selection still follows `replyToMode`.
@@ -328,7 +328,7 @@ High-signal Slack fields:
 \* threading/history: `replyToMode`, `replyToModeByChatType`, `thread.\*`, `historyLimit`, `dmHistoryLimit`, `dms.\*.historyLimit`
 \* delivery: `textChunkLimit`, `chunkMode`, `mediaMaxMb`, `streaming`, `nativeStreaming`
 \* ops/features: `configWrites`, `commands.native`, `slashCommand.\*`, `actions.\*`, `userToken`, `userTokenReadOnly`
-## Related
+## 関連
 \* [Pairing](/channels/pairing)
 \* [Channel routing](/channels/channel-routing)
 \* [Troubleshooting](/channels/troubleshooting)
