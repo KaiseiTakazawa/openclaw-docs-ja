@@ -4,18 +4,18 @@ title: "リアクション"
 
 # リアクション
 
-# Reaction tooling
+# リアクションツール
 
-Shared reaction semantics across channels:
+チャネル間で共有されるリアクションのセマンティクス:
 
-* `emoji` is required when adding a reaction.
-* `emoji=""` removes the bot's reaction(s) when supported.
-* `remove: true` removes the specified emoji when supported (requires `emoji`).
+* リアクションを追加する際には `emoji` が必要です。
+* `emoji=""` はサポートされている場合、ボットのリアクションを削除します。
+* `remove: true` はサポートされている場合、指定された絵文字を削除します（`emoji` が必要です）。
 
-Channel notes:
+チャネルのノート:
 
-* **Discord/Slack**: empty `emoji` removes all of the bot's reactions on the message; `remove: true` removes just that emoji.
-* **Google Chat**: empty `emoji` removes the app's reactions on the message; `remove: true` removes just that emoji.
-* **Telegram**: empty `emoji` removes the bot's reactions; `remove: true` also removes reactions but still requires a non-empty `emoji` for tool validation.
-* **WhatsApp**: empty `emoji` removes the bot reaction; `remove: true` maps to empty emoji (still requires `emoji`).
-* **Signal**: inbound reaction notifications emit system events when `channels.signal.reactionNotifications` is enabled.
+* **Discord/Slack**: 空の `emoji` はメッセージ上のボットのすべてのリアクションを削除します; `remove: true` はその絵文字だけを削除します。
+* **Google Chat**: 空の `emoji` はメッセージ上のアプリのリアクションを削除します; `remove: true` はその絵文字だけを削除します。
+* **Telegram**: 空の `emoji` はボットのリアクションを削除します; `remove: true` もリアクションを削除しますが、ツールの検証には非空の `emoji` が必要です。
+* **WhatsApp**: 空の `emoji` はボットのリアクションを削除します; `remove: true` は空の絵文字にマッピングされます（依然として `emoji` が必要です）。
+* **Signal**: 受信したリアクション通知は、`channels.signal.reactionNotifications` が有効な場合にシステムイベントを発生させます。

@@ -4,33 +4,32 @@ title: "Qianfan"
 
 # Qianfan
 
-# Qianfan Provider Guide
+# Qianfan プロバイダーガイド
 
-Qianfan is Baidu's MaaS platform, provides a **unified API** that routes requests to many models behind a single
-endpoint and API key. It is OpenAI-compatible, so most OpenAI SDKs work by switching the base URL.
+QianfanはBaiduのMaaSプラットフォームで、**統一API**を提供し、単一のエンドポイントとAPIキーを介して多くのモデルへのリクエストをルーティングします。これはOpenAI互換であり、ほとんどのOpenAI SDKはベースURLを切り替えることで動作します。
 
 ## 前提条件
 
-1. A Baidu Cloud account with Qianfan API access
-2. An API key from the Qianfan console
-3. OpenClaw installed on your system
+1. Qianfan APIアクセスのあるBaidu Cloudアカウント
+2. QianfanコンソールからのAPIキー
+3. システムにインストールされたOpenClaw
 
-## Getting Your API Key
+## APIキーの取得
 
-1. Visit the [Qianfan Console](https://console.bce.baidu.com/qianfan/ais/console/apiKey)
-2. Create a new application or select an existing one
-3. Generate an API key (format: `bce-v3/ALTAK-...`)
-4. Copy the API key for use with OpenClaw
+1. [Qianfanコンソール](https://console.bce.baidu.com/qianfan/ais/console/apiKey)にアクセス
+2. 新しいアプリケーションを作成するか、既存のものを選択
+3. APIキーを生成（形式: `bce-v3/ALTAK-...`）
+4. OpenClawで使用するためにAPIキーをコピー
 
-## CLI setup
+## CLIのセットアップ
 
 ```bash
 openclaw onboard --auth-choice qianfan-api-key
 ```
 
-## Related Documentation
+## 関連ドキュメント
 
-* [OpenClaw Configuration](/gateway/configuration)
-* [Model Providers](/concepts/model-providers)
-* [Agent Setup](/concepts/agent)
-* [Qianfan API Documentation](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb)
+* [OpenClaw設定](/gateway/configuration)
+* [モデルプロバイダー](/concepts/model-providers)
+* [エージェントのセットアップ](/concepts/agent)
+* [Qianfan APIドキュメント](https://cloud.baidu.com/doc/qianfan-api/s/3m7of64lb)

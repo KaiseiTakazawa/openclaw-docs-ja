@@ -6,23 +6,21 @@ title: "configure"
 
 # `openclaw configure`
 
-Interactive prompt to set up credentials, devices, and agent defaults.
+資格情報、デバイス、およびエージェントのデフォルトを設定するためのインタラクティブプロンプトです。
 
-Note: The **Model** section now includes a multi-select for the
-`agents.defaults.models` allowlist (what shows up in `/model` and the model picker).
+注意: **Model** セクションには、`agents.defaults.models` のホワイトリスト用のマルチセレクトが含まれるようになりました（`/model` およびモデルピッカーに表示されるもの）。
 
-Tip: `openclaw config` without a subcommand opens the same wizard. Use
-`openclaw config get|set|unset` for non-interactive edits.
+ヒント: サブコマンドなしの `openclaw config` は同じウィザードを開きます。非インタラクティブな編集には `openclaw config get|set|unset` を使用してください。
 
-Related:
+関連情報:
 
-* Gateway configuration reference: [Configuration](/gateway/configuration)
+* Gateway 設定リファレンス: [Configuration](/gateway/configuration)
 * Config CLI: [Config](/cli/config)
 
-Notes:
+注意事項:
 
-* Choosing where the Gateway runs always updates `gateway.mode`. You can select "Continue" without other sections if that is all you need.
-* Channel-oriented services (Slack/Discord/Matrix/Microsoft Teams) prompt for channel/room allowlists during setup. You can enter names or IDs; the wizard resolves names to IDs when possible.
+* Gateway の実行場所を選択すると、常に `gateway.mode` が更新されます。それが必要なすべてであれば、他のセクションなしで「Continue」を選択できます。
+* チャンネル指向のサービス（Slack/Discord/Matrix/Microsoft Teams）は、セットアップ中にチャンネル/ルームのホワイトリストを求めます。名前またはIDを入力できます; ウィザードは可能な場合、名前をIDに解決します。
 
 ## 例
 

@@ -6,21 +6,20 @@ title: "スクリプト"
 
 # スクリプト
 
-The `scripts/` directory contains helper scripts for local workflows and ops tasks.
-Use these when a task is clearly tied to a script; otherwise prefer the CLI.
+`scripts/` ディレクトリには、ローカルワークフローやオペレーションタスクのための補助スクリプトが含まれています。タスクが明らかにスクリプトに関連している場合はこれらを使用してください。それ以外の場合はCLIを優先してください。
 
-## Conventions
+## 規約
 
-* Scripts are **optional** unless referenced in docs or release checklists.
-* Prefer CLI surfaces when they exist (example: auth monitoring uses `openclaw models status --check`).
-* Assume scripts are host‑specific; read them before running on a new machine.
+* スクリプトは、ドキュメントやリリースチェックリストで参照されていない限り、**オプション**です。
+* 存在する場合はCLIインターフェースを優先してください（例: 認証モニタリングは `openclaw models status --check` を使用します）。
+* スクリプトはホスト特有であると仮定してください。新しいマシンで実行する前に、内容を確認してください。
 
-## Auth monitoring scripts
+## 認証モニタリングスクリプト
 
-Auth monitoring scripts are documented here:
+認証モニタリングスクリプトはここに文書化されています：
 [/automation/auth-monitoring](/automation/auth-monitoring)
 
-## When adding scripts
+## スクリプトを追加する際
 
-* Keep scripts focused and documented.
-* Add a short entry in the relevant doc (or create one if missing).
+* スクリプトは焦点を絞り、文書化してください。
+* 関連するドキュメントに短いエントリを追加するか、欠けている場合は新たに作成してください。

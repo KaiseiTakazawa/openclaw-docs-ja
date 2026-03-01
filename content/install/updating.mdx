@@ -4,48 +4,44 @@ title: "アップデート"
 
 # アップデート
 
-# アップデート
+OpenClawは急速に進化しています（プレ“1.0”）。アップデートはインフラの出荷と同様に扱ってください：アップデート → チェックを実行 → 再起動（または`openclaw update`を使用すると再起動します）→ 確認。
 
-OpenClaw is moving fast (pre “1.0”). Treat updates like shipping infra: update → run checks → restart (or use `openclaw update`, which restarts) → verify.
+## 推奨：ウェブサイトインストーラーを再実行（インプレースアップグレード）
 
-## Recommended: re-run the website installer (upgrade in place)
-
-The **preferred** update path is to re-run the installer from the website. It
-detects existing installs, upgrades in place, and runs `openclaw doctor` when
-needed.
+**推奨**のアップデートパスは、ウェブサイトからインストーラーを再実行することです。既存のインストールを検出し、インプレースでアップグレードし、必要に応じて`openclaw doctor`を実行します。
 
 ```bash
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-Notes:
+注意：
 
-* Add `--no-onboard` if you don’t want the onboarding wizard to run again.
+* オンボーディングウィザードを再実行したくない場合は、`--no-onboard`を追加してください。
 
-* For **source installs**, use:
+* **ソースインストール**の場合は、次のようにします：
 
   ```bash
   curl -fsSL https://openclaw.ai/install.sh | bash -s -- --install-method git --no-onboard
   ```
 
-  The installer will `git pull --rebase` **only** if the repo is clean.
+  インストーラーは、リポジトリがクリーンな場合にのみ`git pull --rebase`を実行します。
 
-* For **global installs**, the script uses `npm install -g openclaw@latest` under the hood.
+* **グローバルインストール**の場合、スクリプトは内部で`npm install -g openclaw@latest`を使用します。
 
-* Legacy note: `clawdbot` remains available as a compatibility shim.
+* レガシーノート：`clawdbot`は互換性のためのシムとして利用可能です。
 
-## Before you update
+## アップデート前に
 
-* Know how you installed: **global** (npm/pnpm) vs **from source** (git clone).
-* Know how your Gateway is running: **foreground terminal** vs **supervised service** (launchd/systemd).
-* Snapshot your tailoring:
-  * Config: `~/.openclaw/openclaw.json`
-  * Credentials: `~/.openclaw/credentials/`
-  * Workspace: `~/.openclaw/workspace`
+* インストール方法を確認してください：**グローバル**（npm/pnpm）対 **ソースから**（git clone）。
+* Gatewayがどのように実行されているかを確認してください：**フォアグラウンドターミナル**対 **監視サービス**（launchd/systemd）。
+* カスタマイズのスナップショットを取ります：
+  * 設定：`~/.openclaw/openclaw.json`
+  * 認証情報：`~/.openclaw/credentials/`
+  * ワークスペース：`~/.openclaw/workspace`
 
-## Update (global install)
+## アップデート（グローバルインストール）
 
-Global install (pick one):
+グローバルインストール（いずれかを選択）：
 
 ```bash
 npm i -g openclaw@latest
@@ -55,9 +51,9 @@ npm i -g openclaw@latest
 pnpm add -g openclaw@latest
 ```
 
-We do **not** recommend Bun for the Gateway runtime (WhatsApp/Telegram bugs).
+GatewayランタイムにBunを推奨しません（WhatsApp/Telegramのバグ）。
 
-To switch update channels (git + npm installs):
+アップデートチャネルを切り替えるには（git + npmインストール）：
 
 ```bash
 openclaw update --channel beta
@@ -65,15 +61,15 @@ openclaw update --channel dev
 openclaw update --channel stable
 ```
 
-Use `--tag <dist-tag|version>` for a one-off install tag/version.
+一回限りのインストールタグ/バージョンには`--tag <dist-tag|version>`を使用します。
 
-See [Development channels](/install/development-channels) for channel semantics and release notes.
+チャネルの意味とリリースノートについては、[Development channels](/install/development-channels)を参照してください。
 
-Note: on npm installs, the gateway logs an update hint on startup (checks the current channel tag). Disable via `update.checkOnStart: false`.
+注意：npmインストール時、Gatewayは起動時にアップデートヒントをログに記録します（現在のチャネルタグをチェックします）。`update.checkOnStart: false`で無効にできます。
 
-### Core auto-updater (optional)
+### コア自動アップデーター（オプション）
 
-Auto-updater is **off by default** and is a core Gateway feature (not a plugin).
+自動アップデーターは**デフォルトでオフ**であり、コアGateway機能です（プラグインではありません）。
 
 ```json
 {
@@ -89,15 +85,15 @@ Auto-updater is **off by default** and is a core Gateway feature (not a plugin).
 }
 ```
 
-Behavior:
+動作：
 
-* `stable`: when a new version is seen, OpenClaw waits `stableDelayHours` and then applies a deterministic per-install jitter in `stableJitterHours` (spread rollout).
-* `beta`: checks on `betaCheckIntervalHours` cadence (default: hourly) and applies when an update is available.
-* `dev`: no automatic apply; use manual `openclaw update`.
+* `stable`：新しいバージョンが見つかると、OpenClawは`stableDelayHours`待機し、その後`stableJitterHours`内で決定論的なインストールごとのジッターを適用します（スプレッドロールアウト）。
+* `beta`：`betaCheckIntervalHours`の間隔でチェックします（デフォルト：毎時）し、アップデートが利用可能な場合に適用します。
+* `dev`：自動適用はなく、手動で`openclaw update`を使用します。
 
-Use `openclaw update --dry-run` to preview update actions before enabling automation.
+自動化を有効にする前に、`openclaw update --dry-run`を使用してアップデートアクションをプレビューします。
 
-Then:
+その後：
 
 ```bash
 openclaw doctor
@@ -105,86 +101,86 @@ openclaw gateway restart
 openclaw health
 ```
 
-Notes:
+注意：
 
-* If your Gateway runs as a service, `openclaw gateway restart` is preferred over killing PIDs.
-* If you’re pinned to a specific version, see “Rollback / pinning” below.
+* Gatewayがサービスとして実行されている場合、`openclaw gateway restart`はPIDを強制終了するよりも推奨されます。
+* 特定のバージョンに固定されている場合は、以下の「ロールバック/ピン留め」を参照してください。
 
-## Update (`openclaw update`)
+## アップデート（`openclaw update`）
 
-For **source installs** (git checkout), prefer:
-
-```bash
-openclaw update
-```
-
-It runs a safe-ish update flow:
-
-* Requires a clean worktree.
-* Switches to the selected channel (tag or branch).
-* Fetches + rebases against the configured upstream (dev channel).
-* Installs deps, builds, builds the Control UI, and runs `openclaw doctor`.
-* Restarts the gateway by default (use `--no-restart` to skip).
-
-If you installed via **npm/pnpm** (no git metadata), `openclaw update` will try to update via your package manager. If it can’t detect the install, use “Update (global install)” instead.
-
-## Update (Control UI / RPC)
-
-The Control UI has **Update & Restart** (RPC: `update.run`). It:
-
-1. Runs the same source-update flow as `openclaw update` (git checkout only).
-2. Writes a restart sentinel with a structured report (stdout/stderr tail).
-3. Restarts the gateway and pings the last active session with the report.
-
-If the rebase fails, the gateway aborts and restarts without applying the update.
-
-## Update (from source)
-
-From the repo checkout:
-
-Preferred:
+**ソースインストール**（git checkout）の場合は、次のようにします：
 
 ```bash
 openclaw update
 ```
 
-Manual (equivalent-ish):
+安全なアップデートフローを実行します：
+
+* クリーンなワークツリーが必要です。
+* 選択したチャネル（タグまたはブランチ）に切り替えます。
+* 設定されたアップストリーム（devチャネル）に対してフェッチ + リベースを実行します。
+* 依存関係をインストールし、ビルドし、Control UIをビルドし、`openclaw doctor`を実行します。
+* デフォルトでGatewayを再起動します（スキップするには`--no-restart`を使用）。
+
+**npm/pnpm**を介してインストールした場合（gitメタデータなし）、`openclaw update`はパッケージマネージャーを介して更新を試みます。インストールを検出できない場合は、「アップデート（グローバルインストール）」を使用してください。
+
+## アップデート（Control UI / RPC）
+
+Control UIには**アップデート & 再起動**（RPC: `update.run`）があります。これにより：
+
+1. `openclaw update`と同じソースアップデートフローを実行します（git checkoutのみ）。
+2. 構造化されたレポート（stdout/stderrのテール）を持つ再起動センチネルを書き込みます。
+3. Gatewayを再起動し、レポートを持って最後のアクティブセッションにpingを送ります。
+
+リベースが失敗した場合、Gatewayは中止し、アップデートを適用せずに再起動します。
+
+## アップデート（ソースから）
+
+リポジトリのチェックアウトから：
+
+推奨：
+
+```bash
+openclaw update
+```
+
+手動（ほぼ同等）：
 
 ```bash
 git pull
 pnpm install
 pnpm build
-pnpm ui:build # auto-installs UI deps on first run
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
 openclaw doctor
 openclaw health
 ```
 
-Notes:
+注意：
 
-* `pnpm build` matters when you run the packaged `openclaw` binary ([`openclaw.mjs`](https://github.com/openclaw/openclaw/blob/main/openclaw.mjs)) or use Node to run `dist/`.
-* If you run from a repo checkout without a global install, use `pnpm openclaw ...` for CLI commands.
-* If you run directly from TypeScript (`pnpm openclaw ...`), a rebuild is usually unnecessary, but **config migrations still apply** → run doctor.
-* Switching between global and git installs is easy: install the other flavor, then run `openclaw doctor` so the gateway service entrypoint is rewritten to the current install.
+* `pnpm build`は、パッケージ化された`openclaw`バイナリ（[`openclaw.mjs`](https://github.com/openclaw/openclaw/blob/main/openclaw.mjs)）を実行する場合や、Nodeを使用して`dist/`を実行する場合に重要です。
+* グローバルインストールなしでリポジトリのチェックアウトから実行する場合は、CLIコマンドに`pnpm openclaw ...`を使用してください。
+* TypeScriptから直接実行する場合（`pnpm openclaw ...`）、再ビルドは通常不要ですが、**設定の移行は依然として適用されます** → doctorを実行してください。
+* グローバルとgitインストールの間を切り替えるのは簡単です：もう一方のフレーバーをインストールし、その後`openclaw doctor`を実行してGatewayサービスエントリポイントが現在のインストールに書き換えられるようにします。
 
-## Always Run: `openclaw doctor`
+## 常に実行：`openclaw doctor`
 
-Doctor is the “safe update” command. It’s intentionally boring: repair + migrate + warn.
+Doctorは「安全なアップデート」コマンドです。意図的に退屈です：修復 + 移行 + 警告。
 
-Note: if you’re on a **source install** (git checkout), `openclaw doctor` will offer to run `openclaw update` first.
+注意：**ソースインストール**（git checkout）の場合、`openclaw doctor`は最初に`openclaw update`を実行するよう提案します。
 
-Typical things it does:
+通常行うこと：
 
-* Migrate deprecated config keys / legacy config file locations.
-* Audit DM policies and warn on risky “open” settings.
-* Check Gateway health and can offer to restart.
-* Detect and migrate older gateway services (launchd/systemd; legacy schtasks) to current OpenClaw services.
-* On Linux, ensure systemd user lingering (so the Gateway survives logout).
+* 非推奨の設定キー/レガシー設定ファイルの場所を移行します。
+* DMポリシーを監査し、リスクのある「オープン」設定について警告します。
+* Gatewayの健康状態をチェックし、再起動を提案できます。
+* 古いGatewayサービス（launchd/systemd; レガシーのschtasks）を検出し、現在のOpenClawサービスに移行します。
+* Linuxでは、systemdユーザーの持続性を確保します（Gatewayがログアウト後も生存するように）。
 
-Details: [Doctor](/gateway/doctor)
+詳細：[Doctor](/gateway/doctor)
 
-## Start / stop / restart the Gateway
+## Gatewayの開始/停止/再起動
 
-CLI (works regardless of OS):
+CLI（OSに関係なく動作します）：
 
 ```bash
 openclaw gateway status
@@ -194,20 +190,20 @@ openclaw gateway --port 18789
 openclaw logs --follow
 ```
 
-If you’re supervised:
+監視されている場合：
 
-* macOS launchd (app-bundled LaunchAgent): `launchctl kickstart -k gui/$UID/ai.openclaw.gateway` (use `ai.openclaw.<profile>`; legacy `com.openclaw.*` still works)
-* Linux systemd user service: `systemctl --user restart openclaw-gateway[-<profile>].service`
-* Windows (WSL2): `systemctl --user restart openclaw-gateway[-<profile>].service`
-  * `launchctl`/`systemctl` only work if the service is installed; otherwise run `openclaw gateway install`.
+* macOS launchd（アプリバンドルのLaunchAgent）：`launchctl kickstart -k gui/$UID/ai.openclaw.gateway`（`ai.openclaw.<profile>`を使用；レガシーの`com.openclaw.*`も動作します）
+* Linux systemdユーザーサービス：`systemctl --user restart openclaw-gateway[-<profile>].service`
+* Windows（WSL2）：`systemctl --user restart openclaw-gateway[-<profile>].service`
+  * `launchctl`/`systemctl`はサービスがインストールされている場合にのみ動作します；そうでない場合は`openclaw gateway install`を実行します。
 
-Runbook + exact service labels: [Gateway runbook](/gateway)
+ランブック + 正確なサービスラベル：[Gateway runbook](/gateway)
 
-## Rollback / pinning (when something breaks)
+## ロールバック / ピン留め（何かが壊れたとき）
 
-### Pin (global install)
+### ピン（グローバルインストール）
 
-Install a known-good version (replace `<version>` with the last working one):
+既知の良好なバージョンをインストールします（`<version>`を最後に動作したものに置き換えます）：
 
 ```bash
 npm i -g openclaw@<version>
@@ -217,25 +213,25 @@ npm i -g openclaw@<version>
 pnpm add -g openclaw@<version>
 ```
 
-Tip: to see the current published version, run `npm view openclaw version`.
+ヒント：現在公開されているバージョンを確認するには、`npm view openclaw version`を実行します。
 
-Then restart + re-run doctor:
+その後、再起動 + doctorを再実行します：
 
 ```bash
 openclaw doctor
 openclaw gateway restart
 ```
 
-### Pin (source) by date
+### ピン（ソース）日付による
 
-Pick a commit from a date (example: “state of main as of 2026-01-01”):
+日付からコミットを選択します（例：「2026-01-01時点のmainの状態」）：
 
 ```bash
 git fetch origin
 git checkout "$(git rev-list -n 1 --before=\"2026-01-01\" origin/main)"
 ```
 
-Then reinstall deps + restart:
+その後、依存関係を再インストール + 再起動します：
 
 ```bash
 pnpm install
@@ -243,15 +239,15 @@ pnpm build
 openclaw gateway restart
 ```
 
-If you want to go back to latest later:
+後で最新に戻したい場合：
 
 ```bash
 git checkout main
 git pull
 ```
 
-## If you’re stuck
+## 行き詰まった場合
 
-* Run `openclaw doctor` again and read the output carefully (it often tells you the fix).
-* Check: [Troubleshooting](/gateway/troubleshooting)
-* Ask in Discord: [https://discord.gg/clawd](https://discord.gg/clawd)
+* 再度`openclaw doctor`を実行し、出力を注意深く読みます（修正方法が示されることが多いです）。
+* チェック：[Troubleshooting](/gateway/troubleshooting)
+* Discordで尋ねる：[https://discord.gg/clawd](https://discord.gg/clawd)

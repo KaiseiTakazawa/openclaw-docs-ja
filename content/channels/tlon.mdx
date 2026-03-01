@@ -4,29 +4,26 @@ title: "Tlon"
 
 # Tlon
 # Tlon (plugin)
-Tlon is a decentralized messenger built on Urbit. OpenClaw connects to your Urbit ship and can
-respond to DMs and group chat messages. Group replies require an @ mention by default and can
-be further restricted via allowlists.
-Status: supported via plugin. DMs, group mentions, thread replies, and text-only media fallback
-(URL appended to caption). Reactions, polls, and native media uploads are not supported.
-## Plugin required
-Tlon ships as a plugin and is not bundled with the core install.
-Install via CLI (npm registry):
+TlonはUrbit上に構築された分散型メッセンジャーです。OpenClawはあなたのUrbitシップに接続し、DMやグループチャットメッセージに応答できます。グループ返信はデフォルトで@メンションが必要で、さらに許可リストを通じて制限することができます。
+ステータス: プラグインを介してサポートされています。DM、グループメンション、スレッド返信、およびテキストのみのメディアフォールバック（キャプションにURLを追加）。リアクション、投票、ネイティブメディアのアップロードはサポートされていません。
+## プラグインが必要
+Tlonはプラグインとして提供されており、コアインストールにはバンドルされていません。
+CLIを介してインストール（npmレジストリ）:
 ```bash
 openclaw plugins install @openclaw/tlon
 ```
-Local checkout (when running from a git repo):
+ローカルチェックアウト（gitリポジトリから実行する場合）:
 ```bash
 openclaw plugins install ./extensions/tlon
 ```
-Details: [Plugins](/tools/plugin)
+詳細: [Plugins](/tools/plugin)
 ## セットアップ
-1. Install the Tlon plugin.
-2. Gather your ship URL and login code.
-3. Configure `channels.tlon`.
-4. Restart the gateway.
-5. DM the bot or mention it in a group channel.
-Minimal config (single account):
+1. Tlonプラグインをインストールします。
+2. あなたのシップURLとログインコードを集めます。
+3. `channels.tlon`を設定します。
+4. ゲートウェイを再起動します。
+5. ボットにDMを送るか、グループチャンネルでメンションします。
+最小構成（単一アカウント）:
 ```json5
 {
 channels: {
@@ -39,10 +36,9 @@ code: "lidlut-tabwed-pillex-ridrup",
 },
 }
 ```
-Private/LAN ship URLs (advanced):
-By default, OpenClaw blocks private/internal hostnames and IP ranges for this plugin (SSRF hardening).
-If your ship URL is on a private network (for example `http://192.168.1.50:8080` or `http://localhost:8080`),
-you must explicitly opt in:
+プライベート/LANシップURL（上級者向け）:
+デフォルトでは、OpenClawはこのプラグインのためにプライベート/内部ホスト名とIP範囲をブロックします（SSRF強化）。
+あなたのシップURLがプライベートネットワーク上にある場合（例えば`http://192.168.1.50:8080`や`http://localhost:8080`）、明示的にオプトインする必要があります:
 ```json5
 {
 channels: {
@@ -52,8 +48,8 @@ allowPrivateNetwork: true,
 },
 }
 ```
-## Group channels
-Auto-discovery is enabled by default. You can also pin channels manually:
+## グループチャンネル
+自動発見はデフォルトで有効です。チャンネルを手動でピン留めすることもできます:
 ```json5
 {
 channels: {
@@ -63,7 +59,7 @@ groupChannels: ["chat/~host-ship/general", "chat/~host-ship/support"],
 },
 }
 ```
-Disable auto-discovery:
+自動発見を無効にする:
 ```json5
 {
 channels: {
@@ -73,8 +69,8 @@ autoDiscoverChannels: false,
 },
 }
 ```
-## Access control
-DM allowlist (empty = allow all):
+## アクセス制御
+DM許可リスト（空 = すべて許可）:
 ```json5
 {
 channels: {
@@ -84,7 +80,7 @@ dmAllowlist: ["~zod", "~nec"],
 },
 }
 ```
-Group authorization (restricted by default):
+グループ認証（デフォルトで制限）:
 ```json5
 {
 channels: {
@@ -105,11 +101,11 @@ mode: "open",
 },
 }
 ```
-## Delivery targets (CLI/cron)
-Use these with `openclaw message send` or cron delivery:
-\* DM: `~sampel-palnet` or `dm/~sampel-palnet`
-\* Group: `chat/~host-ship/channel` or `group:~host-ship/channel`
+## 配信ターゲット（CLI/cron）
+これらを`openclaw message send`またはcron配信で使用します:
+\* DM: `~sampel-palnet`または`dm/~sampel-palnet`
+\* グループ: `chat/~host-ship/channel`または`group:~host-ship/channel`
 ## 注意事項
-\* Group replies require a mention (e.g. `~your-bot-ship`) to respond.
-\* Thread replies: if the inbound message is in a thread, OpenClaw replies in-thread.
-\* Media: `sendMedia` falls back to text + URL (no native upload).
+\* グループ返信にはメンション（例: `~your-bot-ship`）が必要です。
+\* スレッド返信: 受信メッセージがスレッド内にある場合、OpenClawはスレッド内で返信します。
+\* メディア: `sendMedia`はテキスト + URLにフォールバックします（ネイティブアップロードはありません）。

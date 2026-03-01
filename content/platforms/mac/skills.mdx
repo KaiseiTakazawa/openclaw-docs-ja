@@ -6,26 +6,26 @@ title: "スキル"
 
 # Skills (macOS)
 
-The macOS app surfaces OpenClaw skills via the gateway; it does not parse skills locally.
+macOSアプリは、ゲートウェイを介してOpenClawスキルを表示します。スキルをローカルで解析することはありません。
 
-## Data source
+## データソース
 
-* `skills.status` (gateway) returns all skills plus eligibility and missing requirements
-  (including allowlist blocks for bundled skills).
-* Requirements are derived from `metadata.openclaw.requires` in each `SKILL.md`.
+* `skills.status` (ゲートウェイ) は、すべてのスキルとその適格性および欠落している要件を返します
+  (バンドルされたスキルの許可リストブロックを含む)。
+* 要件は、各`SKILL.md`内の`metadata.openclaw.requires`から導出されます。
 
-## Install actions
+## インストールアクション
 
-* `metadata.openclaw.install` defines install options (brew/node/go/uv).
-* The app calls `skills.install` to run installers on the gateway host.
-* The gateway surfaces only one preferred installer when multiple are provided
-  (brew when available, otherwise node manager from `skills.install`, default npm).
+* `metadata.openclaw.install` はインストールオプションを定義します (brew/node/go/uv)。
+* アプリは、ゲートウェイホスト上でインストーラーを実行するために`skills.install`を呼び出します。
+* ゲートウェイは、複数のインストーラーが提供されている場合、好ましいインストーラーを1つだけ表示します
+  (利用可能な場合はbrew、そうでなければ`skills.install`からのノードマネージャー、デフォルトはnpm)。
 
-## Env/API keys
+## 環境/APIキー
 
-* The app stores keys in `~/.openclaw/openclaw.json` under `skills.entries.<skillKey>`.
-* `skills.update` patches `enabled`, `apiKey`, and `env`.
+* アプリは、`~/.openclaw/openclaw.json`内の`skills.entries.<skillKey>`にキーを保存します。
+* `skills.update`は`enabled`、`apiKey`、および`env`をパッチします。
 
-## Remote mode
+## リモートモード
 
-* Install + config updates happen on the gateway host (not the local Mac).
+* インストールおよび設定の更新は、ゲートウェイホスト上で行われます (ローカルMacではありません)。

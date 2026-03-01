@@ -4,19 +4,19 @@ title: "セッション管理詳解"
 
 # セッション管理詳解
 
-# Session Management & Compaction (Deep Dive)
+# セッション管理と圧縮（詳細解説）
 
-This document explains how OpenClaw manages sessions end-to-end:
+このドキュメントでは、OpenClawがセッションをエンドツーエンドで管理する方法について説明します。
 
-* **Session routing** (how inbound messages map to a `sessionKey`)
-* **Session store** (`sessions.json`) and what it tracks
-* **Transcript persistence** (`*.jsonl`) and its structure
-* **Transcript hygiene** (provider-specific fixups before runs)
-* **Context limits** (context window vs tracked tokens)
-* **Compaction** (manual + auto-compaction) and where to hook pre-compaction work
-* **Silent housekeeping** (e.g. memory writes that shouldn’t produce user-visible output)
+* **セッションルーティング**（受信メッセージがどのように `sessionKey` にマッピングされるか）
+* **セッションストア**（`sessions.json`）とその追跡内容
+* **トランスクリプトの永続性**（`*.jsonl`）とその構造
+* **トランスクリプトの衛生管理**（実行前のプロバイダー特有の修正）
+* **コンテキスト制限**（コンテキストウィンドウと追跡トークンの違い）
+* **圧縮**（手動および自動圧縮）と圧縮前の作業をフックする場所
+* **サイレントハウスキーピング**（例：ユーザーに見えない出力を生成しないメモリ書き込み）
 
-If you want a higher-level overview first, start with:
+最初に高レベルの概要を知りたい場合は、以下から始めてください。
 
 * [/concepts/session](/concepts/session)
 * [/concepts/compaction](/concepts/compaction)
@@ -25,64 +25,64 @@ If you want a higher-level overview first, start with:
 
 ***
 
-## Source of truth: the Gateway
+## 真実の源：Gateway
 
-OpenClaw is designed around a single **Gateway process** that owns session state.
+OpenClawは、セッション状態を所有する単一の**Gatewayプロセス**を中心に設計されています。
 
-* UIs (macOS app, web Control UI, TUI) should query the Gateway for session lists and token counts.
-* In remote mode, session files are on the remote host; “checking your local Mac files” won’t reflect what the Gateway is using.
-
-***
-
-## Two persistence layers
-
-OpenClaw persists sessions in two layers:
-
-1. **Session store (`sessions.json`)**
-   * Key/value map: `sessionKey -> SessionEntry`
-   * Small, mutable, safe to edit (or delete entries)
-   * Tracks session metadata (current session id, last activity, toggles, token counters, etc.)
-
-2. **Transcript (`<sessionId>.jsonl`)**
-   * Append-only transcript with tree structure (entries have `id` + `parentId`)
-   * Stores the actual conversation + tool calls + compaction summaries
-   * Used to rebuild the model context for future turns
+* UI（macOSアプリ、WebコントロールUI、TUI）は、セッションリストやトークンカウントのためにGatewayにクエリを送信する必要があります。
+* リモートモードでは、セッションファイルはリモートホスト上にあります。「ローカルMacファイルを確認する」ことは、Gatewayが使用している内容を反映しません。
 
 ***
 
-## On-disk locations
+## 二つの永続層
 
-Per agent, on the Gateway host:
+OpenClawは、セッションを二つの層で永続化します。
 
-* Store: `~/.openclaw/agents/<agentId>/sessions/sessions.json`
-* Transcripts: `~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
-  * Telegram topic sessions: `.../<sessionId>-topic-<threadId>.jsonl`
+1. **セッションストア（`sessions.json`）**
+   * キー/値マップ：`sessionKey -> SessionEntry`
+   * 小さく、可変で、安全に編集（またはエントリを削除）できます
+   * セッションメタデータを追跡します（現在のセッションID、最終活動、トグル、トークンカウンタなど）
 
-OpenClaw resolves these via `src/config/sessions.ts`.
+2. **トランスクリプト（`<sessionId>.jsonl`）**
+   * ツリー構造を持つ追加専用トランスクリプト（エントリには `id` + `parentId` が含まれます）
+   * 実際の会話 + ツールコール + 圧縮サマリーを保存します
+   * 将来のターンのためにモデルコンテキストを再構築するために使用されます
 
 ***
 
-## Store maintenance and disk controls
+## ディスク上の場所
 
-Session persistence has automatic maintenance controls (`session.maintenance`) for `sessions.json` and transcript artifacts:
+エージェントごとに、Gatewayホスト上にあります。
 
-* `mode`: `warn` (default) or `enforce`
-* `pruneAfter`: stale-entry age cutoff (default `30d`)
-* `maxEntries`: cap entries in `sessions.json` (default `500`)
-* `rotateBytes`: rotate `sessions.json` when oversized (default `10mb`)
-* `resetArchiveRetention`: retention for `*.reset.<timestamp>` transcript archives (default: same as `pruneAfter`; `false` disables cleanup)
-* `maxDiskBytes`: optional sessions-directory budget
-* `highWaterBytes`: optional target after cleanup (default `80%` of `maxDiskBytes`)
+* ストア：`~/.openclaw/agents/<agentId>/sessions/sessions.json`
+* トランスクリプト：`~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
+  * Telegramトピックセッション：`.../<sessionId>-topic-<threadId>.jsonl`
 
-Enforcement order for disk budget cleanup (`mode: "enforce"`):
+OpenClawはこれらを `src/config/sessions.ts` を介して解決します。
 
-1. Remove oldest archived or orphan transcript artifacts first.
-2. If still above the target, evict oldest session entries and their transcript files.
-3. Keep going until usage is at or below `highWaterBytes`.
+***
 
-In `mode: "warn"`, OpenClaw reports potential evictions but does not mutate the store/files.
+## ストアのメンテナンスとディスク制御
 
-Run maintenance on demand:
+セッションの永続性には、`sessions.json` とトランスクリプトアーティファクトのための自動メンテナンス制御（`session.maintenance`）があります。
+
+* `mode`：`warn`（デフォルト）または `enforce`
+* `pruneAfter`：古いエントリの年齢カットオフ（デフォルト `30d`）
+* `maxEntries`：`sessions.json` のエントリの上限（デフォルト `500`）
+* `rotateBytes`：サイズオーバー時に `sessions.json` をローテート（デフォルト `10mb`）
+* `resetArchiveRetention`：`*.reset.<timestamp>` トランスクリプトアーカイブの保持期間（デフォルト：`pruneAfter` と同じ；`false` はクリーンアップを無効にします）
+* `maxDiskBytes`：オプションのセッションディレクトリ予算
+* `highWaterBytes`：クリーンアップ後のオプションの目標（デフォルト `80%` の `maxDiskBytes`）
+
+ディスク予算クリーンアップの強制順序（`mode: "enforce"`）：
+
+1. 最も古いアーカイブまたは孤立したトランスクリプトアーティファクトを最初に削除します。
+2. まだ目標を超えている場合、最も古いセッションエントリとそのトランスクリプトファイルを排除します。
+3. 使用量が `highWaterBytes` 以下になるまで続けます。
+
+`mode: "warn"` では、OpenClawは潜在的な排除を報告しますが、ストア/ファイルを変更しません。
+
+メンテナンスをオンデマンドで実行します：
 
 ```bash
 openclaw sessions cleanup --dry-run
@@ -91,143 +91,143 @@ openclaw sessions cleanup --enforce
 
 ***
 
-## Cron sessions and run logs
+## Cronセッションと実行ログ
 
-Isolated cron runs also create session entries/transcripts, and they have dedicated retention controls:
+孤立したcron実行もセッションエントリ/トランスクリプトを作成し、専用の保持制御があります。
 
-* `cron.sessionRetention` (default `24h`) prunes old isolated cron run sessions from the session store (`false` disables).
-* `cron.runLog.maxBytes` + `cron.runLog.keepLines` prune `~/.openclaw/cron/runs/<jobId>.jsonl` files (defaults: `2_000_000` bytes and `2000` lines).
-
-***
-
-## Session keys (`sessionKey`)
-
-A `sessionKey` identifies *which conversation bucket* you’re in (routing + isolation).
-
-Common patterns:
-
-* Main/direct chat (per agent): `agent:<agentId>:<mainKey>` (default `main`)
-* Group: `agent:<agentId>:<channel>:group:<id>`
-* Room/channel (Discord/Slack): `agent:<agentId>:<channel>:channel:<id>` or `...:room:<id>`
-* Cron: `cron:<job.id>`
-* Webhook: `hook:<uuid>` (unless overridden)
-
-The canonical rules are documented at [/concepts/session](/concepts/session).
+* `cron.sessionRetention`（デフォルト `24h`）は、セッションストアから古い孤立したcron実行セッションをプルーニングします（`false` は無効にします）。
+* `cron.runLog.maxBytes` + `cron.runLog.keepLines` は `~/.openclaw/cron/runs/<jobId>.jsonl` ファイルをプルーニングします（デフォルト：`2_000_000` バイトおよび `2000` 行）。
 
 ***
 
-## Session ids (`sessionId`)
+## セッションキー（`sessionKey`）
 
-Each `sessionKey` points at a current `sessionId` (the transcript file that continues the conversation).
+`sessionKey` は *どの会話バケット* にいるかを識別します（ルーティング + 隔離）。
 
-Rules of thumb:
+一般的なパターン：
 
-* **Reset** (`/new`, `/reset`) creates a new `sessionId` for that `sessionKey`.
-* **Daily reset** (default 4:00 AM local time on the gateway host) creates a new `sessionId` on the next message after the reset boundary.
-* **Idle expiry** (`session.reset.idleMinutes` or legacy `session.idleMinutes`) creates a new `sessionId` when a message arrives after the idle window. When daily + idle are both configured, whichever expires first wins.
-* **Thread parent fork guard** (`session.parentForkMaxTokens`, default `100000`) skips parent transcript forking when the parent session is already too large; the new thread starts fresh. Set `0` to disable.
+* メイン/直接チャット（エージェントごと）：`agent:<agentId>:<mainKey>`（デフォルト `main`）
+* グループ：`agent:<agentId>:<channel>:group:<id>`
+* ルーム/チャンネル（Discord/Slack）：`agent:<agentId>:<channel>:channel:<id>` または `...:room:<id>`
+* Cron：`cron:<job.id>`
+* Webhook：`hook:<uuid>`（上書きされない限り）
 
-Implementation detail: the decision happens in `initSessionState()` in `src/auto-reply/reply/session.ts`.
+標準的なルールは [/concepts/session](/concepts/session) に記載されています。
 
 ***
 
-## Session store schema (`sessions.json`)
+## セッションID（`sessionId`）
 
-The store’s value type is `SessionEntry` in `src/config/sessions.ts`.
+各 `sessionKey` は現在の `sessionId` を指し示します（会話を続けるトランスクリプトファイル）。
 
-Key fields (not exhaustive):
+経験則：
 
-* `sessionId`: current transcript id (filename is derived from this unless `sessionFile` is set)
-* `updatedAt`: last activity timestamp
-* `sessionFile`: optional explicit transcript path override
-* `chatType`: `direct | group | room` (helps UIs and send policy)
-* `provider`, `subject`, `room`, `space`, `displayName`: metadata for group/channel labeling
-* Toggles:
+* **リセット**（`/new`, `/reset`）は、その `sessionKey` に対して新しい `sessionId` を作成します。
+* **デイリーリセット**（デフォルトはGatewayホストの現地時間で午前4時）は、リセット境界の次のメッセージで新しい `sessionId` を作成します。
+* **アイドル期限**（`session.reset.idleMinutes` またはレガシー `session.idleMinutes`）は、アイドルウィンドウの後にメッセージが到着すると新しい `sessionId` を作成します。デイリーとアイドルの両方が設定されている場合、最初に期限が切れた方が優先されます。
+* **スレッド親フォークガード**（`session.parentForkMaxTokens`、デフォルト `100000`）は、親セッションがすでに大きすぎる場合に親トランスクリプトのフォークをスキップします；新しいスレッドは新しく開始します。`0` に設定すると無効になります。
+
+実装の詳細：この決定は `src/auto-reply/reply/session.ts` の `initSessionState()` で行われます。
+
+***
+
+## セッションストアスキーマ（`sessions.json`）
+
+ストアの値の型は `SessionEntry` で、`src/config/sessions.ts` にあります。
+
+主要なフィールド（網羅的ではありません）：
+
+* `sessionId`：現在のトランスクリプトID（ファイル名はこれから派生します、`sessionFile` が設定されていない限り）
+* `updatedAt`：最終活動のタイムスタンプ
+* `sessionFile`：オプションの明示的トランスクリプトパスのオーバーライド
+* `chatType`：`direct | group | room`（UIや送信ポリシーに役立ちます）
+* `provider`, `subject`, `room`, `space`, `displayName`：グループ/チャンネルラベリングのためのメタデータ
+* トグル：
   * `thinkingLevel`, `verboseLevel`, `reasoningLevel`, `elevatedLevel`
-  * `sendPolicy` (per-session override)
-* Model selection:
+  * `sendPolicy`（セッションごとのオーバーライド）
+* モデル選択：
   * `providerOverride`, `modelOverride`, `authProfileOverride`
-* Token counters (best-effort / provider-dependent):
+* トークンカウンタ（最善の努力 / プロバイダー依存）：
   * `inputTokens`, `outputTokens`, `totalTokens`, `contextTokens`
-* `compactionCount`: how often auto-compaction completed for this session key
-* `memoryFlushAt`: timestamp for the last pre-compaction memory flush
-* `memoryFlushCompactionCount`: compaction count when the last flush ran
+* `compactionCount`：このセッションキーの自動圧縮が完了した回数
+* `memoryFlushAt`：最後の圧縮前メモリフラッシュのタイムスタンプ
+* `memoryFlushCompactionCount`：最後のフラッシュが実行されたときの圧縮カウント
 
-The store is safe to edit, but the Gateway is the authority: it may rewrite or rehydrate entries as sessions run.
-
-***
-
-## Transcript structure (`*.jsonl`)
-
-Transcripts are managed by `@mariozechner/pi-coding-agent`’s `SessionManager`.
-
-The file is JSONL:
-
-* First line: session header (`type: "session"`, includes `id`, `cwd`, `timestamp`, optional `parentSession`)
-* Then: session entries with `id` + `parentId` (tree)
-
-Notable entry types:
-
-* `message`: user/assistant/toolResult messages
-* `custom_message`: extension-injected messages that *do* enter model context (can be hidden from UI)
-* `custom`: extension state that does *not* enter model context
-* `compaction`: persisted compaction summary with `firstKeptEntryId` and `tokensBefore`
-* `branch_summary`: persisted summary when navigating a tree branch
-
-OpenClaw intentionally does **not** “fix up” transcripts; the Gateway uses `SessionManager` to read/write them.
+ストアは編集可能ですが、Gatewayが権限を持ちます：セッションが実行されると、エントリを再書き込みまたは再水和することがあります。
 
 ***
 
-## Context windows vs tracked tokens
+## トランスクリプト構造（`*.jsonl`）
 
-Two different concepts matter:
+トランスクリプトは `@mariozechner/pi-coding-agent` の `SessionManager` によって管理されます。
 
-1. **Model context window**: hard cap per model (tokens visible to the model)
-2. **Session store counters**: rolling stats written into `sessions.json` (used for /status and dashboards)
+ファイルはJSONL形式です：
 
-If you’re tuning limits:
+* 最初の行：セッションヘッダー（`type: "session"`、`id`、`cwd`、`timestamp`、オプションの `parentSession` を含む）
+* 次に：`id` + `parentId` を持つセッションエントリ（ツリー）
 
-* The context window comes from the model catalog (and can be overridden via config).
-* `contextTokens` in the store is a runtime estimate/reporting value; don’t treat it as a strict guarantee.
+注目すべきエントリタイプ：
 
-For more, see [/token-use](/reference/token-use).
+* `message`：ユーザー/アシスタント/ツール結果メッセージ
+* `custom_message`：モデルコンテキストに *入る* 拡張機能によって注入されたメッセージ（UIから隠すことができます）
+* `custom`：モデルコンテキストに *入らない* 拡張機能の状態
+* `compaction`：`firstKeptEntryId` と `tokensBefore` を持つ永続化された圧縮サマリー
+* `branch_summary`：ツリー分岐をナビゲートする際の永続化されたサマリー
 
-***
-
-## Compaction: what it is
-
-Compaction summarizes older conversation into a persisted `compaction` entry in the transcript and keeps recent messages intact.
-
-After compaction, future turns see:
-
-* The compaction summary
-* Messages after `firstKeptEntryId`
-
-Compaction is **persistent** (unlike session pruning). See [/concepts/session-pruning](/concepts/session-pruning).
+OpenClawは意図的にトランスクリプトを「修正」しません；Gatewayは `SessionManager` を使用してそれらを読み書きします。
 
 ***
 
-## When auto-compaction happens (Pi runtime)
+## コンテキストウィンドウと追跡トークン
 
-In the embedded Pi agent, auto-compaction triggers in two cases:
+重要な二つの異なる概念があります：
 
-1. **Overflow recovery**: the model returns a context overflow error → compact → retry.
-2. **Threshold maintenance**: after a successful turn, when:
+1. **モデルコンテキストウィンドウ**：モデルごとのハードキャップ（モデルに見えるトークン）
+2. **セッションストアカウンタ**：`sessions.json` に書き込まれるローリング統計（/status やダッシュボードで使用されます）
+
+制限を調整している場合：
+
+* コンテキストウィンドウはモデルカタログから来ます（設定を介してオーバーライド可能）。
+* ストアの `contextTokens` はランタイムの推定/報告値です；厳密な保証として扱わないでください。
+
+詳細については [/token-use](/reference/token-use) を参照してください。
+
+***
+
+## 圧縮：それが何か
+
+圧縮は、古い会話を永続化された `compaction` エントリに要約し、最近のメッセージをそのまま保持します。
+
+圧縮後、将来のターンでは以下が見えます：
+
+* 圧縮サマリー
+* `firstKeptEntryId` 以降のメッセージ
+
+圧縮は **永続的** です（セッションプルーニングとは異なります）。詳細は [/concepts/session-pruning](/concepts/session-pruning) を参照してください。
+
+***
+
+## 自動圧縮が発生するタイミング（Piランタイム）
+
+埋め込みPiエージェントでは、自動圧縮は二つのケースでトリガーされます：
+
+1. **オーバーフロー回復**：モデルがコンテキストオーバーフローエラーを返す → 圧縮 → リトライ。
+2. **閾値維持**：成功したターンの後、次の条件が満たされたとき：
 
 `contextTokens > contextWindow - reserveTokens`
 
-Where:
+ここで：
 
-* `contextWindow` is the model’s context window
-* `reserveTokens` is headroom reserved for prompts + the next model output
+* `contextWindow` はモデルのコンテキストウィンドウ
+* `reserveTokens` はプロンプト + 次のモデル出力のために予約された余裕トークン
 
-These are Pi runtime semantics (OpenClaw consumes the events, but Pi decides when to compact).
+これらはPiランタイムのセマンティクスです（OpenClawはイベントを消費しますが、Piが圧縮のタイミングを決定します）。
 
 ***
 
-## Compaction settings (`reserveTokens`, `keepRecentTokens`)
+## 圧縮設定（`reserveTokens`, `keepRecentTokens`）
 
-Pi’s compaction settings live in Pi settings:
+Piの圧縮設定はPi設定にあります：
 
 ```json5
 {
@@ -239,83 +239,79 @@ Pi’s compaction settings live in Pi settings:
 }
 ```
 
-OpenClaw also enforces a safety floor for embedded runs:
+OpenClawは、埋め込み実行のために安全なフロアを強制します：
 
-* If `compaction.reserveTokens < reserveTokensFloor`, OpenClaw bumps it.
-* Default floor is `20000` tokens.
-* Set `agents.defaults.compaction.reserveTokensFloor: 0` to disable the floor.
-* If it’s already higher, OpenClaw leaves it alone.
+* `compaction.reserveTokens < reserveTokensFloor` の場合、OpenClawはそれを増加させます。
+* デフォルトのフロアは `20000` トークンです。
+* フロアを無効にするには `agents.defaults.compaction.reserveTokensFloor: 0` に設定します。
+* すでに高い場合、OpenClawはそのままにします。
 
-Why: leave enough headroom for multi-turn “housekeeping” (like memory writes) before compaction becomes unavoidable.
+理由：圧縮が避けられなくなる前に、マルチターンの「ハウスキーピング」（メモリ書き込みなど）のための十分な余裕を残します。
 
-Implementation: `ensurePiCompactionReserveTokens()` in `src/agents/pi-settings.ts`
-(called from `src/agents/pi-embedded-runner.ts`).
+実装：`src/agents/pi-settings.ts` の `ensurePiCompactionReserveTokens()` 
+（`src/agents/pi-embedded-runner.ts` から呼び出されます）。
 
 ***
 
-## User-visible surfaces
+## ユーザーに見える表面
 
-You can observe compaction and session state via:
+圧縮とセッション状態は以下で観察できます：
 
-* `/status` (in any chat session)
-* `openclaw status` (CLI)
+* `/status`（任意のチャットセッション内）
+* `openclaw status`（CLI）
 * `openclaw sessions` / `sessions --json`
-* Verbose mode: `🧹 Auto-compaction complete` + compaction count
+* 詳細モード：`🧹 自動圧縮が完了しました` + 圧縮カウント
 
 ***
 
-## Silent housekeeping (`NO_REPLY`)
+## サイレントハウスキーピング（`NO_REPLY`）
 
-OpenClaw supports “silent” turns for background tasks where the user should not see intermediate output.
+OpenClawは、ユーザーが中間出力を見ないべきバックグラウンドタスクのための「サイレント」ターンをサポートします。
 
-Convention:
+慣例：
 
-* The assistant starts its output with `NO_REPLY` to indicate “do not deliver a reply to the user”.
-* OpenClaw strips/suppresses this in the delivery layer.
+* アシスタントは出力を `NO_REPLY` で開始し、「ユーザーに返信を配信しない」ことを示します。
+* OpenClawは配信層でこれを削除/抑制します。
 
-As of `2026.1.10`, OpenClaw also suppresses **draft/typing streaming** when a partial chunk begins with `NO_REPLY`, so silent operations don’t leak partial output mid-turn.
-
-***
-
-## Pre-compaction “memory flush” (implemented)
-
-Goal: before auto-compaction happens, run a silent agentic turn that writes durable
-state to disk (e.g. `memory/YYYY-MM-DD.md` in the agent workspace) so compaction can’t
-erase critical context.
-
-OpenClaw uses the **pre-threshold flush** approach:
-
-1. Monitor session context usage.
-2. When it crosses a “soft threshold” (below Pi’s compaction threshold), run a silent
-   “write memory now” directive to the agent.
-3. Use `NO_REPLY` so the user sees nothing.
-
-Config (`agents.defaults.compaction.memoryFlush`):
-
-* `enabled` (default: `true`)
-* `softThresholdTokens` (default: `4000`)
-* `prompt` (user message for the flush turn)
-* `systemPrompt` (extra system prompt appended for the flush turn)
-
-Notes:
-
-* The default prompt/system prompt include a `NO_REPLY` hint to suppress delivery.
-* The flush runs once per compaction cycle (tracked in `sessions.json`).
-* The flush runs only for embedded Pi sessions (CLI backends skip it).
-* The flush is skipped when the session workspace is read-only (`workspaceAccess: "ro"` or `"none"`).
-* See [Memory](/concepts/memory) for the workspace file layout and write patterns.
-
-Pi also exposes a `session_before_compact` hook in the extension API, but OpenClaw’s
-flush logic lives on the Gateway side today.
+`2026.1.10` 以降、OpenClawは **ドラフト/タイピングストリーミング** も抑制します。部分的なチャンクが `NO_REPLY` で始まる場合、サイレント操作がターンの途中で部分的な出力を漏らすことはありません。
 
 ***
 
-## Troubleshooting checklist
+## 圧縮前の「メモリフラッシュ」（実装済み）
 
-* Session key wrong? Start with [/concepts/session](/concepts/session) and confirm the `sessionKey` in `/status`.
-* Store vs transcript mismatch? Confirm the Gateway host and the store path from `openclaw status`.
-* Compaction spam? Check:
-  * model context window (too small)
-  * compaction settings (`reserveTokens` too high for the model window can cause earlier compaction)
-  * tool-result bloat: enable/tune session pruning
-* Silent turns leaking? Confirm the reply starts with `NO_REPLY` (exact token) and you’re on a build that includes the streaming suppression fix.
+目標：自動圧縮が発生する前に、耐久性のある状態をディスクに書き込むサイレントエージェントターンを実行します（例：エージェントワークスペース内の `memory/YYYY-MM-DD.md`）ので、圧縮が重要なコンテキストを消去できないようにします。
+
+OpenClawは **プレしきい値フラッシュ** アプローチを使用します：
+
+1. セッションコンテキストの使用状況を監視します。
+2. 「ソフトしきい値」（Piの圧縮しきい値未満）を超えたとき、エージェントに「今すぐメモリを書き込む」指示をサイレントで実行します。
+3. `NO_REPLY` を使用して、ユーザーには何も見えないようにします。
+
+設定（`agents.defaults.compaction.memoryFlush`）：
+
+* `enabled`（デフォルト：`true`）
+* `softThresholdTokens`（デフォルト：`4000`）
+* `prompt`（フラッシュターンのユーザーメッセージ）
+* `systemPrompt`（フラッシュターンのために追加された追加のシステムプロンプト）
+
+注意：
+
+* デフォルトのプロンプト/システムプロンプトには、配信を抑制するための `NO_REPLY` ヒントが含まれています。
+* フラッシュは圧縮サイクルごとに一度実行されます（`sessions.json` に追跡されます）。
+* フラッシュは埋め込みPiセッションのみに対して実行されます（CLIバックエンドはスキップします）。
+* フラッシュは、セッションワークスペースが読み取り専用の場合（`workspaceAccess: "ro"` または `"none"`）、スキップされます。
+* ワークスペースファイルのレイアウトと書き込みパターンについては [Memory](/concepts/memory) を参照してください。
+
+Piはまた、拡張APIで `session_before_compact` フックを公開していますが、OpenClawのフラッシュロジックは現在Gateway側にあります。
+
+***
+
+## トラブルシューティングチェックリスト
+
+* セッションキーが間違っていますか？ [/concepts/session](/concepts/session) から始めて、`/status` で `sessionKey` を確認してください。
+* ストアとトランスクリプトの不一致？ Gatewayホストと `openclaw status` からストアパスを確認してください。
+* 圧縮のスパム？ 確認してください：
+  * モデルコンテキストウィンドウ（小さすぎる）
+  * 圧縮設定（`reserveTokens` がモデルウィンドウに対して高すぎると、早期の圧縮を引き起こす可能性があります）
+  * ツール結果の膨張：セッションプルーニングを有効化/調整してください
+* サイレントターンが漏れていますか？ 返信が `NO_REPLY`（正確なトークン）で始まっていることを確認し、ストリーミング抑制修正が含まれているビルドを使用していることを確認してください。

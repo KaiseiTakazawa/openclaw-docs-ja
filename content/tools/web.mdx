@@ -6,63 +6,61 @@ title: "Web ツール"
 
 # Web tools
 
-OpenClaw ships two lightweight web tools:
+OpenClaw は、2つの軽量なウェブツールを提供します。
 
-* `web_search` — Search the web via Brave Search API (default), Perplexity Sonar, or Gemini with Google Search grounding.
-* `web_fetch` — HTTP fetch + readable extraction (HTML → markdown/text).
+* `web_search` — Brave Search API（デフォルト）、Perplexity Sonar、または Google Search に基づく Gemini を使用してウェブを検索します。
+* `web_fetch` — HTTP フェッチ + 読みやすい抽出（HTML → markdown/text）。
 
-These are **not** browser automation. For JS-heavy sites or logins, use the
-[Browser tool](/tools/browser).
+これらは **ブラウザの自動化** ではありません。JS-heavy サイトやログインが必要な場合は、[Browser tool](/tools/browser) を使用してください。
 
 ## 仕組み
 
-* `web_search` calls your configured provider and returns results.
-  * **Brave** (default): returns structured results (title, URL, snippet).
-  * **Perplexity**: returns AI-synthesized answers with citations from real-time web search.
-  * **Gemini**: returns AI-synthesized answers grounded in Google Search with citations.
-* Results are cached by query for 15 minutes (configurable).
-* `web_fetch` does a plain HTTP GET and extracts readable content
-  (HTML → markdown/text). It does **not** execute JavaScript.
-* `web_fetch` is enabled by default (unless explicitly disabled).
+* `web_search` は、設定されたプロバイダーを呼び出し、結果を返します。
+  * **Brave**（デフォルト）：構造化された結果（タイトル、URL、スニペット）を返します。
+  * **Perplexity**：リアルタイムのウェブ検索からの引用を含む、AI 合成された回答を返します。
+  * **Gemini**：Google Search に基づく AI 合成された回答を引用付きで返します。
+* 結果はクエリごとに 15 分間キャッシュされます（設定可能）。
+* `web_fetch` は、プレーンな HTTP GET を行い、読みやすいコンテンツを抽出します（HTML → markdown/text）。JavaScript は **実行しません**。
+* `web_fetch` はデフォルトで有効になっています（明示的に無効にしない限り）。
 
-## Choosing a search provider
+## 検索プロバイダーの選択
 
-| Provider            | Pros                                         | Cons                                     | API Key                                      |
+| プロバイダー            | 利点                                         | 欠点                                     | API キー                                      |
 | ------------------- | -------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
-| **Brave** (default) | Fast, structured results, free tier          | Traditional search results               | `BRAVE_API_KEY`                              |
-| **Perplexity**      | AI-synthesized answers, citations, real-time | Requires Perplexity or OpenRouter access | `OPENROUTER_API_KEY` or `PERPLEXITY_API_KEY` |
-| **Gemini**          | Google Search grounding, AI-synthesized      | Requires Gemini API key                  | `GEMINI_API_KEY`                             |
+| **Brave**（デフォルト） | 高速、構造化された結果、無料プラン          | 従来の検索結果                           | `BRAVE_API_KEY`                              |
+| **Perplexity**      | AI 合成された回答、引用、リアルタイム       | Perplexity または OpenRouter アクセスが必要 | `OPENROUTER_API_KEY` または `PERPLEXITY_API_KEY` |
+| **Gemini**          | Google Search に基づく、AI 合成された結果  | Gemini API キーが必要                    | `GEMINI_API_KEY`                             |
 
-See [Brave Search setup](/brave-search) and [Perplexity Sonar](/perplexity) for provider-specific details.
+プロバイダー固有の詳細については、[Brave Search setup](/brave-search) および [Perplexity Sonar](/perplexity) を参照してください。
 
-### Auto-detection
+### 自動検出
 
-If no `provider` is explicitly set, OpenClaw auto-detects which provider to use based on available API keys, checking in this order:
+`provider` が明示的に設定されていない場合、OpenClaw は利用可能な API キーに基づいて使用するプロバイダーを自動的に検出します。この順序で確認します：
 
-1. **Brave** — `BRAVE_API_KEY` env var or `search.apiKey` config
-2. **Gemini** — `GEMINI_API_KEY` env var or `search.gemini.apiKey` config
-3. **Perplexity** — `PERPLEXITY_API_KEY` / `OPENROUTER_API_KEY` env var or `search.perplexity.apiKey` config
-4. **Grok** — `XAI_API_KEY` env var or `search.grok.apiKey` config
+1. **Brave** — `BRAVE_API_KEY` 環境変数または `search.apiKey` 設定
+2. **Gemini** — `GEMINI_API_KEY` 環境変数または `search.gemini.apiKey` 設定
+3. **Perplexity** — `PERPLEXITY_API_KEY` / `OPENROUTER_API_KEY` 環境変数または `search.perplexity.apiKey` 設定
+4. **Grok** — `XAI_API_KEY` 環境変数または `search.grok.apiKey` 設定
 
-If no keys are found, it falls back to Brave (you'll get a missing-key error prompting you to configure one).
+キーが見つからない場合は、Brave にフォールバックします（設定するように促す欠落キーエラーが表示されます）。
 
-### Explicit provider
+### 明示的プロバイダー
 
-Set the provider in config:
+設定でプロバイダーを指定します：
 
 ```json5
 {
   tools: {
     web: {
       search: {
-        provider: "brave", // or "perplexity" or "gemini"
+        provider: "brave", // または "perplexity" または "gemini"
       },
     },
   },
 }
 ```
 
-Example: switch to Perplexity Sonar (direct API):
+例：Perplexity Sonar に切り替える（直接 API）：
 
 ```json5
 {
@@ -81,37 +79,31 @@ Example: switch to Perplexity Sonar (direct API):
 }
 ```
 
-## Getting a Brave API key
+## Brave API キーの取得
 
-1. Create a Brave Search API account at [https://brave.com/search/api/](https://brave.com/search/api/)
-2. In the dashboard, choose the **Data for Search** plan (not “Data for AI”) and generate an API key.
-3. Run `openclaw configure --section web` to store the key in config (recommended), or set `BRAVE_API_KEY` in your environment.
+1. [https://brave.com/search/api/](https://brave.com/search/api/) で Brave Search API アカウントを作成します。
+2. ダッシュボードで **Data for Search** プラン（「Data for AI」ではない）を選択し、API キーを生成します。
+3. `openclaw configure --section web` を実行して、設定にキーを保存します（推奨）、または環境に `BRAVE_API_KEY` を設定します。
 
-Brave provides a free tier plus paid plans; check the Brave API portal for the
-current limits and pricing.
+Brave は無料プランと有料プランを提供しています。現在の制限と価格については、Brave API ポータルを確認してください。
 
-### Where to set the key (recommended)
+### キーを設定する場所（推奨）
 
-**Recommended:** run `openclaw configure --section web`. It stores the key in
-`~/.openclaw/openclaw.json` under `tools.web.search.apiKey`.
+**推奨：** `openclaw configure --section web` を実行します。これにより、キーが `~/.openclaw/openclaw.json` の `tools.web.search.apiKey` に保存されます。
 
-**Environment alternative:** set `BRAVE_API_KEY` in the Gateway process
-environment. For a gateway install, put it in `~/.openclaw/.env` (or your
-service environment). See [Env vars](/help/faq#how-does-openclaw-load-environment-variables).
+**環境の代替手段：** Gateway プロセス環境に `BRAVE_API_KEY` を設定します。ゲートウェイインストールの場合は、`~/.openclaw/.env`（またはサービス環境）に置いてください。環境変数の詳細については、[Env vars](/help/faq#how-does-openclaw-load-environment-variables) を参照してください。
 
-## Using Perplexity (direct or via OpenRouter)
+## Perplexity の使用（直接または OpenRouter 経由）
 
-Perplexity Sonar models have built-in web search capabilities and return AI-synthesized
-answers with citations. You can use them via OpenRouter (no credit card required - supports
-crypto/prepaid).
+Perplexity Sonar モデルには、組み込みのウェブ検索機能があり、引用付きの AI 合成された回答を返します。これらは OpenRouter 経由で使用できます（クレジットカードは不要 - 暗号通貨/プリペイドに対応）。
 
-### Getting an OpenRouter API key
+### OpenRouter API キーの取得
 
-1. Create an account at [https://openrouter.ai/](https://openrouter.ai/)
-2. Add credits (supports crypto, prepaid, or credit card)
-3. Generate an API key in your account settings
+1. [https://openrouter.ai/](https://openrouter.ai/) でアカウントを作成します。
+2. クレジットを追加します（暗号通貨、プリペイド、またはクレジットカードに対応）
+3. アカウント設定で API キーを生成します。
 
-### Setting up Perplexity search
+### Perplexity 検索の設定
 
 ```json5
 {
@@ -121,11 +113,11 @@ crypto/prepaid).
         enabled: true,
         provider: "perplexity",
         perplexity: {
-          // API key (optional if OPENROUTER_API_KEY or PERPLEXITY_API_KEY is set)
+          // API キー（OPENROUTER_API_KEY または PERPLEXITY_API_KEY が設定されている場合はオプション）
           apiKey: "sk-or-v1-...",
-          // Base URL (key-aware default if omitted)
+          // ベース URL（省略時はキーに応じたデフォルト）
           baseUrl: "https://openrouter.ai/api/v1",
-          // Model (defaults to perplexity/sonar-pro)
+          // モデル（デフォルトは perplexity/sonar-pro）
           model: "perplexity/sonar-pro",
         },
       },
@@ -134,78 +126,34 @@ crypto/prepaid).
 }
 ```
 
-**Environment alternative:** set `OPENROUTER_API_KEY` or `PERPLEXITY_API_KEY` in the Gateway
-environment. For a gateway install, put it in `~/.openclaw/.env`.
+**環境の代替手段：** Gateway 環境に `OPENROUTER_API_KEY` または `PERPLEXITY_API_KEY` を設定します。ゲートウェイインストールの場合は、`~/.openclaw/.env` に置いてください。
 
-If no base URL is set, OpenClaw chooses a default based on the API key source:
+ベース URL が設定されていない場合、OpenClaw は API キーのソースに基づいてデフォルトを選択します：
 
-* `PERPLEXITY_API_KEY` or `pplx-...` → `https://api.perplexity.ai`
-* `OPENROUTER_API_KEY` or `sk-or-...` → `https://openrouter.ai/api/v1`
-* Unknown key formats → OpenRouter (safe fallback)
+* `PERPLEXITY_API_KEY` または `pplx-...` → `https://api.perplexity.ai`
+* `OPENROUTER_API_KEY` または `sk-or-...` → `https://openrouter.ai/api/v1`
+* 不明なキー形式 → OpenRouter（安全なフォールバック）
 
-### Available Perplexity models
+### 利用可能な Perplexity モデル
 
-| Model                            | Description                          | Best for          |
+| モデル                            | 説明                          | 最適な用途          |
 | -------------------------------- | ------------------------------------ | ----------------- |
-| `perplexity/sonar`               | Fast Q\&A with web search            | Quick lookups     |
-| `perplexity/sonar-pro` (default) | Multi-step reasoning with web search | Complex questions |
-| `perplexity/sonar-reasoning-pro` | Chain-of-thought analysis            | Deep research     |
-
-## Using Gemini (Google Search grounding)
-
-Gemini models support built-in [Google Search grounding](https://ai.google.dev/gemini-api/docs/grounding),
-which returns AI-synthesized answers backed by live Google Search results with citations.
-
-### Getting a Gemini API key
-
-1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
-2. Create an API key
-3. Set `GEMINI_API_KEY` in the Gateway environment, or configure `tools.web.search.gemini.apiKey`
-
-### Setting up Gemini search
-
-```json5
-{
-  tools: {
-    web: {
-      search: {
-        provider: "gemini",
-        gemini: {
-          // API key (optional if GEMINI_API_KEY is set)
-          apiKey: "AIza...",
-          // Model (defaults to "gemini-2.5-flash")
-          model: "gemini-2.5-flash",
-        },
-      },
-    },
-  },
-}
-```
-
-**Environment alternative:** set `GEMINI_API_KEY` in the Gateway environment.
-For a gateway install, put it in `~/.openclaw/.env`.
-
-### 注意事項
-
-* Citation URLs from Gemini grounding are automatically resolved from Google's
-  redirect URLs to direct URLs.
-* Redirect resolution uses the SSRF guard path (HEAD + redirect checks + http/https validation) before returning the final citation URL.
-* This redirect resolver follows the trusted-network model (private/internal networks allowed by default) to match Gateway operator trust assumptions.
-* The default model (`gemini-2.5-flash`) is fast and cost-effective.
-  Any Gemini model that supports grounding can be used.
+| `perplexity/sonar`               | ウェブ検索を用いた高速 Q&A            | クイックルックアップ     |
+| `perplexity/sonar-pro`（デフォルト） | ウェブ検索を用いた多段階推論         | 複雑な質問         |
+| `perplexity/sonar-reasoning-pro` | チェイン・オブ・ソート分析            | 深い研究           |
 
 ## web\_search
 
-Search the web using your configured provider.
+設定されたプロバイダーを使用してウェブを検索します。
 
 ### 要件
 
-* `tools.web.search.enabled` must not be `false` (default: enabled)
-* API key for your chosen provider:
-  * **Brave**: `BRAVE_API_KEY` or `tools.web.search.apiKey`
-  * **Perplexity**: `OPENROUTER_API_KEY`, `PERPLEXITY_API_KEY`, or `tools.web.search.perplexity.apiKey`
+* `tools.web.search.enabled` は `false` であってはならない（デフォルト：有効）
+* 選択したプロバイダーの API キー：
+  * **Brave**: `BRAVE_API_KEY` または `tools.web.search.apiKey`
+  * **Perplexity**: `OPENROUTER_API_KEY`、`PERPLEXITY_API_KEY`、または `tools.web.search.perplexity.apiKey`
 
-### Config
+### 設定
 
 ```json5
 {
@@ -213,7 +161,7 @@ Search the web using your configured provider.
     web: {
       search: {
         enabled: true,
-        apiKey: "BRAVE_API_KEY_HERE", // optional if BRAVE_API_KEY is set
+        apiKey: "BRAVE_API_KEY_HERE", // BRAVE_API_KEY が設定されている場合はオプション
         maxResults: 5,
         timeoutSeconds: 30,
         cacheTtlMinutes: 15,
@@ -223,21 +171,21 @@ Search the web using your configured provider.
 }
 ```
 
-### Tool parameters
+### ツールパラメータ
 
-* `query` (required)
-* `count` (1–10; default from config)
-* `country` (optional): 2-letter country code for region-specific results (e.g., "DE", "US", "ALL"). If omitted, Brave chooses its default region.
-* `search_lang` (optional): ISO language code for search results (e.g., "de", "en", "fr")
-* `ui_lang` (optional): ISO language code for UI elements
-* `freshness` (optional): filter by discovery time
-  * Brave: `pd`, `pw`, `pm`, `py`, or `YYYY-MM-DDtoYYYY-MM-DD`
-  * Perplexity: `pd`, `pw`, `pm`, `py`
+* `query`（必須）
+* `count`（1–10; デフォルトは設定から）
+* `country`（オプション）：地域特有の結果のための 2 文字の国コード（例："DE"、"US"、"ALL"）。省略した場合、Brave がデフォルトの地域を選択します。
+* `search_lang`（オプション）：検索結果のための ISO 言語コード（例："de"、"en"、"fr"）
+* `ui_lang`（オプション）：UI 要素のための ISO 言語コード
+* `freshness`（オプション）：発見時間でフィルタリング
+  * Brave: `pd`、`pw`、`pm`、`py`、または `YYYY-MM-DDtoYYYY-MM-DD`
+  * Perplexity: `pd`、`pw`、`pm`、`py`
 
-**Examples:**
+**例：**
 
 ```javascript
-// German-specific search
+// ドイツ特有の検索
 await web_search({
   query: "TV online schauen",
   count: 10,
@@ -245,7 +193,7 @@ await web_search({
   search_lang: "de",
 });
 
-// French search with French UI
+// フランス語の検索とフランス語の UI
 await web_search({
   query: "actualités",
   country: "FR",
@@ -253,7 +201,7 @@ await web_search({
   ui_lang: "fr",
 });
 
-// Recent results (past week)
+// 最近の結果（過去1週間）
 await web_search({
   query: "TMBG interview",
   freshness: "pw",
@@ -262,14 +210,14 @@ await web_search({
 
 ## web\_fetch
 
-Fetch a URL and extract readable content.
+URL をフェッチして、読みやすいコンテンツを抽出します。
 
-### web\_fetch requirements
+### web\_fetch 要件
 
-* `tools.web.fetch.enabled` must not be `false` (default: enabled)
-* Optional Firecrawl fallback: set `tools.web.fetch.firecrawl.apiKey` or `FIRECRAWL_API_KEY`.
+* `tools.web.fetch.enabled` は `false` であってはならない（デフォルト：有効）
+* オプションの Firecrawl フォールバック：`tools.web.fetch.firecrawl.apiKey` または `FIRECRAWL_API_KEY` を設定します。
 
-### web\_fetch config
+### web\_fetch 設定
 
 ```json5
 {
@@ -287,10 +235,10 @@ Fetch a URL and extract readable content.
         readability: true,
         firecrawl: {
           enabled: true,
-          apiKey: "FIRECRAWL_API_KEY_HERE", // optional if FIRECRAWL_API_KEY is set
+          apiKey: "FIRECRAWL_API_KEY_HERE", // FIRECRAWL_API_KEY が設定されている場合はオプション
           baseUrl: "https://api.firecrawl.dev",
           onlyMainContent: true,
-          maxAgeMs: 86400000, // ms (1 day)
+          maxAgeMs: 86400000, // ms（1日）
           timeoutSeconds: 60,
         },
       },
@@ -299,22 +247,22 @@ Fetch a URL and extract readable content.
 }
 ```
 
-### web\_fetch tool parameters
+### web\_fetch ツールパラメータ
 
-* `url` (required, http/https only)
-* `extractMode` (`markdown` | `text`)
-* `maxChars` (truncate long pages)
+* `url`（必須、http/https のみ）
+* `extractMode`（`markdown` | `text`）
+* `maxChars`（長いページを切り詰める）
 
-Notes:
+注意事項：
 
-* `web_fetch` uses Readability (main-content extraction) first, then Firecrawl (if configured). If both fail, the tool returns an error.
-* Firecrawl requests use bot-circumvention mode and cache results by default.
-* `web_fetch` sends a Chrome-like User-Agent and `Accept-Language` by default; override `userAgent` if needed.
-* `web_fetch` blocks private/internal hostnames and re-checks redirects (limit with `maxRedirects`).
-* `maxChars` is clamped to `tools.web.fetch.maxCharsCap`.
-* `web_fetch` caps the downloaded response body size to `tools.web.fetch.maxResponseBytes` before parsing; oversized responses are truncated and include a warning.
-* `web_fetch` is best-effort extraction; some sites will need the browser tool.
-* See [Firecrawl](/tools/firecrawl) for key setup and service details.
-* Responses are cached (default 15 minutes) to reduce repeated fetches.
-* If you use tool profiles/allowlists, add `web_search`/`web_fetch` or `group:web`.
-* If the Brave key is missing, `web_search` returns a short setup hint with a docs link.
+* `web_fetch` は最初に Readability（メインコンテンツ抽出）を使用し、その後 Firecrawl（設定されている場合）を使用します。両方が失敗した場合、ツールはエラーを返します。
+* Firecrawl リクエストはボット回避モードを使用し、デフォルトで結果をキャッシュします。
+* `web_fetch` はデフォルトで Chrome のような User-Agent と `Accept-Language` を送信します。必要に応じて `userAgent` をオーバーライドしてください。
+* `web_fetch` はプライベート/内部ホスト名をブロックし、リダイレクトを再確認します（`maxRedirects` で制限）。
+* `maxChars` は `tools.web.fetch.maxCharsCap` に制限されます。
+* `web_fetch` は、解析前にダウンロードされたレスポンスボディのサイズを `tools.web.fetch.maxResponseBytes` に制限します。サイズが大きすぎるレスポンスは切り詰められ、警告が含まれます。
+* `web_fetch` はベストエフォート抽出です。一部のサイトではブラウザツールが必要です。
+* キー設定とサービスの詳細については、[Firecrawl](/tools/firecrawl) を参照してください。
+* レスポンスはキャッシュされます（デフォルトは 15 分）ので、繰り返しフェッチを減らします。
+* ツールプロファイル/ホワイトリストを使用する場合は、`web_search`/`web_fetch` または `group:web` を追加します。
+* Brave キーが欠落している場合、`web_search` は設定のヒントを短く返し、ドキュメントへのリンクを表示します。

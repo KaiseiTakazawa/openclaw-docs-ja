@@ -6,50 +6,50 @@ title: "Zalo Personal プラグイン"
 
 # Zalo Personal (plugin)
 
-Zalo Personal support for OpenClaw via a plugin, using `zca-cli` to automate a normal Zalo user account.
+Zalo Personalは、`zca-cli`を使用して通常のZaloユーザーアカウントを自動化するプラグインを通じてOpenClawをサポートします。
 
-> **Warning:** Unofficial automation may lead to account suspension/ban. Use at your own risk.
+> **警告:** 非公式の自動化はアカウントの停止や禁止につながる可能性があります。自己責任で使用してください。
 
-## Naming
+## 名前付け
 
-Channel id is `zalouser` to make it explicit this automates a **personal Zalo user account** (unofficial). We keep `zalo` reserved for a potential future official Zalo API integration.
+チャンネルIDは`zalouser`で、これは**個人のZaloユーザーアカウント**（非公式）を自動化することを明示しています。将来的な公式Zalo API統合のために`zalo`は予約しています。
 
-## Where it runs
+## 実行場所
 
-This plugin runs **inside the Gateway process**.
+このプラグインは**Gatewayプロセス内**で実行されます。
 
-If you use a remote Gateway, install/configure it on the **machine running the Gateway**, then restart the Gateway.
+リモートGatewayを使用する場合は、**Gatewayを実行しているマシン**にインストール/設定し、その後Gatewayを再起動してください。
 
 ## インストール
 
-### Option A: install from npm
+### オプションA: npmからインストール
 
 ```bash
 openclaw plugins install @openclaw/zalouser
 ```
 
-Restart the Gateway afterwards.
+その後、Gatewayを再起動してください。
 
-### Option B: install from a local folder (dev)
+### オプションB: ローカルフォルダからインストール（開発）
 
 ```bash
 openclaw plugins install ./extensions/zalouser
 cd ./extensions/zalouser && pnpm install
 ```
 
-Restart the Gateway afterwards.
+その後、Gatewayを再起動してください。
 
-## Prerequisite: zca-cli
+## 前提条件: zca-cli
 
-The Gateway machine must have `zca` on `PATH`:
+Gatewayマシンには`zca`が`PATH`に含まれている必要があります：
 
 ```bash
 zca --version
 ```
 
-## Config
+## 設定
 
-Channel config lives under `channels.zalouser` (not `plugins.entries.*`):
+チャンネル設定は`channels.zalouser`の下にあります（`plugins.entries.*`ではありません）：
 
 ```json5
 {
@@ -72,8 +72,8 @@ openclaw message send --channel zalouser --target <threadId> --message "Hello fr
 openclaw directory peers list --channel zalouser --query "name"
 ```
 
-## Agent tool
+## エージェントツール
 
-Tool name: `zalouser`
+ツール名: `zalouser`
 
-Actions: `send`, `image`, `link`, `friends`, `groups`, `me`, `status`
+アクション: `send`, `image`, `link`, `friends`, `groups`, `me`, `status`

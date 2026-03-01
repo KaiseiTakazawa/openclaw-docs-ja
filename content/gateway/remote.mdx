@@ -6,85 +6,85 @@ title: "リモートアクセス"
 
 # Remote access (SSH, tunnels, and tailnets)
 
-This repo supports “remote over SSH” by keeping a single Gateway (the master) running on a dedicated host (desktop/server) and connecting clients to it.
+このリポジトリは、専用ホスト（デスクトップ/サーバー）で単一のGateway（マスター）を実行し、クライアントをそれに接続することで「SSH経由のリモートアクセス」をサポートします。
 
-* For **operators (you / the macOS app)**: SSH tunneling is the universal fallback.
-* For **nodes (iOS/Android and future devices)**: connect to the Gateway **WebSocket** (LAN/tailnet or SSH tunnel as needed).
+* **オペレーター（あなた / macOSアプリ）**: SSHトンネリングは普遍的なフォールバックです。
+* **ノード（iOS/Androidおよび将来のデバイス）**: 必要に応じてGateway **WebSocket**（LAN/tailnetまたはSSHトンネル）に接続します。
 
-## The core idea
+## コアアイデア
 
-* The Gateway WebSocket binds to **loopback** on your configured port (defaults to 18789).
-* For remote use, you forward that loopback port over SSH (or use a tailnet/VPN and tunnel less).
+* Gateway WebSocketは、設定されたポート（デフォルトは18789）で**ループバック**にバインドします。
+* リモート使用のために、そのループバックポートをSSH経由で転送します（またはtailnet/VPNを使用してトンネルを減らします）。
 
-## Common VPN/tailnet setups (where the agent lives)
+## 一般的なVPN/tailnetセットアップ（エージェントが存在する場所）
 
-Think of the **Gateway host** as “where the agent lives.” It owns sessions, auth profiles, channels, and state.
-Your laptop/desktop (and nodes) connect to that host.
+**Gatewayホスト**を「エージェントが存在する場所」と考えてください。これはセッション、認証プロファイル、チャネル、状態を所有します。
+あなたのラップトップ/デスクトップ（およびノード）はそのホストに接続します。
 
-### 1) Always-on Gateway in your tailnet (VPS or home server)
+### 1) Tailnet上の常時稼働Gateway（VPSまたはホームサーバー）
 
-Run the Gateway on a persistent host and reach it via **Tailscale** or SSH.
+永続的なホストでGatewayを実行し、**Tailscale**またはSSH経由でアクセスします。
 
-* **Best UX:** keep `gateway.bind: "loopback"` and use **Tailscale Serve** for the Control UI.
-* **Fallback:** keep loopback + SSH tunnel from any machine that needs access.
-* **Examples:** [exe.dev](/install/exe-dev) (easy VM) or [Hetzner](/install/hetzner) (production VPS).
+* **最良のUX**: `gateway.bind: "loopback"`を維持し、Control UIに**Tailscale Serve**を使用します。
+* **フォールバック**: アクセスが必要な任意のマシンからループバック + SSHトンネルを維持します。
+* **例**: [exe.dev](/install/exe-dev)（簡単なVM）または[Hetzner](/install/hetzner)（プロダクションVPS）。
 
-This is ideal when your laptop sleeps often but you want the agent always-on.
+これは、ラップトップが頻繁にスリープするが、エージェントを常に稼働させたい場合に理想的です。
 
-### 2) Home desktop runs the Gateway, laptop is remote control
+### 2) ホームデスクトップがGatewayを実行し、ラップトップがリモートコントロール
 
-The laptop does **not** run the agent. It connects remotely:
+ラップトップは**エージェントを実行しません**。リモートで接続します：
 
-* Use the macOS app’s **Remote over SSH** mode (Settings → General → “OpenClaw runs”).
-* The app opens and manages the tunnel, so WebChat + health checks “just work.”
+* macOSアプリの**SSH経由のリモート**モードを使用します（設定 → 一般 → 「OpenClawが実行される」）。
+* アプリがトンネルを開いて管理するため、WebChat + ヘルスチェックは「そのまま動作します」。
 
-Runbook: [macOS remote access](/platforms/mac/remote).
+実行手順: [macOSリモートアクセス](/platforms/mac/remote)。
 
-### 3) Laptop runs the Gateway, remote access from other machines
+### 3) ラップトップがGatewayを実行し、他のマシンからリモートアクセス
 
-Keep the Gateway local but expose it safely:
+Gatewayをローカルに維持し、安全に公開します：
 
-* SSH tunnel to the laptop from other machines, or
-* Tailscale Serve the Control UI and keep the Gateway loopback-only.
+* 他のマシンからラップトップへのSSHトンネル、または
+* Tailscale Serveを使用してControl UIを公開し、Gatewayをループバック専用に保ちます。
 
-Guide: [Tailscale](/gateway/tailscale) and [Web overview](/web).
+ガイド: [Tailscale](/gateway/tailscale)および[Web概要](/web)。
 
-## Command flow (what runs where)
+## コマンドフロー（どこで何が実行されるか）
 
-One gateway service owns state + channels. Nodes are peripherals.
+1つのGatewayサービスが状態 + チャネルを所有します。ノードは周辺機器です。
 
-Flow example (Telegram → node):
+フローの例（Telegram → ノード）：
 
-* Telegram message arrives at the **Gateway**.
-* Gateway runs the **agent** and decides whether to call a node tool.
-* Gateway calls the **node** over the Gateway WebSocket (`node.*` RPC).
-* Node returns the result; Gateway replies back out to Telegram.
+* Telegramメッセージが**Gateway**に到着します。
+* Gatewayは**エージェント**を実行し、ノードツールを呼び出すかどうかを決定します。
+* GatewayはGateway WebSocketを介して**ノード**を呼び出します（`node.*` RPC）。
+* ノードが結果を返し、GatewayがTelegramに返信します。
 
-Notes:
+注意：
 
-* **Nodes do not run the gateway service.** Only one gateway should run per host unless you intentionally run isolated profiles (see [Multiple gateways](/gateway/multiple-gateways)).
-* macOS app “node mode” is just a node client over the Gateway WebSocket.
+* **ノードはGatewayサービスを実行しません。** ホストごとに1つのGatewayのみが実行されるべきです。意図的に隔離されたプロファイルを実行する場合を除きます（[複数のGateway](/gateway/multiple-gateways)を参照）。
+* macOSアプリの「ノードモード」は、Gateway WebSocketを介したノードクライアントに過ぎません。
 
-## SSH tunnel (CLI + tools)
+## SSHトンネル（CLI + ツール）
 
-Create a local tunnel to the remote Gateway WS:
+リモートGateway WSへのローカルトンネルを作成します：
 
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 user@host
 ```
 
-With the tunnel up:
+トンネルが開いている状態で：
 
-* `openclaw health` and `openclaw status --deep` now reach the remote gateway via `ws://127.0.0.1:18789`.
-* `openclaw gateway {status,health,send,agent,call}` can also target the forwarded URL via `--url` when needed.
+* `openclaw health`と`openclaw status --deep`は、`ws://127.0.0.1:18789`を介してリモートGatewayに到達します。
+* `openclaw gateway {status,health,send,agent,call}`は、必要に応じて転送されたURLを`--url`経由でターゲットにすることもできます。
 
-Note: replace `18789` with your configured `gateway.port` (or `--port`/`OPENCLAW_GATEWAY_PORT`).
-Note: when you pass `--url`, the CLI does not fall back to config or environment credentials.
-Include `--token` or `--password` explicitly. Missing explicit credentials is an error.
+注意: `18789`を設定された`gateway.port`（または`--port`/`OPENCLAW_GATEWAY_PORT`）に置き換えてください。
+注意: `--url`を渡すと、CLIは設定や環境の資格情報にフォールバックしません。
+`--token`または`--password`を明示的に含めてください。明示的な資格情報が欠けていることはエラーです。
 
-## CLI remote defaults
+## CLIリモートデフォルト
 
-You can persist a remote target so CLI commands use it by default:
+リモートターゲットを永続化して、CLIコマンドがデフォルトで使用するようにできます：
 
 ```json5
 {
@@ -98,48 +98,45 @@ You can persist a remote target so CLI commands use it by default:
 }
 ```
 
-When the gateway is loopback-only, keep the URL at `ws://127.0.0.1:18789` and open the SSH tunnel first.
+Gatewayがループバック専用の場合、URLは`ws://127.0.0.1:18789`のままにし、最初にSSHトンネルを開いてください。
 
-## Credential precedence
+## 資格情報の優先順位
 
-Gateway call/probe credential resolution now follows one shared contract:
+Gateway呼び出し/プローブの資格情報解決は、1つの共有契約に従います：
 
-* Explicit credentials (`--token`, `--password`, or tool `gatewayToken`) always win.
-* Local mode defaults:
-  * token: `OPENCLAW_GATEWAY_TOKEN` -> `gateway.auth.token` -> `gateway.remote.token`
-  * password: `OPENCLAW_GATEWAY_PASSWORD` -> `gateway.auth.password` -> `gateway.remote.password`
-* Remote mode defaults:
-  * token: `gateway.remote.token` -> `OPENCLAW_GATEWAY_TOKEN` -> `gateway.auth.token`
-  * password: `OPENCLAW_GATEWAY_PASSWORD` -> `gateway.remote.password` -> `gateway.auth.password`
-* Remote probe/status token checks are strict by default: they use `gateway.remote.token` only (no local token fallback) when targeting remote mode.
-* Legacy `CLAWDBOT_GATEWAY_*` env vars are only used by compatibility call paths; probe/status/auth resolution uses `OPENCLAW_GATEWAY_*` only.
+* 明示的な資格情報（`--token`、`--password`、またはツール`gatewayToken`）が常に優先されます。
+* ローカルモードのデフォルト：
+  * トークン: `OPENCLAW_GATEWAY_TOKEN` -> `gateway.auth.token` -> `gateway.remote.token`
+  * パスワード: `OPENCLAW_GATEWAY_PASSWORD` -> `gateway.auth.password` -> `gateway.remote.password`
+* リモートモードのデフォルト：
+  * トークン: `gateway.remote.token` -> `OPENCLAW_GATEWAY_TOKEN` -> `gateway.auth.token`
+  * パスワード: `OPENCLAW_GATEWAY_PASSWORD` -> `gateway.remote.password` -> `gateway.auth.password`
+* リモートプローブ/ステータスのトークンチェックはデフォルトで厳格です: リモートモードをターゲットにする場合、`gateway.remote.token`のみを使用します（ローカルトークンのフォールバックはありません）。
+* 従来の`CLAWDBOT_GATEWAY_*`環境変数は、互換性のある呼び出しパスでのみ使用されます。プローブ/ステータス/認証の解決は`OPENCLAW_GATEWAY_*`のみを使用します。
 
-## Chat UI over SSH
+## SSH経由のチャットUI
 
-WebChat no longer uses a separate HTTP port. The SwiftUI chat UI connects directly to the Gateway WebSocket.
+WebChatはもはや別のHTTPポートを使用しません。SwiftUIチャットUIはGateway WebSocketに直接接続します。
 
-* Forward `18789` over SSH (see above), then connect clients to `ws://127.0.0.1:18789`.
-* On macOS, prefer the app’s “Remote over SSH” mode, which manages the tunnel automatically.
+* `18789`をSSH経由で転送します（上記を参照）、その後クライアントを`ws://127.0.0.1:18789`に接続します。
+* macOSでは、アプリの「SSH経由のリモート」モードを優先し、トンネルを自動的に管理します。
 
-## macOS app “Remote over SSH”
+## macOSアプリ「SSH経由のリモート」
 
-The macOS menu bar app can drive the same setup end-to-end (remote status checks, WebChat, and Voice Wake forwarding).
+macOSメニューバーアプリは、同じセットアップをエンドツーエンドで実行できます（リモートステータスチェック、WebChat、および音声ウェイク転送）。
 
-Runbook: [macOS remote access](/platforms/mac/remote).
+実行手順: [macOSリモートアクセス](/platforms/mac/remote)。
 
-## Security rules (remote/VPN)
+## セキュリティルール（リモート/VPN）
 
-Short version: **keep the Gateway loopback-only** unless you’re sure you need a bind.
+短いバージョン: **Gatewayをループバック専用に保つ**。必要なバインドが確実でない限り。
 
-* **Loopback + SSH/Tailscale Serve** is the safest default (no public exposure).
-* **Non-loopback binds** (`lan`/`tailnet`/`custom`, or `auto` when loopback is unavailable) must use auth tokens/passwords.
-* `gateway.remote.token` / `.password` are client credential sources. They do **not** configure server auth by themselves.
-* Local call paths can use `gateway.remote.*` as fallback when `gateway.auth.*` is unset.
-* `gateway.remote.tlsFingerprint` pins the remote TLS cert when using `wss://`.
-* **Tailscale Serve** can authenticate Control UI/WebSocket traffic via identity
-  headers when `gateway.auth.allowTailscale: true`; HTTP API endpoints still
-  require token/password auth. This tokenless flow assumes the gateway host is
-  trusted. Set it to `false` if you want tokens/passwords everywhere.
-* Treat browser control like operator access: tailnet-only + deliberate node pairing.
+* **ループバック + SSH/Tailscale Serve**は最も安全なデフォルトです（公開露出なし）。
+* **非ループバックバインド**（`lan`/`tailnet`/`custom`、またはループバックが利用できない場合の`auto`）は、認証トークン/パスワードを使用する必要があります。
+* `gateway.remote.token` / `.password`はクライアント資格情報のソースです。これらはサーバー認証を自動的に構成しません。
+* ローカル呼び出しパスは、`gateway.auth.*`が設定されていない場合にフォールバックとして`gateway.remote.*`を使用できます。
+* `gateway.remote.tlsFingerprint`は、`wss://`を使用する際にリモートTLS証明書をピン留めします。
+* **Tailscale Serve**は、`gateway.auth.allowTailscale: true`のときに、アイデンティティヘッダーを介してControl UI/WebSocketトラフィックを認証できます。HTTP APIエンドポイントは依然としてトークン/パスワード認証を必要とします。このトークンなしのフローは、Gatewayホストが信頼されていると仮定します。どこでもトークン/パスワードを使用したい場合は、`false`に設定してください。
+* ブラウザ制御をオペレーターアクセスのように扱います: tailnet専用 + 意図的なノードペアリング。
 
-Deep dive: [Security](/gateway/security).
+詳細: [セキュリティ](/gateway/security)。

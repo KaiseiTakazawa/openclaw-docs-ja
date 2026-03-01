@@ -6,115 +6,115 @@ title: "ディスカバリーとトランスポート"
 
 # Discovery & transports
 
-OpenClaw has two distinct problems that look similar on the surface:
+OpenClawには、一見似ているが異なる二つの問題があります。
 
-1. **Operator remote control**: the macOS menu bar app controlling a gateway running elsewhere.
-2. **Node pairing**: iOS/Android (and future nodes) finding a gateway and pairing securely.
+1. **オペレーターのリモートコントロール**: macOSメニューバーアプリが他の場所で実行されているゲートウェイを制御します。
+2. **ノードのペアリング**: iOS/Android（および将来のノード）がゲートウェイを見つけ、安全にペアリングします。
 
-The design goal is to keep all network discovery/advertising in the **Node Gateway** (`openclaw gateway`) and keep clients (mac app, iOS) as consumers.
+設計の目標は、すべてのネットワークディスカバリー/広告を**Node Gateway**（`openclaw gateway`）に保持し、クライアント（macアプリ、iOS）を消費者として扱うことです。
 
-## Terms
+## 用語
 
-* **Gateway**: a single long-running gateway process that owns state (sessions, pairing, node registry) and runs channels. Most setups use one per host; isolated multi-gateway setups are possible.
-* **Gateway WS (control plane)**: the WebSocket endpoint on `127.0.0.1:18789` by default; can be bound to LAN/tailnet via `gateway.bind`.
-* **Direct WS transport**: a LAN/tailnet-facing Gateway WS endpoint (no SSH).
-* **SSH transport (fallback)**: remote control by forwarding `127.0.0.1:18789` over SSH.
-* **Legacy TCP bridge (deprecated/removed)**: older node transport (see [Bridge protocol](/gateway/bridge-protocol)); no longer advertised for discovery.
+* **Gateway**: 状態（セッション、ペアリング、ノードレジストリ）を所有し、チャネルを実行する単一の長時間実行されるゲートウェイプロセス。ほとんどのセットアップではホストごとに1つ使用されますが、隔離されたマルチゲートウェイセットアップも可能です。
+* **Gateway WS (制御プレーン)**: デフォルトで`127.0.0.1:18789`のWebSocketエンドポイント; `gateway.bind`を介してLAN/tailnetにバインドできます。
+* **Direct WS transport**: LAN/tailnet向けのGateway WSエンドポイント（SSHなし）。
+* **SSH transport (フォールバック)**: `127.0.0.1:18789`をSSH経由で転送することでリモートコントロールを行います。
+* **Legacy TCP bridge (非推奨/削除済み)**: 古いノードトランスポート（[Bridge protocol](/gateway/bridge-protocol)を参照）；ディスカバリーのためにもはや広告されていません。
 
-Protocol details:
+プロトコルの詳細:
 
 * [Gateway protocol](/gateway/protocol)
 * [Bridge protocol (legacy)](/gateway/bridge-protocol)
 
-## Why we keep both “direct” and SSH
+## なぜ「直接」とSSHの両方を保持するのか
 
-* **Direct WS** is the best UX on the same network and within a tailnet:
-  * auto-discovery on LAN via Bonjour
-  * pairing tokens + ACLs owned by the gateway
-  * no shell access required; protocol surface can stay tight and auditable
-* **SSH** remains the universal fallback:
-  * works anywhere you have SSH access (even across unrelated networks)
-  * survives multicast/mDNS issues
-  * requires no new inbound ports besides SSH
+* **Direct WS**は同じネットワークおよびtailnet内での最良のUXです：
+  * Bonjourを介したLANでの自動ディスカバリー
+  * ゲートウェイが所有するペアリングトークン + ACL
+  * シェルアクセスは不要; プロトコルの表面は厳密で監査可能なままです
+* **SSH**は普遍的なフォールバックとして残ります：
+  * SSHアクセスがある任意の場所で機能します（無関係なネットワークを越えても）
+  * マルチキャスト/mDNSの問題を回避します
+  * SSH以外の新しい受信ポートは不要です
 
-## Discovery inputs (how clients learn where the gateway is)
+## ディスカバリー入力（クライアントがゲートウェイの場所を学ぶ方法）
 
-### 1) Bonjour / mDNS (LAN only)
+### 1) Bonjour / mDNS (LANのみ)
 
-Bonjour is best-effort and does not cross networks. It is only used for “same LAN” convenience.
+Bonjourは最善を尽くすものであり、ネットワークを越えることはありません。これは「同じLAN」の利便性のためだけに使用されます。
 
-Target direction:
+ターゲット方向:
 
-* The **gateway** advertises its WS endpoint via Bonjour.
-* Clients browse and show a “pick a gateway” list, then store the chosen endpoint.
+* **ゲートウェイ**はそのWSエンドポイントをBonjourを介して広告します。
+* クライアントは「ゲートウェイを選択する」リストを表示し、選択したエンドポイントを保存します。
 
-Troubleshooting and beacon details: [Bonjour](/gateway/bonjour).
+トラブルシューティングとビーコンの詳細: [Bonjour](/gateway/bonjour)。
 
-#### Service beacon details
+#### サービスビーコンの詳細
 
-* Service types:
-  * `_openclaw-gw._tcp` (gateway transport beacon)
-* TXT keys (non-secret):
+* サービスタイプ:
+  * `_openclaw-gw._tcp`（ゲートウェイトランスポートビーコン）
+* TXTキー（非秘密）:
   * `role=gateway`
   * `lanHost=<hostname>.local`
-  * `sshPort=22` (or whatever is advertised)
-  * `gatewayPort=18789` (Gateway WS + HTTP)
-  * `gatewayTls=1` (only when TLS is enabled)
-  * `gatewayTlsSha256=<sha256>` (only when TLS is enabled and fingerprint is available)
-  * `canvasPort=<port>` (canvas host port; currently the same as `gatewayPort` when the canvas host is enabled)
-  * `cliPath=<path>` (optional; absolute path to a runnable `openclaw` entrypoint or binary)
-  * `tailnetDns=<magicdns>` (optional hint; auto-detected when Tailscale is available)
+  * `sshPort=22`（または広告されているもの）
+  * `gatewayPort=18789`（Gateway WS + HTTP）
+  * `gatewayTls=1`（TLSが有効な場合のみ）
+  * `gatewayTlsSha256=<sha256>`（TLSが有効でフィンガープリントが利用可能な場合のみ）
+  * `canvasPort=<port>`（キャンバスホストポート; 現在、キャンバスホストが有効な場合は`gatewayPort`と同じ）
+  * `cliPath=<path>`（オプション; 実行可能な`openclaw`エントリポイントまたはバイナリへの絶対パス）
+  * `tailnetDns=<magicdns>`（オプションのヒント; Tailscaleが利用可能な場合に自動検出）
 
-Security notes:
+セキュリティノート:
 
-* Bonjour/mDNS TXT records are **unauthenticated**. Clients must treat TXT values as UX hints only.
-* Routing (host/port) should prefer the **resolved service endpoint** (SRV + A/AAAA) over TXT-provided `lanHost`, `tailnetDns`, or `gatewayPort`.
-* TLS pinning must never allow an advertised `gatewayTlsSha256` to override a previously stored pin.
-* iOS/Android nodes should treat discovery-based direct connects as **TLS-only** and require an explicit “trust this fingerprint” confirmation before storing a first-time pin (out-of-band verification).
+* Bonjour/mDNS TXTレコードは**認証されていません**。クライアントはTXT値をUXヒントとしてのみ扱う必要があります。
+* ルーティング（ホスト/ポート）は、TXTで提供された`lanHost`、`tailnetDns`、または`gatewayPort`よりも**解決されたサービスエンドポイント**（SRV + A/AAAA）を優先するべきです。
+* TLSピンニングは、広告された`gatewayTlsSha256`が以前に保存されたピンを上書きすることを決して許可してはいけません。
+* iOS/Androidノードは、ディスカバリーベースの直接接続を**TLS専用**として扱い、初回ピンを保存する前に明示的な「このフィンガープリントを信頼する」確認を要求する必要があります（アウトオブバンド検証）。
 
-Disable/override:
+無効化/上書き:
 
-* `OPENCLAW_DISABLE_BONJOUR=1` disables advertising.
-* `gateway.bind` in `~/.openclaw/openclaw.json` controls the Gateway bind mode.
-* `OPENCLAW_SSH_PORT` overrides the SSH port advertised in TXT (defaults to 22).
-* `OPENCLAW_TAILNET_DNS` publishes a `tailnetDns` hint (MagicDNS).
-* `OPENCLAW_CLI_PATH` overrides the advertised CLI path.
+* `OPENCLAW_DISABLE_BONJOUR=1`は広告を無効にします。
+* `~/.openclaw/openclaw.json`の`gateway.bind`はGatewayのバインドモードを制御します。
+* `OPENCLAW_SSH_PORT`はTXTで広告されるSSHポートを上書きします（デフォルトは22）。
+* `OPENCLAW_TAILNET_DNS`は`tailnetDns`ヒントを公開します（MagicDNS）。
+* `OPENCLAW_CLI_PATH`は広告されるCLIパスを上書きします。
 
-### 2) Tailnet (cross-network)
+### 2) Tailnet (クロスネットワーク)
 
-For London/Vienna style setups, Bonjour won’t help. The recommended “direct” target is:
+ロンドン/ウィーンスタイルのセットアップでは、Bonjourは役に立ちません。推奨される「直接」ターゲットは：
 
-* Tailscale MagicDNS name (preferred) or a stable tailnet IP.
+* Tailscale MagicDNS名（推奨）または安定したtailnet IP。
 
-If the gateway can detect it is running under Tailscale, it publishes `tailnetDns` as an optional hint for clients (including wide-area beacons).
+ゲートウェイがTailscaleの下で実行されていることを検出できる場合、クライアントのために`tailnetDns`をオプションのヒントとして公開します（広域ビーコンを含む）。
 
-### 3) Manual / SSH target
+### 3) 手動 / SSHターゲット
 
-When there is no direct route (or direct is disabled), clients can always connect via SSH by forwarding the loopback gateway port.
+直接ルートがない場合（または直接が無効な場合）、クライアントは常にループバックゲートウェイポートを転送することでSSH経由で接続できます。
 
-See [Remote access](/gateway/remote).
+[リモートアクセス](/gateway/remote)を参照してください。
 
-## Transport selection (client policy)
+## トランスポート選択（クライアントポリシー）
 
-Recommended client behavior:
+推奨されるクライアントの動作：
 
-1. If a paired direct endpoint is configured and reachable, use it.
-2. Else, if Bonjour finds a gateway on LAN, offer a one-tap “Use this gateway” choice and save it as the direct endpoint.
-3. Else, if a tailnet DNS/IP is configured, try direct.
-4. Else, fall back to SSH.
+1. ペアリングされた直接エンドポイントが構成され、到達可能な場合は、それを使用します。
+2. そうでない場合、BonjourがLAN上でゲートウェイを見つけた場合は、「このゲートウェイを使用する」というワンタップの選択肢を提供し、それを直接エンドポイントとして保存します。
+3. そうでない場合、tailnet DNS/IPが構成されている場合は、直接を試みます。
+4. それ以外の場合は、SSHにフォールバックします。
 
-## Pairing + auth (direct transport)
+## ペアリング + 認証（直接トランスポート）
 
-The gateway is the source of truth for node/client admission.
+ゲートウェイはノード/クライアントの入場に関する真実の源です。
 
-* Pairing requests are created/approved/rejected in the gateway (see [Gateway pairing](/gateway/pairing)).
-* The gateway enforces:
-  * auth (token / keypair)
-  * scopes/ACLs (the gateway is not a raw proxy to every method)
-  * rate limits
+* ペアリングリクエストはゲートウェイで作成/承認/拒否されます（[Gateway pairing](/gateway/pairing)を参照）。
+* ゲートウェイは以下を強制します：
+  * 認証（トークン / キーペア）
+  * スコープ/ACL（ゲートウェイはすべてのメソッドへの生のプロキシではありません）
+  * レート制限
 
-## Responsibilities by component
+## コンポーネントごとの責任
 
-* **Gateway**: advertises discovery beacons, owns pairing decisions, and hosts the WS endpoint.
-* **macOS app**: helps you pick a gateway, shows pairing prompts, and uses SSH only as a fallback.
-* **iOS/Android nodes**: browse Bonjour as a convenience and connect to the paired Gateway WS.
+* **Gateway**: ディスカバリービーコンズを広告し、ペアリングの決定を所有し、WSエンドポイントをホストします。
+* **macOSアプリ**: ゲートウェイを選択するのを助け、ペアリングプロンプトを表示し、SSHはフォールバックとしてのみ使用します。
+* **iOS/Androidノード**: 利便性のためにBonjourをブラウズし、ペアリングされたGateway WSに接続します。

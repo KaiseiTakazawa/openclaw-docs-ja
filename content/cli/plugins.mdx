@@ -6,15 +6,15 @@ title: "plugins"
 
 # `openclaw plugins`
 
-Manage Gateway plugins/extensions (loaded in-process).
+Gatewayのプラグイン/拡張機能を管理します（プロセス内で読み込まれます）。
 
-Related:
+関連情報:
 
-* Plugin system: [Plugins](/tools/plugin)
-* Plugin manifest + schema: [Plugin manifest](/plugins/manifest)
-* Security hardening: [Security](/gateway/security)
+* プラグインシステム: [Plugins](/tools/plugin)
+* プラグインマニフェスト + スキーマ: [Plugin manifest](/plugins/manifest)
+* セキュリティ強化: [Security](/gateway/security)
 
-## Commands
+## コマンド
 
 ```bash
 openclaw plugins list
@@ -27,12 +27,11 @@ openclaw plugins update <id>
 openclaw plugins update --all
 ```
 
-Bundled plugins ship with OpenClaw but start disabled. Use `plugins enable` to
-activate them.
+バンドルされたプラグインはOpenClawと共に出荷されますが、初期状態では無効です。`plugins enable`を使用して
+アクティブにします。
 
-All plugins must ship a `openclaw.plugin.json` file with an inline JSON Schema
-(`configSchema`, even if empty). Missing/invalid manifests or schemas prevent
-the plugin from loading and fail config validation.
+すべてのプラグインは、インラインJSONスキーマ（`configSchema`、空でも可）を含む`openclaw.plugin.json`ファイルを
+同梱する必要があります。マニフェストやスキーマが欠落または無効な場合、プラグインは読み込まれず、設定の検証に失敗します。
 
 ### インストール
 
@@ -41,21 +40,21 @@ openclaw plugins install <path-or-spec>
 openclaw plugins install <npm-spec> --pin
 ```
 
-Security note: treat plugin installs like running code. Prefer pinned versions.
+セキュリティノート: プラグインのインストールはコードを実行するのと同様に扱ってください。ピン留めされたバージョンを優先してください。
 
-Npm specs are **registry-only** (package name + optional version/tag). Git/URL/file
-specs are rejected. Dependency installs run with `--ignore-scripts` for safety.
+npmの仕様は**レジストリ専用**（パッケージ名 + オプションのバージョン/タグ）です。Git/URL/ファイル
+仕様は拒否されます。依存関係のインストールは安全のために`--ignore-scripts`で実行されます。
 
-Supported archives: `.zip`, `.tgz`, `.tar.gz`, `.tar`.
+サポートされているアーカイブ: `.zip`, `.tgz`, `.tar.gz`, `.tar`。
 
-Use `--link` to avoid copying a local directory (adds to `plugins.load.paths`):
+ローカルディレクトリのコピーを避けるために`--link`を使用します（`plugins.load.paths`に追加）:
 
 ```bash
 openclaw plugins install -l ./my-plugin
 ```
 
-Use `--pin` on npm installs to save the resolved exact spec (`name@version`) in
-`plugins.installs` while keeping the default behavior unpinned.
+npmインストール時に`--pin`を使用すると、解決された正確な仕様（`name@version`）が
+`plugins.installs`に保存され、デフォルトの動作はピン留めされません。
 
 ### アンインストール
 
@@ -65,17 +64,16 @@ openclaw plugins uninstall <id> --dry-run
 openclaw plugins uninstall <id> --keep-files
 ```
 
-`uninstall` removes plugin records from `plugins.entries`, `plugins.installs`,
-the plugin allowlist, and linked `plugins.load.paths` entries when applicable.
-For active memory plugins, the memory slot resets to `memory-core`.
+`uninstall`は、プラグインのレコードを`plugins.entries`、`plugins.installs`、
+プラグインの許可リスト、および該当する場合はリンクされた`plugins.load.paths`エントリから削除します。
+アクティブなメモリプラグインの場合、メモリスロットは`memory-core`にリセットされます。
 
-By default, uninstall also removes the plugin install directory under the active
-state dir extensions root (`$OPENCLAW_STATE_DIR/extensions/<id>`). Use
-`--keep-files` to keep files on disk.
+デフォルトでは、アンインストールはアクティブな状態ディレクトリの拡張ルート（`$OPENCLAW_STATE_DIR/extensions/<id>`）の下にあるプラグインインストールディレクトリも削除します。
+ディスク上のファイルを保持するには`--keep-files`を使用します。
 
-`--keep-config` is supported as a deprecated alias for `--keep-files`.
+`--keep-config`は`--keep-files`の非推奨エイリアスとしてサポートされています。
 
-### Update
+### 更新
 
 ```bash
 openclaw plugins update <id>
@@ -83,8 +81,8 @@ openclaw plugins update --all
 openclaw plugins update <id> --dry-run
 ```
 
-Updates only apply to plugins installed from npm (tracked in `plugins.installs`).
+更新はnpmからインストールされたプラグインにのみ適用されます（`plugins.installs`で追跡されます）。
 
-When a stored integrity hash exists and the fetched artifact hash changes,
-OpenClaw prints a warning and asks for confirmation before proceeding. Use
-global `--yes` to bypass prompts in CI/non-interactive runs.
+保存された整合性ハッシュが存在し、取得したアーティファクトのハッシュが変更された場合、
+OpenClawは警告を表示し、続行する前に確認を求めます。CI/非対話型の実行でプロンプトをバイパスするには、
+グローバル`--yes`を使用してください。

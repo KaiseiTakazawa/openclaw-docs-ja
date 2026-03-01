@@ -3,65 +3,65 @@ title: "Twitch"
 ---
 
 # Twitch
-# Twitch (plugin)
-Twitch chat support via IRC connection. OpenClaw connects as a Twitch user (bot account) to receive and send messages in channels.
-## Plugin required
-Twitch ships as a plugin and is not bundled with the core install.
-Install via CLI (npm registry):
+# Twitch (プラグイン)
+TwitchチャットはIRC接続を介してサポートされています。OpenClawはTwitchユーザー（ボットアカウント）として接続し、チャンネル内でメッセージを受信および送信します。
+## プラグインが必要
+Twitchはプラグインとして提供されており、コアインストールにはバンドルされていません。
+CLIを介してインストールします（npmレジストリ）:
 ```bash
 openclaw plugins install @openclaw/twitch
 ```
-Local checkout (when running from a git repo):
+ローカルチェックアウト（gitリポジトリから実行する場合）:
 ```bash
 openclaw plugins install ./extensions/twitch
 ```
-Details: [Plugins](/tools/plugin)
-## Quick setup (beginner)
-1. Create a dedicated Twitch account for the bot (or use an existing account).
-2. Generate credentials: [Twitch Token Generator](https://twitchtokengenerator.com/)
-\* Select \*\*Bot Token\*\*
-\* Verify scopes `chat:read` and `chat:write` are selected
-\* Copy the \*\*Client ID\*\* and \*\*Access Token\*\*
-3. Find your Twitch user ID: [https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/](https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/)
-4. Configure the token:
-\* Env: `OPENCLAW\_TWITCH\_ACCESS\_TOKEN=...` (default account only)
-\* Or config: `channels.twitch.accessToken`
-\* If both are set, config takes precedence (env fallback is default-account only).
-5. Start the gateway.
-\*\*⚠️ Important:\*\* Add access control (`allowFrom` or `allowedRoles`) to prevent unauthorized users from triggering the bot. `requireMention` defaults to `true`.
-Minimal config:
+詳細: [プラグイン](/tools/plugin)
+## クイックセットアップ（初心者向け）
+1. ボット用の専用Twitchアカウントを作成する（または既存のアカウントを使用する）。
+2. 認証情報を生成する: [Twitch Token Generator](https://twitchtokengenerator.com/)
+\* \*\*Bot Token\*\*を選択
+\* スコープ`chat:read`と`chat:write`が選択されていることを確認
+\* \*\*Client ID\*\*と\*\*Access Token\*\*をコピー
+3. 自分のTwitchユーザーIDを見つける: [https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/](https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/)
+4. トークンを設定する:
+\* 環境変数: `OPENCLAW\_TWITCH\_ACCESS\_TOKEN=...`（デフォルトアカウントのみ）
+\* または設定: `channels.twitch.accessToken`
+\* 両方が設定されている場合、設定が優先されます（環境変数はデフォルトアカウントのみがフォールバックします）。
+5. ゲートウェイを起動する。
+\*\*⚠️ 重要:\*\* アクセス制御（`allowFrom`または`allowedRoles`）を追加して、無許可のユーザーがボットをトリガーするのを防ぎます。`requireMention`はデフォルトで`true`です。
+最小限の設定:
 ```json5
 {
 channels: {
 twitch: {
 enabled: true,
-username: "openclaw", // Bot's Twitch account
-accessToken: "oauth:abc123...", // OAuth Access Token (or use OPENCLAW\_TWITCH\_ACCESS\_TOKEN env var)
-clientId: "xyz789...", // Client ID from Token Generator
-channel: "vevisk", // Which Twitch channel's chat to join (required)
-allowFrom: ["123456789"], // (recommended) Your Twitch user ID only - get it from https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/
+username: "openclaw", // ボットのTwitchアカウント
+accessToken: "oauth:abc123...", // OAuthアクセストークン（またはOPENCLAW\_TWITCH\_ACCESS\_TOKEN環境変数を使用）
+clientId: "xyz789...", // トークンジェネレーターからのクライアントID
+channel: "vevisk", // 参加するTwitchチャンネルのチャット（必須）
+allowFrom: ["123456789"], // （推奨）あなたのTwitchユーザーIDのみ - https://www.streamweasels.com/tools/convert-twitch-username-to-user-id/ から取得
 },
 },
 }
 ```
-## What it is
-\* A Twitch channel owned by the Gateway.
-\* Deterministic routing: replies always go back to Twitch.
-\* Each account maps to an isolated session key `agent::twitch:`.
-\* `username` is the bot's account (who authenticates), `channel` is which chat room to join.
-## Setup (detailed)
-### Generate credentials
-Use [Twitch Token Generator](https://twitchtokengenerator.com/):
-\* Select \*\*Bot Token\*\*
-\* Verify scopes `chat:read` and `chat:write` are selected
-\* Copy the \*\*Client ID\*\* and \*\*Access Token\*\*
-No manual app registration needed. Tokens expire after several hours.
-### Configure the bot
-\*\*Env var (default account only):\*\*
+## それは何か
+\* ゲートウェイが所有するTwitchチャンネル。
+\* 決定論的ルーティング: 返信は常にTwitchに戻ります。
+\* 各アカウントは孤立したセッションキー`agent::twitch:`にマッピングされます。
+\* `username`はボットのアカウント（認証する人）、`channel`は参加するチャットルームです。
+## セットアップ（詳細）
+### 認証情報を生成する
+[Twitch Token Generator](https://twitchtokengenerator.com/)を使用します:
+\* \*\*Bot Token\*\*を選択
+\* スコープ`chat:read`と`chat:write`が選択されていることを確認
+\* \*\*Client ID\*\*と\*\*Access Token\*\*をコピー
+手動でのアプリ登録は不要です。トークンは数時間後に期限切れになります。
+### ボットを設定する
+\*\*環境変数（デフォルトアカウントのみ）:\*\*
 ```bash
 OPENCLAW\_TWITCH\_ACCESS\_TOKEN=oauth:abc123...
 ```
-\*\*Or config:\*\*
+\*\*または設定:\*\*
 ```json5
 {
 channels: {
@@ -75,24 +75,24 @@ channel: "vevisk",
 },
 }
 ```
-If both env and config are set, config takes precedence.
-### Access control (recommended)
+環境変数と設定の両方が設定されている場合、設定が優先されます。
+### アクセス制御（推奨）
 ```json5
 {
 channels: {
 twitch: {
-allowFrom: ["123456789"], // (recommended) Your Twitch user ID only
+allowFrom: ["123456789"], // （推奨）あなたのTwitchユーザーIDのみ
 },
 },
 }
 ```
-Prefer `allowFrom` for a hard allowlist. Use `allowedRoles` instead if you want role-based access.
-\*\*Available roles:\*\* `"moderator"`, `"owner"`, `"vip"`, `"subscriber"`, `"all"`.
-\*\*Why user IDs?\*\* Usernames can change, allowing impersonation. User IDs are permanent.
-Find your Twitch user ID: [https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/](https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/) (Convert your Twitch username to ID)
-## Token refresh (optional)
-Tokens from [Twitch Token Generator](https://twitchtokengenerator.com/) cannot be automatically refreshed - regenerate when expired.
-For automatic token refresh, create your own Twitch application at [Twitch Developer Console](https://dev.twitch.tv/console) and add to config:
+ハードな許可リストには`allowFrom`を優先してください。役割ベースのアクセスが必要な場合は、代わりに`allowedRoles`を使用してください。
+\*\*利用可能な役割:\*\* `"moderator"`, `"owner"`, `"vip"`, `"subscriber"`, `"all"`。
+\*\*なぜユーザーIDなのか?\*\* ユーザー名は変更可能で、なりすましが可能です。ユーザーIDは永久的です。
+自分のTwitchユーザーIDを見つける: [https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/](https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/)（Twitchユーザー名をIDに変換）
+## トークンの更新（オプション）
+[Twitch Token Generator](https://twitchtokengenerator.com/)からのトークンは自動的に更新できません - 期限切れの際は再生成してください。
+自動トークン更新を行うには、[Twitch Developer Console](https://dev.twitch.tv/console)で自分のTwitchアプリケーションを作成し、設定に追加します:
 ```json5
 {
 channels: {
@@ -103,10 +103,10 @@ refreshToken: "your\_refresh\_token",
 },
 }
 ```
-The bot automatically refreshes tokens before expiration and logs refresh events.
-## Multi-account support
-Use `channels.twitch.accounts` with per-account tokens. See [`gateway/configuration`](/gateway/configuration) for the shared pattern.
-Example (one bot account in two channels):
+ボットは自動的にトークンの有効期限が切れる前に更新し、更新イベントをログに記録します。
+## マルチアカウントサポート
+`channels.twitch.accounts`を使用して、アカウントごとのトークンを持つことができます。共有パターンについては[`gateway/configuration`](/gateway/configuration)を参照してください。
+例（2つのチャンネルに1つのボットアカウント）:
 ```json5
 {
 channels: {
@@ -129,9 +129,9 @@ channel: "secondchannel",
 },
 }
 ```
-\*\*Note:\*\* Each account needs its own token (one token per channel).
-## Access control
-### Role-based restrictions
+\*\*注意:\*\* 各アカウントは独自のトークンが必要です（チャンネルごとに1つのトークン）。
+## アクセス制御
+### 役割ベースの制限
 ```json5
 {
 channels: {
@@ -145,7 +145,7 @@ allowedRoles: ["moderator", "vip"],
 },
 }
 ```
-### Allowlist by User ID (most secure)
+### ユーザーIDによる許可リスト（最も安全）
 ```json5
 {
 channels: {
@@ -159,9 +159,9 @@ allowFrom: ["123456789", "987654321"],
 },
 }
 ```
-### Role-based access (alternative)
-`allowFrom` is a hard allowlist. When set, only those user IDs are allowed.
-If you want role-based access, leave `allowFrom` unset and configure `allowedRoles` instead:
+### 役割ベースのアクセス（代替）
+`allowFrom`はハードな許可リストです。設定されている場合、指定されたユーザーIDのみが許可されます。
+役割ベースのアクセスを希望する場合は、`allowFrom`を設定せず、代わりに`allowedRoles`を設定してください:
 ```json5
 {
 channels: {
@@ -175,8 +175,8 @@ allowedRoles: ["moderator"],
 },
 }
 ```
-### Disable @mention requirement
-By default, `requireMention` is `true`. To disable and respond to all messages:
+### @mention要件を無効にする
+デフォルトでは、`requireMention`は`true`です。すべてのメッセージに応答するために無効にするには:
 ```json5
 {
 channels: {
@@ -191,51 +191,50 @@ requireMention: false,
 }
 ```
 ## トラブルシューティング
-First, run diagnostic commands:
+まず、診断コマンドを実行します:
 ```bash
 openclaw doctor
 openclaw channels status --probe
 ```
-### Bot doesn't respond to messages
-\*\*Check access control:\*\* Ensure your user ID is in `allowFrom`, or temporarily remove
-`allowFrom` and set `allowedRoles: ["all"]` to test.
-\*\*Check the bot is in the channel:\*\* The bot must join the channel specified in `channel`.
-### Token issues
-\*\*"Failed to connect" or authentication errors:\*\*
-\* Verify `accessToken` is the OAuth access token value (typically starts with `oauth:` prefix)
-\* Check token has `chat:read` and `chat:write` scopes
-\* If using token refresh, verify `clientSecret` and `refreshToken` are set
-### Token refresh not working
-\*\*Check logs for refresh events:\*\*
+### ボットがメッセージに応答しない
+\*\*アクセス制御を確認:\*\* あなたのユーザーIDが`allowFrom`に含まれていることを確認するか、一時的に`allowFrom`を削除し、`allowedRoles: ["all"]`を設定してテストします。
+\*\*ボットがチャンネルにいることを確認:\*\* ボットは`channel`で指定されたチャンネルに参加する必要があります。
+### トークンの問題
+\*\*"接続に失敗"または認証エラー:\*\*
+\* `accessToken`がOAuthアクセストークンの値であることを確認（通常は`oauth:`プレフィックスで始まります）
+\* トークンに`chat:read`と`chat:write`のスコープがあることを確認
+\* トークン更新を使用している場合、`clientSecret`と`refreshToken`が設定されていることを確認
+### トークンの更新が機能しない
+\*\*更新イベントのログを確認:\*\*
 ```
 Using env token source for mybot
 Access token refreshed for user 123456 (expires in 14400s)
 ```
-If you see "token refresh disabled (no refresh token)":
-\* Ensure `clientSecret` is provided
-\* Ensure `refreshToken` is provided
-## Config
-\*\*Account config:\*\*
-\* `username` - Bot username
-\* `accessToken` - OAuth access token with `chat:read` and `chat:write`
-\* `clientId` - Twitch Client ID (from Token Generator or your app)
-\* `channel` - Channel to join (required)
-\* `enabled` - Enable this account (default: `true`)
-\* `clientSecret` - Optional: For automatic token refresh
-\* `refreshToken` - Optional: For automatic token refresh
-\* `expiresIn` - Token expiry in seconds
-\* `obtainmentTimestamp` - Token obtained timestamp
-\* `allowFrom` - User ID allowlist
-\* `allowedRoles` - Role-based access control (`"moderator" | "owner" | "vip" | "subscriber" | "all"`)
-\* `requireMention` - Require @mention (default: `true`)
-\*\*Provider options:\*\*
-\* `channels.twitch.enabled` - Enable/disable channel startup
-\* `channels.twitch.username` - Bot username (simplified single-account config)
-\* `channels.twitch.accessToken` - OAuth access token (simplified single-account config)
-\* `channels.twitch.clientId` - Twitch Client ID (simplified single-account config)
-\* `channels.twitch.channel` - Channel to join (simplified single-account config)
-\* `channels.twitch.accounts.` - Multi-account config (all account fields above)
-Full example:
+"トークン更新が無効（リフレッシュトークンなし）"と表示された場合:
+\* `clientSecret`が提供されていることを確認
+\* `refreshToken`が提供されていることを確認
+## 設定
+\*\*アカウント設定:\*\*
+\* `username` - ボットのユーザー名
+\* `accessToken` - `chat:read`と`chat:write`を持つOAuthアクセストークン
+\* `clientId` - TwitchクライアントID（トークンジェネレーターまたはアプリから）
+\* `channel` - 参加するチャンネル（必須）
+\* `enabled` - このアカウントを有効にする（デフォルト: `true`）
+\* `clientSecret` - オプション: 自動トークン更新用
+\* `refreshToken` - オプション: 自動トークン更新用
+\* `expiresIn` - トークンの有効期限（秒）
+\* `obtainmentTimestamp` - トークン取得のタイムスタンプ
+\* `allowFrom` - ユーザーIDの許可リスト
+\* `allowedRoles` - 役割ベースのアクセス制御（`"moderator" | "owner" | "vip" | "subscriber" | "all"`）
+\* `requireMention` - @mentionを要求する（デフォルト: `true`）
+\*\*プロバイダーオプション:\*\*
+\* `channels.twitch.enabled` - チャンネルの起動を有効/無効にする
+\* `channels.twitch.username` - ボットのユーザー名（単一アカウント設定の簡略化）
+\* `channels.twitch.accessToken` - OAuthアクセストークン（単一アカウント設定の簡略化）
+\* `channels.twitch.clientId` - TwitchクライアントID（単一アカウント設定の簡略化）
+\* `channels.twitch.channel` - 参加するチャンネル（単一アカウント設定の簡略化）
+\* `channels.twitch.accounts.` - マルチアカウント設定（上記のすべてのアカウントフィールド）
+完全な例:
 ```json5
 {
 channels: {
@@ -268,10 +267,10 @@ allowedRoles: ["moderator"],
 },
 }
 ```
-## Tool actions
-The agent can call `twitch` with action:
-\* `send` - Send a message to a channel
-Example:
+## ツールアクション
+エージェントは`twitch`をアクションで呼び出すことができます:
+\* `send` - チャンネルにメッセージを送信
+例:
 ```json5
 {
 action: "twitch",
@@ -281,14 +280,14 @@ to: "#mychannel",
 },
 }
 ```
-## Safety & ops
-\* \*\*Treat tokens like passwords\*\* - Never commit tokens to git
-\* \*\*Use automatic token refresh\*\* for long-running bots
-\* \*\*Use user ID allowlists\*\* instead of usernames for access control
-\* \*\*Monitor logs\*\* for token refresh events and connection status
-\* \*\*Scope tokens minimally\*\* - Only request `chat:read` and `chat:write`
-\* \*\*If stuck\*\*: Restart the gateway after confirming no other process owns the session
-## Limits
-\* \*\*500 characters\*\* per message (auto-chunked at word boundaries)
-\* Markdown is stripped before chunking
-\* No rate limiting (uses Twitch's built-in rate limits)
+## 安全性と運用
+\* \*\*トークンをパスワードのように扱う\*\* - トークンをgitにコミットしないでください
+\* \*\*長時間実行されるボットには自動トークン更新を使用する\*\*
+\* \*\*アクセス制御にはユーザーIDの許可リストを使用する\*\* - ユーザー名の代わりに
+\* \*\*トークン更新イベントと接続状況をログで監視する\*\*
+\* \*\*トークンのスコープは最小限にする\*\* - `chat:read`と`chat:write`のみを要求
+\* \*\*行き詰まった場合\*\*: セッションを所有しているプロセスがないことを確認した後、ゲートウェイを再起動する
+## 制限
+\* \*\*1メッセージあたり500文字\*\*（単語の境界で自動的に分割）
+\* Markdownは分割前に削除されます
+\* レート制限なし（Twitchの組み込みレート制限を使用）

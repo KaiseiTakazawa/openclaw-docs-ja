@@ -6,59 +6,53 @@ title: "Exec ツール"
 
 # Exec tool
 
-Run shell commands in the workspace. Supports foreground + background execution via `process`.
-If `process` is disallowed, `exec` runs synchronously and ignores `yieldMs`/`background`.
-Background sessions are scoped per agent; `process` only sees sessions from the same agent.
+ワークスペース内でシェルコマンドを実行します。`process`を介して前景および背景の実行をサポートします。
+`process`が許可されていない場合、`exec`は同期的に実行され、`yieldMs`/`background`を無視します。
+背景セッションはエージェントごとにスコープされ、`process`は同じエージェントのセッションのみを参照します。
 
 ## パラメーター
 
-* `command` (required)
-* `workdir` (defaults to cwd)
-* `env` (key/value overrides)
-* `yieldMs` (default 10000): auto-background after delay
-* `background` (bool): background immediately
-* `timeout` (seconds, default 1800): kill on expiry
-* `pty` (bool): run in a pseudo-terminal when available (TTY-only CLIs, coding agents, terminal UIs)
-* `host` (`sandbox | gateway | node`): where to execute
-* `security` (`deny | allowlist | full`): enforcement mode for `gateway`/`node`
-* `ask` (`off | on-miss | always`): approval prompts for `gateway`/`node`
-* `node` (string): node id/name for `host=node`
-* `elevated` (bool): request elevated mode (gateway host); `security=full` is only forced when elevated resolves to `full`
+* `command` (必須)
+* `workdir` (デフォルトはカレントワーキングディレクトリ)
+* `env` (キー/値のオーバーライド)
+* `yieldMs` (デフォルト10000): 遅延後に自動的に背景実行
+* `background` (bool): 直ちに背景実行
+* `timeout` (秒、デフォルト1800): 期限切れで終了
+* `pty` (bool): 利用可能な場合は擬似端末で実行（TTY専用CLI、コーディングエージェント、ターミナルUI）
+* `host` (`sandbox | gateway | node`): 実行場所
+* `security` (`deny | allowlist | full`): `gateway`/`node`の強制モード
+* `ask` (`off | on-miss | always`): `gateway`/`node`の承認プロンプト
+* `node` (文字列): `host=node`用のノードID/名前
+* `elevated` (bool): 拡張モードを要求（ゲートウェイホスト）；`security=full`は、`elevated`が`full`に解決されるときのみ強制される
 
-Notes:
+注意事項：
 
-* `host` defaults to `sandbox`.
-* `elevated` is ignored when sandboxing is off (exec already runs on the host).
-* `gateway`/`node` approvals are controlled by `~/.openclaw/exec-approvals.json`.
-* `node` requires a paired node (companion app or headless node host).
-* If multiple nodes are available, set `exec.node` or `tools.exec.node` to select one.
-* On non-Windows hosts, exec uses `SHELL` when set; if `SHELL` is `fish`, it prefers `bash` (or `sh`)
-  from `PATH` to avoid fish-incompatible scripts, then falls back to `SHELL` if neither exists.
-* On Windows hosts, exec prefers PowerShell 7 (`pwsh`) discovery (Program Files, ProgramW6432, then PATH),
-  then falls back to Windows PowerShell 5.1.
-* Host execution (`gateway`/`node`) rejects `env.PATH` and loader overrides (`LD_*`/`DYLD_*`) to
-  prevent binary hijacking or injected code.
-* Important: sandboxing is **off by default**. If sandboxing is off and `host=sandbox` is explicitly
-  configured/requested, exec now fails closed instead of silently running on the gateway host.
-  Enable sandboxing or use `host=gateway` with approvals.
-* Script preflight checks (for common Python/Node shell-syntax mistakes) only inspect files inside the
-  effective `workdir` boundary. If a script path resolves outside `workdir`, preflight is skipped for
-  that file.
+* `host`のデフォルトは`sandbox`です。
+* サンドボックスがオフのときは`elevated`は無視されます（execはすでにホスト上で実行されます）。
+* `gateway`/`node`の承認は`~/.openclaw/exec-approvals.json`で制御されます。
+* `node`にはペアリングされたノード（コンパニオンアプリまたはヘッドレスノードホスト）が必要です。
+* 複数のノードが利用可能な場合、`exec.node`または`tools.exec.node`を設定して選択します。
+* Windows以外のホストでは、execは設定されている場合`SHELL`を使用します；`SHELL`が`fish`の場合、`bash`（または`sh`）を`PATH`から優先して使用し、どちらも存在しない場合は`SHELL`にフォールバックします。
+* Windowsホストでは、execはPowerShell 7（`pwsh`）の発見を優先し（Program Files、ProgramW6432、次にPATH）、その後Windows PowerShell 5.1にフォールバックします。
+* ホスト実行（`gateway`/`node`）は、バイナリのハイジャックやコードの注入を防ぐために`env.PATH`およびローダーオーバーライド（`LD_*`/`DYLD_*`）を拒否します。
+* 重要: サンドボックスは**デフォルトでオフ**です。サンドボックスがオフで`host=sandbox`が明示的に設定/要求されると、execはゲートウェイホストで静かに実行されるのではなく、失敗します。
+  サンドボックスを有効にするか、承認と共に`host=gateway`を使用してください。
+* スクリプトの事前チェック（一般的なPython/Nodeシェル構文の誤りのため）は、実効`workdir`境界内のファイルのみを検査します。スクリプトパスが`workdir`の外部に解決される場合、そのファイルの事前チェックはスキップされます。
 
 ## Config
 
-* `tools.exec.notifyOnExit` (default: true): when true, backgrounded exec sessions enqueue a system event and request a heartbeat on exit.
-* `tools.exec.approvalRunningNoticeMs` (default: 10000): emit a single “running” notice when an approval-gated exec runs longer than this (0 disables).
-* `tools.exec.host` (default: `sandbox`)
-* `tools.exec.security` (default: `deny` for sandbox, `allowlist` for gateway + node when unset)
-* `tools.exec.ask` (default: `on-miss`)
-* `tools.exec.node` (default: unset)
-* `tools.exec.pathPrepend`: list of directories to prepend to `PATH` for exec runs (gateway + sandbox only).
-* `tools.exec.safeBins`: stdin-only safe binaries that can run without explicit allowlist entries. For behavior details, see [Safe bins](/tools/exec-approvals#safe-bins-stdin-only).
-* `tools.exec.safeBinTrustedDirs`: additional explicit directories trusted for `safeBins` path checks. `PATH` entries are never auto-trusted. Built-in defaults are `/bin` and `/usr/bin`.
-* `tools.exec.safeBinProfiles`: optional custom argv policy per safe bin (`minPositional`, `maxPositional`, `allowedValueFlags`, `deniedFlags`).
+* `tools.exec.notifyOnExit` (デフォルト: true): trueの場合、バックグラウンドで実行されているexecセッションはシステムイベントをキューに入れ、終了時にハートビートを要求します。
+* `tools.exec.approvalRunningNoticeMs` (デフォルト: 10000): 承認が必要なexecがこの時間を超えて実行されると、単一の「実行中」通知を発信します（0は無効）。
+* `tools.exec.host` (デフォルト: `sandbox`)
+* `tools.exec.security` (デフォルト: `deny`はサンドボックス、未設定時は`allowlist`はゲートウェイ + ノード)
+* `tools.exec.ask` (デフォルト: `on-miss`)
+* `tools.exec.node` (デフォルト: 未設定)
+* `tools.exec.pathPrepend`: exec実行のために`PATH`に追加するディレクトリのリスト（ゲートウェイ + サンドボックスのみ）。
+* `tools.exec.safeBins`: 明示的な許可リストエントリなしで実行できる標準入力専用の安全なバイナリ。動作の詳細については、[Safe bins](/tools/exec-approvals#safe-bins-stdin-only)を参照してください。
+* `tools.exec.safeBinTrustedDirs`: `safeBins`パスチェックのために信頼される追加の明示的ディレクトリ。`PATH`エントリは自動的に信頼されることはありません。組み込みのデフォルトは`/bin`と`/usr/bin`です。
+* `tools.exec.safeBinProfiles`: カスタム安全なバイナリごとのオプションのargvポリシー（`minPositional`、`maxPositional`、`allowedValueFlags`、`deniedFlags`）。
 
-Example:
+例:
 
 ```json5
 {
@@ -70,95 +64,86 @@ Example:
 }
 ```
 
-### PATH handling
+### PATHの取り扱い
 
-* `host=gateway`: merges your login-shell `PATH` into the exec environment. `env.PATH` overrides are
-  rejected for host execution. The daemon itself still runs with a minimal `PATH`:
-  * macOS: `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`, `/bin`
-  * Linux: `/usr/local/bin`, `/usr/bin`, `/bin`
-* `host=sandbox`: runs `sh -lc` (login shell) inside the container, so `/etc/profile` may reset `PATH`.
-  OpenClaw prepends `env.PATH` after profile sourcing via an internal env var (no shell interpolation);
-  `tools.exec.pathPrepend` applies here too.
-* `host=node`: only non-blocked env overrides you pass are sent to the node. `env.PATH` overrides are
-  rejected for host execution and ignored by node hosts. If you need additional PATH entries on a node,
-  configure the node host service environment (systemd/launchd) or install tools in standard locations.
+* `host=gateway`: ログインシェルの`PATH`をexec環境にマージします。ホスト実行のために`env.PATH`のオーバーライドは拒否されます。デーモン自体は依然として最小限の`PATH`で実行されます：
+  * macOS: `/opt/homebrew/bin`、`/usr/local/bin`、`/usr/bin`、`/bin`
+  * Linux: `/usr/local/bin`、`/usr/bin`、`/bin`
+* `host=sandbox`: コンテナ内で`sh -lc`（ログインシェル）を実行するため、`/etc/profile`が`PATH`をリセットする可能性があります。
+  OpenClawは、内部環境変数を介してプロファイルソース後に`env.PATH`を前置します（シェルの補間はなし）；
+  `tools.exec.pathPrepend`もここに適用されます。
+* `host=node`: あなたが渡す非ブロック環境オーバーライドのみがノードに送信されます。ホスト実行のために`env.PATH`のオーバーライドは拒否され、ノードホストによって無視されます。ノードに追加のPATHエントリが必要な場合は、ノードホストサービス環境（systemd/launchd）を設定するか、標準の場所にツールをインストールしてください。
 
-Per-agent node binding (use the agent list index in config):
+エージェントごとのノードバインディング（設定内のエージェントリストインデックスを使用）：
 
 ```bash
 openclaw config get agents.list
 openclaw config set agents.list[0].tools.exec.node "node-id-or-name"
 ```
 
-Control UI: the Nodes tab includes a small “Exec node binding” panel for the same settings.
+コントロールUI: ノードタブには、同じ設定のための小さな「Execノードバインディング」パネルが含まれています。
 
-## Session overrides (`/exec`)
+## セッションオーバーライド (`/exec`)
 
-Use `/exec` to set **per-session** defaults for `host`, `security`, `ask`, and `node`.
-Send `/exec` with no arguments to show the current values.
+`/exec`を使用して、`host`、`security`、`ask`、および`node`の**セッションごとの**デフォルトを設定します。
+引数なしで`/exec`を送信すると、現在の値が表示されます。
 
-Example:
+例:
 
 ```
 /exec host=gateway security=allowlist ask=on-miss node=mac-1
 ```
 
-## Authorization model
+## 認可モデル
 
-`/exec` is only honored for **authorized senders** (channel allowlists/pairing plus `commands.useAccessGroups`).
-It updates **session state only** and does not write config. To hard-disable exec, deny it via tool
-policy (`tools.deny: ["exec"]` or per-agent). Host approvals still apply unless you explicitly set
-`security=full` and `ask=off`.
+`/exec`は**認可された送信者**（チャネル許可リスト/ペアリングおよび`commands.useAccessGroups`）に対してのみ尊重されます。
+これは**セッション状態のみ**を更新し、設定を書き込みません。execを完全に無効にするには、ツールポリシーを介して拒否します
+（`tools.deny: ["exec"]`またはエージェントごと）。ホストの承認は、`security=full`を明示的に設定し、`ask=off`にしない限り、依然として適用されます。
 
-## Exec approvals (companion app / node host)
+## Exec承認（コンパニオンアプリ / ノードホスト）
 
-Sandboxed agents can require per-request approval before `exec` runs on the gateway or node host.
-See [Exec approvals](/tools/exec-approvals) for the policy, allowlist, and UI flow.
+サンドボックス化されたエージェントは、`exec`がゲートウェイまたはノードホストで実行される前にリクエストごとの承認を要求することができます。
+ポリシー、許可リスト、およびUIフローについては、[Exec approvals](/tools/exec-approvals)を参照してください。
 
-When approvals are required, the exec tool returns immediately with
-`status: "approval-pending"` and an approval id. Once approved (or denied / timed out),
-the Gateway emits system events (`Exec finished` / `Exec denied`). If the command is still
-running after `tools.exec.approvalRunningNoticeMs`, a single `Exec running` notice is emitted.
+承認が必要な場合、execツールはすぐに`status: "approval-pending"`と承認IDを返します。承認（または拒否/タイムアウト）されると、
+ゲートウェイはシステムイベント（`Exec finished` / `Exec denied`）を発信します。`tools.exec.approvalRunningNoticeMs`を超えてコマンドがまだ実行中の場合、単一の`Exec running`通知が発信されます。
 
-## Allowlist + safe bins
+## 許可リスト + 安全なバイナリ
 
-Manual allowlist enforcement matches **resolved binary paths only** (no basename matches). When
-`security=allowlist`, shell commands are auto-allowed only if every pipeline segment is
-allowlisted or a safe bin. Chaining (`;`, `&&`, `||`) and redirections are rejected in
-allowlist mode unless every top-level segment satisfies the allowlist (including safe bins).
-Redirections remain unsupported.
+手動の許可リスト強制は**解決されたバイナリパスのみ**に一致します（ベース名の一致はなし）。`security=allowlist`の場合、シェルコマンドは
+すべてのパイプラインセグメントが許可リストに含まれているか、安全なバイナリである場合にのみ自動的に許可されます。チェイニング（`;`、`&&`、`||`）およびリダイレクションは、すべてのトップレベルセグメントが許可リストを満たさない限り、許可リストモードでは拒否されます（安全なバイナリを含む）。
+リダイレクションはサポートされていません。
 
-`autoAllowSkills` is a separate convenience path in exec approvals. It is not the same as
-manual path allowlist entries. For strict explicit trust, keep `autoAllowSkills` disabled.
+`autoAllowSkills`はexec承認のための別の便利なパスです。これは手動のパス許可リストエントリとは異なります。厳密な明示的信頼のために、`autoAllowSkills`を無効にしておいてください。
 
-Use the two controls for different jobs:
+異なるジョブに対して2つのコントロールを使用します：
 
-* `tools.exec.safeBins`: small, stdin-only stream filters.
-* `tools.exec.safeBinTrustedDirs`: explicit extra trusted directories for safe-bin executable paths.
-* `tools.exec.safeBinProfiles`: explicit argv policy for custom safe bins.
-* allowlist: explicit trust for executable paths.
+* `tools.exec.safeBins`: 小さな、標準入力専用のストリームフィルタ。
+* `tools.exec.safeBinTrustedDirs`: 安全なバイナリ実行可能パスのために明示的に信頼される追加のディレクトリ。
+* `tools.exec.safeBinProfiles`: カスタム安全なバイナリのための明示的なargvポリシー。
+* 許可リスト: 実行可能パスに対する明示的な信頼。
 
-Do not treat `safeBins` as a generic allowlist, and do not add interpreter/runtime binaries (for example `python3`, `node`, `ruby`, `bash`). If you need those, use explicit allowlist entries and keep approval prompts enabled.
-`openclaw security audit` warns when interpreter/runtime `safeBins` entries are missing explicit profiles, and `openclaw doctor --fix` can scaffold missing custom `safeBinProfiles` entries.
+`safeBins`を一般的な許可リストとして扱わず、インタプリタ/ランタイムバイナリ（例えば`python3`、`node`、`ruby`、`bash`）を追加しないでください。それらが必要な場合は、明示的な許可リストエントリを使用し、承認プロンプトを有効にしておいてください。
+`openclaw security audit`は、インタプリタ/ランタイムの`safeBins`エントリが明示的なプロファイルを欠いていると警告し、`openclaw doctor --fix`は欠落しているカスタム`safeBinProfiles`エントリをスキャフォールドできます。
 
-For full policy details and examples, see [Exec approvals](/tools/exec-approvals#safe-bins-stdin-only) and [Safe bins versus allowlist](/tools/exec-approvals#safe-bins-versus-allowlist).
+完全なポリシーの詳細と例については、[Exec approvals](/tools/exec-approvals#safe-bins-stdin-only)および[Safe bins versus allowlist](/tools/exec-approvals#safe-bins-versus-allowlist)を参照してください。
 
 ## 例
 
-Foreground:
+前景:
 
 ```json
 { "tool": "exec", "command": "ls -la" }
 ```
 
-Background + poll:
+背景 + ポーリング:
 
 ```json
 {"tool":"exec","command":"npm run build","yieldMs":1000}
 {"tool":"process","action":"poll","sessionId":"<id>"}
 ```
 
-Send keys (tmux-style):
+キーを送信（tmuxスタイル）:
 
 ```json
 {"tool":"process","action":"send-keys","sessionId":"<id>","keys":["Enter"]}
@@ -166,22 +151,22 @@ Send keys (tmux-style):
 {"tool":"process","action":"send-keys","sessionId":"<id>","keys":["Up","Up","Enter"]}
 ```
 
-Submit (send CR only):
+送信（CRのみ送信）:
 
 ```json
 { "tool": "process", "action": "submit", "sessionId": "<id>" }
 ```
 
-Paste (bracketed by default):
+ペースト（デフォルトで括弧付き）:
 
 ```json
 { "tool": "process", "action": "paste", "sessionId": "<id>", "text": "line1\nline2\n" }
 ```
 
-## apply\_patch (experimental)
+## apply\_patch (実験的)
 
-`apply_patch` is a subtool of `exec` for structured multi-file edits.
-Enable it explicitly:
+`apply_patch`は、構造化されたマルチファイル編集のための`exec`のサブツールです。
+明示的に有効にします：
 
 ```json5
 {
@@ -193,9 +178,9 @@ Enable it explicitly:
 }
 ```
 
-Notes:
+注意事項：
 
-* Only available for OpenAI/OpenAI Codex models.
-* Tool policy still applies; `allow: ["exec"]` implicitly allows `apply_patch`.
-* Config lives under `tools.exec.applyPatch`.
-* `tools.exec.applyPatch.workspaceOnly` defaults to `true` (workspace-contained). Set it to `false` only if you intentionally want `apply_patch` to write/delete outside the workspace directory.
+* OpenAI/OpenAI Codexモデルのみに利用可能です。
+* ツールポリシーは依然として適用されます；`allow: ["exec"]`は暗黙的に`apply_patch`を許可します。
+* 設定は`tools.exec.applyPatch`の下にあります。
+* `tools.exec.applyPatch.workspaceOnly`のデフォルトは`true`（ワークスペース内）です。意図的に`apply_patch`がワークスペースディレクトリの外で書き込み/削除を行うことを望む場合のみ、`false`に設定します。

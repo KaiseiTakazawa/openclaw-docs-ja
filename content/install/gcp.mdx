@@ -4,84 +4,84 @@ title: "GCP"
 
 # GCP
 
-# OpenClaw on GCP Compute Engine (Docker, Production VPS Guide)
+# GCP Compute Engine 上の OpenClaw (Docker, プロダクション VPS ガイド)
 
-## Goal
+## 目標
 
-Run a persistent OpenClaw Gateway on a GCP Compute Engine VM using Docker, with durable state, baked-in binaries, and safe restart behavior.
+Docker を使用して GCP Compute Engine VM 上で永続的な OpenClaw Gateway を実行し、耐久性のある状態、組み込みのバイナリ、安全な再起動動作を実現します。
 
-If you want "OpenClaw 24/7 for \~\$5-12/mo", this is a reliable setup on Google Cloud.
-Pricing varies by machine type and region; pick the smallest VM that fits your workload and scale up if you hit OOMs.
+「OpenClaw 24/7 を \~\$5-12/月」で利用したい場合、これは Google Cloud 上での信頼できるセットアップです。
+価格はマシンの種類と地域によって異なります。ワークロードに合った最小の VM を選び、OOM に達した場合はスケールアップしてください。
 
-## What are we doing (simple terms)?
+## 何をするのか（簡単に言うと）
 
-* Create a GCP project and enable billing
-* Create a Compute Engine VM
-* Install Docker (isolated app runtime)
-* Start the OpenClaw Gateway in Docker
-* Persist `~/.openclaw` + `~/.openclaw/workspace` on the host (survives restarts/rebuilds)
-* Access the Control UI from your laptop via an SSH tunnel
+* GCP プロジェクトを作成し、請求を有効にする
+* Compute Engine VM を作成する
+* Docker をインストールする（隔離されたアプリケーションランタイム）
+* Docker で OpenClaw Gateway を起動する
+* ホスト上に `~/.openclaw` + `~/.openclaw/workspace` を永続化する（再起動/再構築を生き残る）
+* SSH トンネルを介してノートパソコンからコントロール UI にアクセスする
 
-The Gateway can be accessed via:
+Gateway には以下の方法でアクセスできます：
 
-* SSH port forwarding from your laptop
-* Direct port exposure if you manage firewalling and tokens yourself
+* ノートパソコンからの SSH ポートフォワーディング
+* 自分でファイアウォールとトークンを管理する場合の直接ポート公開
 
-This guide uses Debian on GCP Compute Engine.
-Ubuntu also works; map packages accordingly.
-For the generic Docker flow, see [Docker](/install/docker).
-
-***
-
-## Quick path (experienced operators)
-
-1. Create GCP project + enable Compute Engine API
-2. Create Compute Engine VM (e2-small, Debian 12, 20GB)
-3. SSH into the VM
-4. Install Docker
-5. Clone OpenClaw repository
-6. Create persistent host directories
-7. Configure `.env` and `docker-compose.yml`
-8. Bake required binaries, build, and launch
+このガイドでは GCP Compute Engine 上の Debian を使用します。
+Ubuntu でも動作しますので、パッケージを適宜マッピングしてください。
+一般的な Docker フローについては [Docker](/install/docker) を参照してください。
 
 ***
 
-## What you need
+## 簡単な手順（経験者向け）
 
-* GCP account (free tier eligible for e2-micro)
-* gcloud CLI installed (or use Cloud Console)
-* SSH access from your laptop
-* Basic comfort with SSH + copy/paste
-* \~20-30 minutes
-* Docker and Docker Compose
-* Model auth credentials
-* Optional provider credentials
+1. GCP プロジェクトを作成し、Compute Engine API を有効にする
+2. Compute Engine VM を作成する（e2-small, Debian 12, 20GB）
+3. VM に SSH 接続する
+4. Docker をインストールする
+5. OpenClaw リポジトリをクローンする
+6. 永続的なホストディレクトリを作成する
+7. `.env` と `docker-compose.yml` を設定する
+8. 必要なバイナリを焼き込み、ビルドして起動する
+
+***
+
+## 必要なもの
+
+* GCP アカウント（e2-micro に対して無料枠が適用されます）
+* gcloud CLI がインストールされていること（または Cloud Console を使用）
+* ノートパソコンからの SSH アクセス
+* SSH + コピー/ペーストに関する基本的な快適さ
+* \~20-30 分
+* Docker と Docker Compose
+* モデル認証資格情報
+* オプションのプロバイダー資格情報
   * WhatsApp QR
-  * Telegram bot token
+  * Telegram ボットトークン
   * Gmail OAuth
 
 ***
 
-## 1) Install gcloud CLI (or use Console)
+## 1) gcloud CLI をインストールする（または Console を使用）
 
-**Option A: gcloud CLI** (recommended for automation)
+**オプション A: gcloud CLI**（自動化に推奨）
 
-Install from [https://cloud.google.com/sdk/docs/install](https://cloud.google.com/sdk/docs/install)
+[https://cloud.google.com/sdk/docs/install](https://cloud.google.com/sdk/docs/install) からインストールします。
 
-Initialize and authenticate:
+初期化と認証：
 
 ```bash
 gcloud init
 gcloud auth login
 ```
 
-**Option B: Cloud Console**
+**オプション B: Cloud Console**
 
-All steps can be done via the web UI at [https://console.cloud.google.com](https://console.cloud.google.com)
+すべてのステップは [https://console.cloud.google.com](https://console.cloud.google.com) のウェブ UI で行うことができます。
 
 ***
 
-## 2) Create a GCP project
+## 2) GCP プロジェクトを作成する
 
 **CLI:**
 
@@ -90,9 +90,9 @@ gcloud projects create my-openclaw-project --name="OpenClaw Gateway"
 gcloud config set project my-openclaw-project
 ```
 
-Enable billing at [https://console.cloud.google.com/billing](https://console.cloud.google.com/billing) (required for Compute Engine).
+Compute Engine に必要な請求を [https://console.cloud.google.com/billing](https://console.cloud.google.com/billing) で有効にします。
 
-Enable the Compute Engine API:
+Compute Engine API を有効にします：
 
 ```bash
 gcloud services enable compute.googleapis.com
@@ -100,22 +100,22 @@ gcloud services enable compute.googleapis.com
 
 **Console:**
 
-1. Go to IAM & Admin > Create Project
-2. Name it and create
-3. Enable billing for the project
-4. Navigate to APIs & Services > Enable APIs > search "Compute Engine API" > Enable
+1. IAM & 管理 > プロジェクトの作成 に移動
+2. 名前を付けて作成
+3. プロジェクトの請求を有効にする
+4. APIs & サービス > API を有効にする > "Compute Engine API" を検索 > 有効にする
 
 ***
 
-## 3) Create the VM
+## 3) VM を作成する
 
-**Machine types:**
+**マシンタイプ:**
 
-| Type      | Specs                    | Cost               | Notes                                        |
-| --------- | ------------------------ | ------------------ | -------------------------------------------- |
-| e2-medium | 2 vCPU, 4GB RAM          | \~\$25/mo          | Most reliable for local Docker builds        |
-| e2-small  | 2 vCPU, 2GB RAM          | \~\$12/mo          | Minimum recommended for Docker build         |
-| e2-micro  | 2 vCPU (shared), 1GB RAM | Free tier eligible | Often fails with Docker build OOM (exit 137) |
+| タイプ      | スペック                    | コスト               | 注釈                                        |
+| ----------- | -------------------------- | ------------------ | ------------------------------------------ |
+| e2-medium   | 2 vCPU, 4GB RAM           | \~\$25/月          | ローカル Docker ビルドに最も信頼性が高い    |
+| e2-small    | 2 vCPU, 2GB RAM           | \~\$12/月          | Docker ビルドに推奨される最小              |
+| e2-micro    | 2 vCPU（共有）、1GB RAM    | 無料枠対象         | Docker ビルド OOM（終了コード 137）で失敗することが多い |
 
 **CLI:**
 
@@ -130,16 +130,16 @@ gcloud compute instances create openclaw-gateway \
 
 **Console:**
 
-1. Go to Compute Engine > VM instances > Create instance
-2. Name: `openclaw-gateway`
-3. Region: `us-central1`, Zone: `us-central1-a`
-4. Machine type: `e2-small`
-5. Boot disk: Debian 12, 20GB
-6. Create
+1. Compute Engine > VM インスタンス > インスタンスの作成 に移動
+2. 名前: `openclaw-gateway`
+3. リージョン: `us-central1`, ゾーン: `us-central1-a`
+4. マシンタイプ: `e2-small`
+5. ブートディスク: Debian 12, 20GB
+6. 作成
 
 ***
 
-## 4) SSH into the VM
+## 4) VM に SSH 接続する
 
 **CLI:**
 
@@ -149,13 +149,13 @@ gcloud compute ssh openclaw-gateway --zone=us-central1-a
 
 **Console:**
 
-Click the "SSH" button next to your VM in the Compute Engine dashboard.
+Compute Engine ダッシュボードで VM の横にある「SSH」ボタンをクリックします。
 
-Note: SSH key propagation can take 1-2 minutes after VM creation. If connection is refused, wait and retry.
+注意: SSH キーの伝播には VM 作成後 1-2 分かかることがあります。接続が拒否された場合は、待って再試行してください。
 
 ***
 
-## 5) Install Docker (on the VM)
+## 5) VM に Docker をインストールする
 
 ```bash
 sudo apt-get update
@@ -164,19 +164,19 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 ```
 
-Log out and back in for the group change to take effect:
+グループ変更を反映させるためにログアウトして再度ログインします：
 
 ```bash
 exit
 ```
 
-Then SSH back in:
+その後、再度 SSH 接続します：
 
 ```bash
 gcloud compute ssh openclaw-gateway --zone=us-central1-a
 ```
 
-Verify:
+確認：
 
 ```bash
 docker --version
@@ -185,21 +185,21 @@ docker compose version
 
 ***
 
-## 6) Clone the OpenClaw repository
+## 6) OpenClaw リポジトリをクローンする
 
 ```bash
 git clone https://github.com/openclaw/openclaw.git
 cd openclaw
 ```
 
-This guide assumes you will build a custom image to guarantee binary persistence.
+このガイドでは、バイナリの永続性を保証するためにカスタムイメージをビルドすることを前提としています。
 
 ***
 
-## 7) Create persistent host directories
+## 7) 永続的なホストディレクトリを作成する
 
-Docker containers are ephemeral.
-All long-lived state must live on the host.
+Docker コンテナは一時的です。
+すべての長期的な状態はホスト上に存在する必要があります。
 
 ```bash
 mkdir -p ~/.openclaw
@@ -208,9 +208,9 @@ mkdir -p ~/.openclaw/workspace
 
 ***
 
-## 8) Configure environment variables
+## 8) 環境変数を設定する
 
-Create `.env` in the repository root.
+リポジトリのルートに `.env` を作成します。
 
 ```bash
 OPENCLAW_IMAGE=openclaw:latest
@@ -225,19 +225,19 @@ GOG_KEYRING_PASSWORD=change-me-now
 XDG_CONFIG_HOME=/home/node/.openclaw
 ```
 
-Generate strong secrets:
+強力なシークレットを生成します：
 
 ```bash
 openssl rand -hex 32
 ```
 
-**Do not commit this file.**
+**このファイルをコミットしないでください。**
 
 ***
 
-## 9) Docker Compose configuration
+## 9) Docker Compose の設定
 
-Create or update `docker-compose.yml`.
+`docker-compose.yml` を作成または更新します。
 
 ```yaml
 services:
@@ -261,8 +261,8 @@ services:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
     ports:
-      # Recommended: keep the Gateway loopback-only on the VM; access via SSH tunnel.
-      # To expose it publicly, remove the `127.0.0.1:` prefix and firewall accordingly.
+      # 推奨: Gateway を VM 上でループバック専用に保つ; SSH トンネル経由でアクセス。
+      # 公開するには、`127.0.0.1:` プレフィックスを削除し、ファイアウォールを適宜設定します。
       - "127.0.0.1:${OPENCLAW_GATEWAY_PORT}:18789"
     command:
       [
@@ -278,48 +278,48 @@ services:
 
 ***
 
-## 10) Bake required binaries into the image (critical)
+## 10) 必要なバイナリをイメージに焼き込む（重要）
 
-Installing binaries inside a running container is a trap.
-Anything installed at runtime will be lost on restart.
+実行中のコンテナ内にバイナリをインストールすることは罠です。
+ランタイムでインストールされたものは再起動時に失われます。
 
-All external binaries required by skills must be installed at image build time.
+スキルに必要なすべての外部バイナリは、イメージビルド時にインストールする必要があります。
 
-The examples below show three common binaries only:
+以下の例は、3 つの一般的なバイナリのみを示しています：
 
-* `gog` for Gmail access
-* `goplaces` for Google Places
-* `wacli` for WhatsApp
+* Gmail アクセス用の `gog`
+* Google Places 用の `goplaces`
+* WhatsApp 用の `wacli`
 
-These are examples, not a complete list.
-You may install as many binaries as needed using the same pattern.
+これらは例であり、完全なリストではありません。
+必要に応じて同じパターンを使用して、必要なだけのバイナリをインストールできます。
 
-If you add new skills later that depend on additional binaries, you must:
+後で追加のバイナリに依存する新しいスキルを追加する場合は、次のことを行う必要があります：
 
-1. Update the Dockerfile
-2. Rebuild the image
-3. Restart the containers
+1. Dockerfile を更新する
+2. イメージを再ビルドする
+3. コンテナを再起動する
 
-**Example Dockerfile**
+**例 Dockerfile**
 
 ```dockerfile
 FROM node:22-bookworm
 
 RUN apt-get update && apt-get install -y socat && rm -rf /var/lib/apt/lists/*
 
-# Example binary 1: Gmail CLI
+# 例 バイナリ 1: Gmail CLI
 RUN curl -L https://github.com/steipete/gog/releases/latest/download/gog_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/gog
 
-# Example binary 2: Google Places CLI
+# 例 バイナリ 2: Google Places CLI
 RUN curl -L https://github.com/steipete/goplaces/releases/latest/download/goplaces_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/goplaces
 
-# Example binary 3: WhatsApp CLI
+# 例 バイナリ 3: WhatsApp CLI
 RUN curl -L https://github.com/steipete/wacli/releases/latest/download/wacli_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/wacli
 
-# Add more binaries below using the same pattern
+# 以下に同じパターンでさらにバイナリを追加
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
@@ -341,24 +341,24 @@ CMD ["node","dist/index.js"]
 
 ***
 
-## 11) Build and launch
+## 11) ビルドと起動
 
 ```bash
 docker compose build
 docker compose up -d openclaw-gateway
 ```
 
-If build fails with `Killed` / `exit code 137` during `pnpm install --frozen-lockfile`, the VM is out of memory. Use `e2-small` minimum, or `e2-medium` for more reliable first builds.
+`pnpm install --frozen-lockfile` 中に `Killed` / `exit code 137` でビルドが失敗した場合、VM がメモリ不足です。最小限の e2-small を使用するか、より信頼性の高い最初のビルドのために e2-medium を使用してください。
 
-When binding to LAN (`OPENCLAW_GATEWAY_BIND=lan`), configure a trusted browser origin before continuing:
+LAN にバインドする場合（`OPENCLAW_GATEWAY_BIND=lan`）、続行する前に信頼できるブラウザのオリジンを設定します：
 
 ```bash
 docker compose run --rm openclaw-cli config set gateway.controlUi.allowedOrigins '["http://127.0.0.1:18789"]' --strict-json
 ```
 
-If you changed the gateway port, replace `18789` with your configured port.
+Gateway ポートを変更した場合は、`18789` を設定したポートに置き換えてください。
 
-Verify binaries:
+バイナリを確認します：
 
 ```bash
 docker compose exec openclaw-gateway which gog
@@ -366,7 +366,7 @@ docker compose exec openclaw-gateway which goplaces
 docker compose exec openclaw-gateway which wacli
 ```
 
-Expected output:
+期待される出力：
 
 ```
 /usr/local/bin/gog
@@ -376,13 +376,13 @@ Expected output:
 
 ***
 
-## 12) Verify Gateway
+## 12) Gateway を確認する
 
 ```bash
 docker compose logs -f openclaw-gateway
 ```
 
-Success:
+成功：
 
 ```
 [gateway] listening on ws://0.0.0.0:18789
@@ -390,27 +390,27 @@ Success:
 
 ***
 
-## 13) Access from your laptop
+## 13) ノートパソコンからアクセスする
 
-Create an SSH tunnel to forward the Gateway port:
+Gateway ポートを転送するための SSH トンネルを作成します：
 
 ```bash
 gcloud compute ssh openclaw-gateway --zone=us-central1-a -- -L 18789:127.0.0.1:18789
 ```
 
-Open in your browser:
+ブラウザで開く：
 
 `http://127.0.0.1:18789/`
 
-Fetch a fresh tokenized dashboard link:
+新しいトークン化されたダッシュボードリンクを取得します：
 
 ```bash
 docker compose run --rm openclaw-cli dashboard --no-open
 ```
 
-Paste the token from that URL.
+その URL からトークンを貼り付けます。
 
-If Control UI shows `unauthorized` or `disconnected (1008): pairing required`, approve the browser device:
+Control UI が `unauthorized` または `disconnected (1008): pairing required` を表示する場合、ブラウザデバイスを承認します：
 
 ```bash
 docker compose run --rm openclaw-cli devices list
@@ -419,29 +419,29 @@ docker compose run --rm openclaw-cli devices approve <requestId>
 
 ***
 
-## What persists where (source of truth)
+## どこに何が永続化されるか（真実の源）
 
-OpenClaw runs in Docker, but Docker is not the source of truth.
-All long-lived state must survive restarts, rebuilds, and reboots.
+OpenClaw は Docker で実行されますが、Docker は真実の源ではありません。
+すべての長期的な状態は再起動、再構築、再起動を生き残る必要があります。
 
-| Component           | Location                          | Persistence mechanism  | Notes                            |
-| ------------------- | --------------------------------- | ---------------------- | -------------------------------- |
-| Gateway config      | `/home/node/.openclaw/`           | Host volume mount      | Includes `openclaw.json`, tokens |
-| Model auth profiles | `/home/node/.openclaw/`           | Host volume mount      | OAuth tokens, API keys           |
-| Skill configs       | `/home/node/.openclaw/skills/`    | Host volume mount      | Skill-level state                |
-| Agent workspace     | `/home/node/.openclaw/workspace/` | Host volume mount      | Code and agent artifacts         |
-| WhatsApp session    | `/home/node/.openclaw/`           | Host volume mount      | Preserves QR login               |
-| Gmail keyring       | `/home/node/.openclaw/`           | Host volume + password | Requires `GOG_KEYRING_PASSWORD`  |
-| External binaries   | `/usr/local/bin/`                 | Docker image           | Must be baked at build time      |
-| Node runtime        | Container filesystem              | Docker image           | Rebuilt every image build        |
-| OS packages         | Container filesystem              | Docker image           | Do not install at runtime        |
-| Docker container    | Ephemeral                         | Restartable            | Safe to destroy                  |
+| コンポーネント           | ロケーション                          | 永続化メカニズム  | 注釈                            |
+| ----------------------- | ----------------------------------- | ---------------- | ------------------------------ |
+| Gateway 設定           | `/home/node/.openclaw/`            | ホストボリュームマウント | `openclaw.json`、トークンを含む |
+| モデル認証プロファイル | `/home/node/.openclaw/`            | ホストボリュームマウント | OAuth トークン、API キー       |
+| スキル設定             | `/home/node/.openclaw/skills/`     | ホストボリュームマウント | スキルレベルの状態             |
+| エージェントワークスペース | `/home/node/.openclaw/workspace/` | ホストボリュームマウント | コードとエージェントアーティファクト |
+| WhatsApp セッション     | `/home/node/.openclaw/`            | ホストボリュームマウント | QR ログインを保持              |
+| Gmail キーリング       | `/home/node/.openclaw/`            | ホストボリューム + パスワード | `GOG_KEYRING_PASSWORD` が必要 |
+| 外部バイナリ           | `/usr/local/bin/`                  | Docker イメージ   | ビルド時に焼き込む必要がある   |
+| Node ランタイム        | コンテナファイルシステム           | Docker イメージ   | 各イメージビルドごとに再構築される |
+| OS パッケージ          | コンテナファイルシステム           | Docker イメージ   | ランタイムでインストールしない  |
+| Docker コンテナ        | 一時的                             | 再起動可能        | 削除しても安全                  |
 
 ***
 
-## Updates
+## 更新
 
-To update OpenClaw on the VM:
+VM 上の OpenClaw を更新するには：
 
 ```bash
 cd ~/openclaw
@@ -454,53 +454,53 @@ docker compose up -d
 
 ## トラブルシューティング
 
-**SSH connection refused**
+**SSH 接続が拒否される**
 
-SSH key propagation can take 1-2 minutes after VM creation. Wait and retry.
+SSH キーの伝播には VM 作成後 1-2 分かかることがあります。待って再試行してください。
 
-**OS Login issues**
+**OS ログインの問題**
 
-Check your OS Login profile:
+OS ログインプロファイルを確認します：
 
 ```bash
 gcloud compute os-login describe-profile
 ```
 
-Ensure your account has the required IAM permissions (Compute OS Login or Compute OS Admin Login).
+アカウントに必要な IAM 権限（Compute OS Login または Compute OS Admin Login）があることを確認してください。
 
-**Out of memory (OOM)**
+**メモリ不足（OOM）**
 
-If Docker build fails with `Killed` and `exit code 137`, the VM was OOM-killed. Upgrade to e2-small (minimum) or e2-medium (recommended for reliable local builds):
+Docker ビルドが `Killed` と `exit code 137` で失敗した場合、VM が OOM キルされました。e2-small（最小）または e2-medium（信頼性の高いローカルビルドに推奨）にアップグレードしてください：
 
 ```bash
-# Stop the VM first
+# まず VM を停止します
 gcloud compute instances stop openclaw-gateway --zone=us-central1-a
 
-# Change machine type
+# マシンタイプを変更します
 gcloud compute instances set-machine-type openclaw-gateway \
   --zone=us-central1-a \
   --machine-type=e2-small
 
-# Start the VM
+# VM を起動します
 gcloud compute instances start openclaw-gateway --zone=us-central1-a
 ```
 
 ***
 
-## Service accounts (security best practice)
+## サービスアカウント（セキュリティのベストプラクティス）
 
-For personal use, your default user account works fine.
+個人使用の場合、デフォルトのユーザーアカウントで問題ありません。
 
-For automation or CI/CD pipelines, create a dedicated service account with minimal permissions:
+自動化や CI/CD パイプラインの場合、最小限の権限を持つ専用のサービスアカウントを作成します：
 
-1. Create a service account:
+1. サービスアカウントを作成します：
 
    ```bash
    gcloud iam service-accounts create openclaw-deploy \
      --display-name="OpenClaw Deployment"
    ```
 
-2. Grant Compute Instance Admin role (or narrower custom role):
+2. Compute Instance Admin ロール（またはより狭いカスタムロール）を付与します：
 
    ```bash
    gcloud projects add-iam-policy-binding my-openclaw-project \
@@ -508,14 +508,14 @@ For automation or CI/CD pipelines, create a dedicated service account with minim
      --role="roles/compute.instanceAdmin.v1"
    ```
 
-Avoid using the Owner role for automation. Use the principle of least privilege.
+自動化には Owner ロールを使用しないでください。最小権限の原則を使用します。
 
-See [https://cloud.google.com/iam/docs/understanding-roles](https://cloud.google.com/iam/docs/understanding-roles) for IAM role details.
+IAM ロールの詳細については [https://cloud.google.com/iam/docs/understanding-roles](https://cloud.google.com/iam/docs/understanding-roles) を参照してください。
 
 ***
 
-## Next steps
+## 次のステップ
 
-* Set up messaging channels: [Channels](/channels)
-* Pair local devices as nodes: [Nodes](/nodes)
-* Configure the Gateway: [Gateway configuration](/gateway/configuration)
+* メッセージングチャネルを設定する: [Channels](/channels)
+* ローカルデバイスをノードとしてペアリングする: [Nodes](/nodes)
+* Gateway を設定する: [Gateway configuration](/gateway/configuration)

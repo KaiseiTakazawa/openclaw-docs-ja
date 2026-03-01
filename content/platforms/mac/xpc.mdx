@@ -4,30 +4,30 @@ title: "macOS IPC"
 
 # macOS IPC
 
-# OpenClaw macOS IPC architecture
+# OpenClaw macOS IPC アーキテクチャ
 
-**Current model:** a local Unix socket connects the **node host service** to the **macOS app** for exec approvals + `system.run`. A `openclaw-mac` debug CLI exists for discovery/connect checks; agent actions still flow through the Gateway WebSocket and `node.invoke`. UI automation uses PeekabooBridge.
+**現在のモデル:** ローカルUnixソケットが **nodeホストサービス** と **macOSアプリ** を接続し、exec承認と `system.run` を行います。接続確認のための `openclaw-mac` デバッグCLIが存在し、エージェントのアクションは依然としてGateway WebSocketと `node.invoke` を通じて流れます。UI自動化にはPeekabooBridgeが使用されます。
 
-## Goals
+## 目標
 
-* Single GUI app instance that owns all TCC-facing work (notifications, screen recording, mic, speech, AppleScript).
-* A small surface for automation: Gateway + node commands, plus PeekabooBridge for UI automation.
-* Predictable permissions: always the same signed bundle ID, launched by launchd, so TCC grants stick.
+* TCCに関連するすべての作業（通知、画面録画、マイク、音声、AppleScript）を所有する単一のGUIアプリインスタンス。
+* 自動化のための小さなインターフェース: Gateway + nodeコマンド、さらにUI自動化のためのPeekabooBridge。
+* 予測可能な権限: 常に同じ署名されたバンドルIDで、launchdによって起動されるため、TCCの許可が維持されます。
 
 ## 仕組み
 
-### Gateway + node transport
+### Gateway + nodeトランスポート
 
-* The app runs the Gateway (local mode) and connects to it as a node.
-* Agent actions are performed via `node.invoke` (e.g. `system.run`, `system.notify`, `canvas.*`).
+* アプリはGateway（ローカルモード）を実行し、ノードとして接続します。
+* エージェントのアクションは `node.invoke` を介して実行されます（例: `system.run`, `system.notify`, `canvas.*`）。
 
-### Node service + app IPC
+### Nodeサービス + アプリIPC
 
-* A headless node host service connects to the Gateway WebSocket.
-* `system.run` requests are forwarded to the macOS app over a local Unix socket.
-* The app performs the exec in UI context, prompts if needed, and returns output.
+* ヘッドレスノードホストサービスがGateway WebSocketに接続します。
+* `system.run` リクエストはローカルUnixソケットを介してmacOSアプリに転送されます。
+* アプリはUIコンテキストでexecを実行し、必要に応じてプロンプトを表示し、出力を返します。
 
-Diagram (SCI):
+ダイアグラム (SCI):
 
 ```
 Agent -> Gateway -> Node Service (WS)
@@ -36,25 +36,25 @@ Agent -> Gateway -> Node Service (WS)
                   Mac App (UI + TCC + system.run)
 ```
 
-### PeekabooBridge (UI automation)
+### PeekabooBridge (UI自動化)
 
-* UI automation uses a separate UNIX socket named `bridge.sock` and the PeekabooBridge JSON protocol.
-* Host preference order (client-side): Peekaboo.app → Claude.app → OpenClaw\.app → local execution.
-* Security: bridge hosts require an allowed TeamID; DEBUG-only same-UID escape hatch is guarded by `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1` (Peekaboo convention).
-* See: [PeekabooBridge usage](/platforms/mac/peekaboo) for details.
+* UI自動化は `bridge.sock` という名前の別のUNIXソケットとPeekabooBridge JSONプロトコルを使用します。
+* ホストの優先順位（クライアント側）: Peekaboo.app → Claude.app → OpenClaw\.app → ローカル実行。
+* セキュリティ: ブリッジホストは許可されたTeamIDを必要とします; DEBUG専用の同一UIDエスケープハッチは `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1` によって保護されています（Peekabooの慣習）。
+* 詳細については、[PeekabooBridgeの使用](/platforms/mac/peekaboo)を参照してください。
 
-## Operational flows
+## 操作フロー
 
-* Restart/rebuild: `SIGN_IDENTITY="Apple Development: <Developer Name> (<TEAMID>)" scripts/restart-mac.sh`
-  * Kills existing instances
-  * Swift build + package
-  * Writes/bootstraps/kickstarts the LaunchAgent
-* Single instance: app exits early if another instance with the same bundle ID is running.
+* 再起動/再構築: `SIGN_IDENTITY="Apple Development: <Developer Name> (<TEAMID>)" scripts/restart-mac.sh`
+  * 既存のインスタンスを終了します
+  * Swiftビルド + パッケージ
+  * LaunchAgentを作成/ブートストラップ/キックスタートします
+* 単一インスタンス: 同じバンドルIDの別のインスタンスが実行中の場合、アプリは早期に終了します。
 
-## Hardening notes
+## ハードニングノート
 
-* Prefer requiring a TeamID match for all privileged surfaces.
-* PeekabooBridge: `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1` (DEBUG-only) may allow same-UID callers for local development.
-* All communication remains local-only; no network sockets are exposed.
-* TCC prompts originate only from the GUI app bundle; keep the signed bundle ID stable across rebuilds.
-* IPC hardening: socket mode `0600`, token, peer-UID checks, HMAC challenge/response, short TTL.
+* すべての特権インターフェースにTeamIDの一致を要求することを優先してください。
+* PeekabooBridge: `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1`（DEBUG専用）は、ローカル開発のために同一UIDの呼び出しを許可する場合があります。
+* すべての通信はローカルのみに留まり、ネットワークソケットは公開されません。
+* TCCプロンプトはGUIアプリバンドルからのみ発生します; 再構築の間に署名されたバンドルIDを安定させておいてください。
+* IPCハードニング: ソケットモード `0600`、トークン、ピアUIDチェック、HMACチャレンジ/レスポンス、短いTTL。

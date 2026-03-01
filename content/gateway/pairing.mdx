@@ -4,93 +4,86 @@ title: "ゲートウェイペアリング"
 
 # ゲートウェイペアリング
 
-# Gateway-owned pairing (Option B)
+# Gateway所有のペアリング (オプションB)
 
-In Gateway-owned pairing, the **Gateway** is the source of truth for which nodes
-are allowed to join. UIs (macOS app, future clients) are just frontends that
-approve or reject pending requests.
+Gateway所有のペアリングでは、**Gateway**がどのノードが参加できるかの真実の源となります。UI（macOSアプリ、将来のクライアント）は、保留中のリクエストを承認または拒否するフロントエンドに過ぎません。
 
-**Important:** WS nodes use **device pairing** (role `node`) during `connect`.
-`node.pair.*` is a separate pairing store and does **not** gate the WS handshake.
-Only clients that explicitly call `node.pair.*` use this flow.
+**重要:** WSノードは`connect`中に**デバイスペアリング**（役割`node`）を使用します。`node.pair.*`は別のペアリングストアであり、WSハンドシェイクを制限しません。明示的に`node.pair.*`を呼び出すクライアントのみがこのフローを使用します。
 
-## Concepts
+## 概念
 
-* **Pending request**: a node asked to join; requires approval.
-* **Paired node**: approved node with an issued auth token.
-* **Transport**: the Gateway WS endpoint forwards requests but does not decide
-  membership. (Legacy TCP bridge support is deprecated/removed.)
+* **保留中のリクエスト**: 参加を求めたノード; 承認が必要です。
+* **ペアリングされたノード**: 承認されたノードで、発行された認証トークンを持っています。
+* **トランスポート**: GatewayのWSエンドポイントはリクエストを転送しますが、メンバーシップを決定しません。（レガシーTCPブリッジサポートは非推奨/削除されています。）
 
-## How pairing works
+## ペアリングの仕組み
 
-1. A node connects to the Gateway WS and requests pairing.
-2. The Gateway stores a **pending request** and emits `node.pair.requested`.
-3. You approve or reject the request (CLI or UI).
-4. On approval, the Gateway issues a **new token** (tokens are rotated on re‑pair).
-5. The node reconnects using the token and is now “paired”.
+1. ノードがGateway WSに接続し、ペアリングをリクエストします。
+2. Gatewayは**保留中のリクエスト**を保存し、`node.pair.requested`を発信します。
+3. リクエストを承認または拒否します（CLIまたはUI）。
+4. 承認されると、Gatewayは**新しいトークン**を発行します（トークンは再ペアリング時にローテーションされます）。
+5. ノードはトークンを使用して再接続し、現在「ペアリング」されています。
 
-Pending requests expire automatically after **5 minutes**.
+保留中のリクエストは**5分**後に自動的に期限切れになります。
 
-## CLI workflow (headless friendly)
+## CLIワークフロー (ヘッドレスフレンドリー)
 
 ```bash
 openclaw nodes pending
 openclaw nodes approve <requestId>
 openclaw nodes reject <requestId>
 openclaw nodes status
-openclaw nodes rename --node <id|name|ip> --name "Living Room iPad"
+openclaw nodes rename --node <id|name|ip> --name "リビングルームのiPad"
 ```
 
-`nodes status` shows paired/connected nodes and their capabilities.
+`nodes status`はペアリングされた/接続されたノードとその機能を表示します。
 
-## API surface (gateway protocol)
+## APIサーフェス (ゲートウェイプロトコル)
 
-Events:
+イベント:
 
-* `node.pair.requested` — emitted when a new pending request is created.
-* `node.pair.resolved` — emitted when a request is approved/rejected/expired.
+* `node.pair.requested` — 新しい保留中のリクエストが作成されたときに発信されます。
+* `node.pair.resolved` — リクエストが承認/拒否/期限切れになったときに発信されます。
 
-Methods:
+メソッド:
 
-* `node.pair.request` — create or reuse a pending request.
-* `node.pair.list` — list pending + paired nodes.
-* `node.pair.approve` — approve a pending request (issues token).
-* `node.pair.reject` — reject a pending request.
-* `node.pair.verify` — verify `{ nodeId, token }`.
+* `node.pair.request` — 保留中のリクエストを作成または再利用します。
+* `node.pair.list` — 保留中およびペアリングされたノードをリストします。
+* `node.pair.approve` — 保留中のリクエストを承認します（トークンを発行します）。
+* `node.pair.reject` — 保留中のリクエストを拒否します。
+* `node.pair.verify` — `{ nodeId, token }`を検証します。
 
-Notes:
+注意事項:
 
-* `node.pair.request` is idempotent per node: repeated calls return the same
-  pending request.
-* Approval **always** generates a fresh token; no token is ever returned from
-  `node.pair.request`.
-* Requests may include `silent: true` as a hint for auto-approval flows.
+* `node.pair.request`はノードごとに冪等です: 繰り返し呼び出すと同じ保留中のリクエストが返されます。
+* 承認は**常に**新しいトークンを生成します; `node.pair.request`からトークンは決して返されません。
+* リクエストには`silent: true`を含めることができ、自動承認フローのヒントとなります。
 
-## Auto-approval (macOS app)
+## 自動承認 (macOSアプリ)
 
-The macOS app can optionally attempt a **silent approval** when:
+macOSアプリは、次の条件を満たす場合に**サイレント承認**を試みることができます:
 
-* the request is marked `silent`, and
-* the app can verify an SSH connection to the gateway host using the same user.
+* リクエストが`silent`としてマークされていること、かつ
+* アプリが同じユーザーを使用してゲートウェイホストへのSSH接続を検証できること。
 
-If silent approval fails, it falls back to the normal “Approve/Reject” prompt.
+サイレント承認が失敗した場合、通常の「承認/拒否」プロンプトにフォールバックします。
 
-## Storage (local, private)
+## ストレージ (ローカル、プライベート)
 
-Pairing state is stored under the Gateway state directory (default `~/.openclaw`):
+ペアリング状態はGatewayの状態ディレクトリ（デフォルトは`~/.openclaw`）に保存されます:
 
 * `~/.openclaw/nodes/paired.json`
 * `~/.openclaw/nodes/pending.json`
 
-If you override `OPENCLAW_STATE_DIR`, the `nodes/` folder moves with it.
+`OPENCLAW_STATE_DIR`をオーバーライドすると、`nodes/`フォルダも移動します。
 
-Security notes:
+セキュリティに関する注意事項:
 
-* Tokens are secrets; treat `paired.json` as sensitive.
-* Rotating a token requires re-approval (or deleting the node entry).
+* トークンは秘密です; `paired.json`を機密情報として扱ってください。
+* トークンをローテーションするには再承認が必要です（またはノードエントリを削除します）。
 
-## Transport behavior
+## トランスポートの動作
 
-* The transport is **stateless**; it does not store membership.
-* If the Gateway is offline or pairing is disabled, nodes cannot pair.
-* If the Gateway is in remote mode, pairing still happens against the remote Gateway’s store.
+* トランスポートは**ステートレス**です; メンバーシップを保存しません。
+* Gatewayがオフラインまたはペアリングが無効になっている場合、ノードはペアリングできません。
+* Gatewayがリモートモードの場合でも、ペアリングはリモートGatewayのストアに対して行われます。

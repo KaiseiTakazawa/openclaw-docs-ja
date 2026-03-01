@@ -6,22 +6,21 @@ title: "スラッシュコマンド"
 
 # Slash commands
 
-Commands are handled by the Gateway. Most commands must be sent as a **standalone** message that starts with `/`.
-The host-only bash chat command uses `! <cmd>` (with `/bash <cmd>` as an alias).
+コマンドは Gateway によって処理されます。ほとんどのコマンドは、`/` で始まる **スタンドアロン** メッセージとして送信する必要があります。
+ホスト専用の bash チャットコマンドは `! <cmd>` を使用します（`/bash <cmd>` がエイリアスです）。
 
-There are two related systems:
+関連するシステムは二つあります：
 
-* **Commands**: standalone `/...` messages.
-* **Directives**: `/think`, `/verbose`, `/reasoning`, `/elevated`, `/exec`, `/model`, `/queue`.
-  * Directives are stripped from the message before the model sees it.
-  * In normal chat messages (not directive-only), they are treated as “inline hints” and do **not** persist session settings.
-  * In directive-only messages (the message contains only directives), they persist to the session and reply with an acknowledgement.
-  * Directives are only applied for **authorized senders**. If `commands.allowFrom` is set, it is the only
-    allowlist used; otherwise authorization comes from channel allowlists/pairing plus `commands.useAccessGroups`.
-    Unauthorized senders see directives treated as plain text.
+* **コマンド**: スタンドアロンの `/...` メッセージ。
+* **ディレクティブ**: `/think`, `/verbose`, `/reasoning`, `/elevated`, `/exec`, `/model`, `/queue`。
+  * ディレクティブは、モデルがメッセージを見る前にメッセージから削除されます。
+  * 通常のチャットメッセージ（ディレクティブのみではない）では、「インラインヒント」として扱われ、セッション設定は **持続しません**。
+  * ディレクティブのみのメッセージ（メッセージがディレクティブのみを含む）では、セッションに持続し、確認応答を返します。
+  * ディレクティブは **認可された送信者** のみが適用されます。`commands.allowFrom` が設定されている場合、それが唯一の許可リストとして使用されます。そうでない場合、認可はチャンネルの許可リスト/ペアリングと `commands.useAccessGroups` から来ます。
+    認可されていない送信者は、ディレクティブがプレーンテキストとして扱われます。
 
-There are also a few **inline shortcuts** (allowlisted/authorized senders only): `/help`, `/commands`, `/status`, `/whoami` (`/id`).
-They run immediately, are stripped before the model sees the message, and the remaining text continues through the normal flow.
+また、いくつかの **インラインショートカット**（許可された/認可された送信者のみ）もあります：`/help`, `/commands`, `/status`, `/whoami` (`/id`)。
+これらは即座に実行され、モデルがメッセージを見る前に削除され、残りのテキストは通常のフローを続けます。
 
 ## Config
 
@@ -45,114 +44,112 @@ They run immediately, are stripped before the model sees the message, and the re
 }
 ```
 
-* `commands.text` (default `true`) enables parsing `/...` in chat messages.
-  * On surfaces without native commands (WhatsApp/WebChat/Signal/iMessage/Google Chat/MS Teams), text commands still work even if you set this to `false`.
-* `commands.native` (default `"auto"`) registers native commands.
-  * Auto: on for Discord/Telegram; off for Slack (until you add slash commands); ignored for providers without native support.
-  * Set `channels.discord.commands.native`, `channels.telegram.commands.native`, or `channels.slack.commands.native` to override per provider (bool or `"auto"`).
-  * `false` clears previously registered commands on Discord/Telegram at startup. Slack commands are managed in the Slack app and are not removed automatically.
-* `commands.nativeSkills` (default `"auto"`) registers **skill** commands natively when supported.
-  * Auto: on for Discord/Telegram; off for Slack (Slack requires creating a slash command per skill).
-  * Set `channels.discord.commands.nativeSkills`, `channels.telegram.commands.nativeSkills`, or `channels.slack.commands.nativeSkills` to override per provider (bool or `"auto"`).
-* `commands.bash` (default `false`) enables `! <cmd>` to run host shell commands (`/bash <cmd>` is an alias; requires `tools.elevated` allowlists).
-* `commands.bashForegroundMs` (default `2000`) controls how long bash waits before switching to background mode (`0` backgrounds immediately).
-* `commands.config` (default `false`) enables `/config` (reads/writes `openclaw.json`).
-* `commands.debug` (default `false`) enables `/debug` (runtime-only overrides).
-* `commands.allowFrom` (optional) sets a per-provider allowlist for command authorization. When configured, it is the
-  only authorization source for commands and directives (channel allowlists/pairing and `commands.useAccessGroups`
-  are ignored). Use `"*"` for a global default; provider-specific keys override it.
-* `commands.useAccessGroups` (default `true`) enforces allowlists/policies for commands when `commands.allowFrom` is not set.
+* `commands.text`（デフォルト `true`）は、チャットメッセージ内の `/...` の解析を有効にします。
+  * ネイティブコマンドがないサーフェス（WhatsApp/WebChat/Signal/iMessage/Google Chat/MS Teams）では、これを `false` に設定してもテキストコマンドは機能します。
+* `commands.native`（デフォルト `"auto"`）は、ネイティブコマンドを登録します。
+  * 自動: Discord/Telegram ではオン; Slack ではオフ（スラッシュコマンドを追加するまで）。ネイティブサポートがないプロバイダーには無視されます。
+  * `channels.discord.commands.native`, `channels.telegram.commands.native`, または `channels.slack.commands.native` を設定して、プロバイダーごとにオーバーライドします（bool または `"auto"`）。
+  * `false` は、起動時に Discord/Telegram で以前に登録されたコマンドをクリアします。Slack コマンドは Slack アプリで管理され、自動的には削除されません。
+* `commands.nativeSkills`（デフォルト `"auto"`）は、サポートされている場合に **スキル** コマンドをネイティブに登録します。
+  * 自動: Discord/Telegram ではオン; Slack ではオフ（Slack ではスキルごとにスラッシュコマンドを作成する必要があります）。
+  * `channels.discord.commands.nativeSkills`, `channels.telegram.commands.nativeSkills`, または `channels.slack.commands.nativeSkills` を設定して、プロバイダーごとにオーバーライドします（bool または `"auto"`）。
+* `commands.bash`（デフォルト `false`）は、`! <cmd>` を使用してホストシェルコマンドを実行できるようにします（`/bash <cmd>` はエイリアスです; `tools.elevated` の許可リストが必要です）。
+* `commands.bashForegroundMs`（デフォルト `2000`）は、bash がバックグラウンドモードに切り替えるまでの待機時間を制御します（`0` は即座にバックグラウンドに切り替えます）。
+* `commands.config`（デフォルト `false`）は、`/config` を有効にします（`openclaw.json` を読み書きします）。
+* `commands.debug`（デフォルト `false`）は、`/debug` を有効にします（ランタイム専用のオーバーライド）。
+* `commands.allowFrom`（オプション）は、コマンド認可のためのプロバイダーごとの許可リストを設定します。設定されている場合、それがコマンドとディレクティブの唯一の認可ソースになります（チャンネルの許可リスト/ペアリングおよび `commands.useAccessGroups` は無視されます）。グローバルデフォルトには `"*"` を使用します; プロバイダー固有のキーがそれをオーバーライドします。
+* `commands.useAccessGroups`（デフォルト `true`）は、`commands.allowFrom` が設定されていない場合にコマンドのための許可リスト/ポリシーを強制します。
 
 ## Command list
 
-Text + native (when enabled):
+テキスト + ネイティブ（有効な場合）:
 
 * `/help`
 * `/commands`
-* `/skill <name> [input]` (run a skill by name)
-* `/status` (show current status; includes provider usage/quota for the current model provider when available)
-* `/allowlist` (list/add/remove allowlist entries)
-* `/approve <id> allow-once|allow-always|deny` (resolve exec approval prompts)
-* `/context [list|detail|json]` (explain “context”; `detail` shows per-file + per-tool + per-skill + system prompt size)
-* `/export-session [path]` (alias: `/export`) (export current session to HTML with full system prompt)
-* `/whoami` (show your sender id; alias: `/id`)
-* `/session idle <duration|off>` (manage inactivity auto-unfocus for focused thread bindings)
-* `/session max-age <duration|off>` (manage hard max-age auto-unfocus for focused thread bindings)
-* `/subagents list|kill|log|info|send|steer|spawn` (inspect, control, or spawn sub-agent runs for the current session)
-* `/acp spawn|cancel|steer|close|status|set-mode|set|cwd|permissions|timeout|model|reset-options|doctor|install|sessions` (inspect and control ACP runtime sessions)
-* `/agents` (list thread-bound agents for this session)
-* `/focus <target>` (Discord: bind this thread, or a new thread, to a session/subagent target)
-* `/unfocus` (Discord: remove the current thread binding)
-* `/kill <id|#|all>` (immediately abort one or all running sub-agents for this session; no confirmation message)
-* `/steer <id|#> <message>` (steer a running sub-agent immediately: in-run when possible, otherwise abort current work and restart on the steer message)
-* `/tell <id|#> <message>` (alias for `/steer`)
-* `/config show|get|set|unset` (persist config to disk, owner-only; requires `commands.config: true`)
-* `/debug show|set|unset|reset` (runtime overrides, owner-only; requires `commands.debug: true`)
-* `/usage off|tokens|full|cost` (per-response usage footer or local cost summary)
-* `/tts off|always|inbound|tagged|status|provider|limit|summary|audio` (control TTS; see [/tts](/tts))
-  * Discord: native command is `/voice` (Discord reserves `/tts`); text `/tts` still works.
+* `/skill <name> [input]`（名前でスキルを実行）
+* `/status`（現在のステータスを表示; 利用可能な場合、現在のモデルプロバイダーの使用状況/クォータを含む）
+* `/allowlist`（許可リストのエントリをリスト/追加/削除）
+* `/approve <id> allow-once|allow-always|deny`（exec 承認プロンプトを解決）
+* `/context [list|detail|json]`（「コンテキスト」を説明; `detail` はファイルごと + ツールごと + スキルごと + システムプロンプトサイズを表示）
+* `/export-session [path]`（エイリアス: `/export`）（現在のセッションを HTML にエクスポートし、完全なシステムプロンプトを含む）
+* `/whoami`（あなたの送信者 ID を表示; エイリアス: `/id`）
+* `/session idle <duration|off>`（フォーカスされたスレッドバインディングの非活動自動フォーカス管理）
+* `/session max-age <duration|off>`（フォーカスされたスレッドバインディングのハード最大年齢自動フォーカス管理）
+* `/subagents list|kill|log|info|send|steer|spawn`（現在のセッションのサブエージェントの実行を検査、制御、または生成）
+* `/acp spawn|cancel|steer|close|status|set-mode|set|cwd|permissions|timeout|model|reset-options|doctor|install|sessions`（ACP ランタイムセッションを検査および制御）
+* `/agents`（このセッションのスレッドバウンドエージェントをリスト）
+* `/focus <target>`（Discord: このスレッド、または新しいスレッドをセッション/サブエージェントターゲットにバインド）
+* `/unfocus`（Discord: 現在のスレッドバインディングを削除）
+* `/kill <id|#|all>`（このセッションの実行中のサブエージェントを一つまたは全て即座に中止; 確認メッセージなし）
+* `/steer <id|#> <message>`（実行中のサブエージェントを即座に操縦: 可能な場合は実行中、そうでなければ現在の作業を中止して操縦メッセージで再起動）
+* `/tell <id|#> <message>`（`/steer` のエイリアス）
+* `/config show|get|set|unset`（所有者専用の設定をディスクに持続; `commands.config: true` が必要）
+* `/debug show|set|unset|reset`（ランタイムオーバーライド、所有者専用; `commands.debug: true` が必要）
+* `/usage off|tokens|full|cost`（応答ごとの使用フッターまたはローカルコストの概要）
+* `/tts off|always|inbound|tagged|status|provider|limit|summary|audio`（TTS を制御; 詳細は [/tts](/tts) を参照）
+  * Discord: ネイティブコマンドは `/voice`（Discord は `/tts` を予約しています）; テキスト `/tts` はまだ機能します。
 * `/stop`
 * `/restart`
-* `/dock-telegram` (alias: `/dock_telegram`) (switch replies to Telegram)
-* `/dock-discord` (alias: `/dock_discord`) (switch replies to Discord)
-* `/dock-slack` (alias: `/dock_slack`) (switch replies to Slack)
-* `/activation mention|always` (groups only)
-* `/send on|off|inherit` (owner-only)
-* `/reset` or `/new [model]` (optional model hint; remainder is passed through)
-* `/think <off|minimal|low|medium|high|xhigh>` (dynamic choices by model/provider; aliases: `/thinking`, `/t`)
-* `/verbose on|full|off` (alias: `/v`)
-* `/reasoning on|off|stream` (alias: `/reason`; when on, sends a separate message prefixed `Reasoning:`; `stream` = Telegram draft only)
-* `/elevated on|off|ask|full` (alias: `/elev`; `full` skips exec approvals)
-* `/exec host=<sandbox|gateway|node> security=<deny|allowlist|full> ask=<off|on-miss|always> node=<id>` (send `/exec` to show current)
-* `/model <name>` (alias: `/models`; or `/<alias>` from `agents.defaults.models.*.alias`)
-* `/queue <mode>` (plus options like `debounce:2s cap:25 drop:summarize`; send `/queue` to see current settings)
-* `/bash <command>` (host-only; alias for `! <command>`; requires `commands.bash: true` + `tools.elevated` allowlists)
+* `/dock-telegram`（エイリアス: `/dock_telegram`）（返信を Telegram に切り替え）
+* `/dock-discord`（エイリアス: `/dock_discord`）（返信を Discord に切り替え）
+* `/dock-slack`（エイリアス: `/dock_slack`）（返信を Slack に切り替え）
+* `/activation mention|always`（グループのみ）
+* `/send on|off|inherit`（所有者専用）
+* `/reset` または `/new [model]`（オプションのモデルヒント; 残りは通過します）
+* `/think <off|minimal|low|medium|high|xhigh>`（モデル/プロバイダーによる動的選択; エイリアス: `/thinking`, `/t`）
+* `/verbose on|full|off`（エイリアス: `/v`）
+* `/reasoning on|off|stream`（エイリアス: `/reason`; 有効な場合、`Reasoning:` でプレフィックスされた別のメッセージを送信; `stream` = Telegram ドラフトのみ）
+* `/elevated on|off|ask|full`（エイリアス: `/elev`; `full` は exec 承認をスキップ）
+* `/exec host=<sandbox|gateway|node> security=<deny|allowlist|full> ask=<off|on-miss|always> node=<id>`（現在の状態を表示するために `/exec` を送信）
+* `/model <name>`（エイリアス: `/models`; または `agents.defaults.models.*.alias` からの `/<alias>`）
+* `/queue <mode>`（`debounce:2s cap:25 drop:summarize` などのオプションを追加; 現在の設定を表示するには `/queue` を送信）
+* `/bash <command>`（ホスト専用; `! <command>` のエイリアス; `commands.bash: true` + `tools.elevated` の許可リストが必要）
 
-Text-only:
+テキストのみ:
 
-* `/compact [instructions]` (see [/concepts/compaction](/concepts/compaction))
-* `! <command>` (host-only; one at a time; use `!poll` + `!stop` for long-running jobs)
-* `!poll` (check output / status; accepts optional `sessionId`; `/bash poll` also works)
-* `!stop` (stop the running bash job; accepts optional `sessionId`; `/bash stop` also works)
+* `/compact [instructions]`（詳細は [/concepts/compaction](/concepts/compaction) を参照）
+* `! <command>`（ホスト専用; 一度に一つ; 長時間実行されるジョブには `!poll` + `!stop` を使用）
+* `!poll`（出力/ステータスを確認; オプションの `sessionId` を受け入れる; `/bash poll` も機能します）
+* `!stop`（実行中の bash ジョブを停止; オプションの `sessionId` を受け入れる; `/bash stop` も機能します）
 
-Notes:
+ノート:
 
-* Commands accept an optional `:` between the command and args (e.g. `/think: high`, `/send: on`, `/help:`).
-* `/new <model>` accepts a model alias, `provider/model`, or a provider name (fuzzy match); if no match, the text is treated as the message body.
-* For full provider usage breakdown, use `openclaw status --usage`.
-* `/allowlist add|remove` requires `commands.config=true` and honors channel `configWrites`.
-* `/usage` controls the per-response usage footer; `/usage cost` prints a local cost summary from OpenClaw session logs.
-* `/restart` is enabled by default; set `commands.restart: false` to disable it.
-* Discord-only native command: `/vc join|leave|status` controls voice channels (requires `channels.discord.voice` and native commands; not available as text).
-* Discord thread-binding commands (`/focus`, `/unfocus`, `/agents`, `/session idle`, `/session max-age`) require effective thread bindings to be enabled (`session.threadBindings.enabled` and/or `channels.discord.threadBindings.enabled`).
-* ACP command reference and runtime behavior: [ACP Agents](/tools/acp-agents).
-* `/verbose` is meant for debugging and extra visibility; keep it **off** in normal use.
-* Tool failure summaries are still shown when relevant, but detailed failure text is only included when `/verbose` is `on` or `full`.
-* `/reasoning` (and `/verbose`) are risky in group settings: they may reveal internal reasoning or tool output you did not intend to expose. Prefer leaving them off, especially in group chats.
-* **Fast path:** command-only messages from allowlisted senders are handled immediately (bypass queue + model).
-* **Group mention gating:** command-only messages from allowlisted senders bypass mention requirements.
-* **Inline shortcuts (allowlisted senders only):** certain commands also work when embedded in a normal message and are stripped before the model sees the remaining text.
-  * Example: `hey /status` triggers a status reply, and the remaining text continues through the normal flow.
-* Currently: `/help`, `/commands`, `/status`, `/whoami` (`/id`).
-* Unauthorized command-only messages are silently ignored, and inline `/...` tokens are treated as plain text.
-* **Skill commands:** `user-invocable` skills are exposed as slash commands. Names are sanitized to `a-z0-9_` (max 32 chars); collisions get numeric suffixes (e.g. `_2`).
-  * `/skill <name> [input]` runs a skill by name (useful when native command limits prevent per-skill commands).
-  * By default, skill commands are forwarded to the model as a normal request.
-  * Skills may optionally declare `command-dispatch: tool` to route the command directly to a tool (deterministic, no model).
-  * Example: `/prose` (OpenProse plugin) — see [OpenProse](/prose).
-* **Native command arguments:** Discord uses autocomplete for dynamic options (and button menus when you omit required args). Telegram and Slack show a button menu when a command supports choices and you omit the arg.
+* コマンドは、コマンドと引数の間にオプションの `:` を受け入れます（例: `/think: high`, `/send: on`, `/help:`）。
+* `/new <model>` はモデルエイリアス、`provider/model`、またはプロバイダー名を受け入れます（ファジーマッチ）。マッチがない場合、テキストはメッセージ本文として扱われます。
+* プロバイダーの使用状況の詳細を知るには、`openclaw status --usage` を使用します。
+* `/allowlist add|remove` は `commands.config=true` を必要とし、チャンネルの `configWrites` を尊重します。
+* `/usage` は応答ごとの使用フッターを制御します; `/usage cost` は OpenClaw セッションログからローカルコストの概要を印刷します。
+* `/restart` はデフォルトで有効です; `commands.restart: false` を設定して無効にします。
+* Discord 専用のネイティブコマンド: `/vc join|leave|status` はボイスチャンネルを制御します（`channels.discord.voice` とネイティブコマンドが必要; テキストとしては利用できません）。
+* Discord スレッドバインディングコマンド（`/focus`, `/unfocus`, `/agents`, `/session idle`, `/session max-age`）は、効果的なスレッドバインディングが有効である必要があります（`session.threadBindings.enabled` および/または `channels.discord.threadBindings.enabled`）。
+* ACP コマンドリファレンスとランタイムの動作: [ACP Agents](/tools/acp-agents)。
+* `/verbose` はデバッグと追加の可視性のために設計されています; 通常の使用時には **オフ** にしてください。
+* ツールの失敗の概要は関連する場合に表示されますが、詳細な失敗テキストは `/verbose` が `on` または `full` の場合にのみ含まれます。
+* `/reasoning`（および `/verbose`）はグループ設定でリスクがあります: 内部の推論やツールの出力を意図せず公開する可能性があります。特にグループチャットではオフにしておくことをお勧めします。
+* **ファストパス:** 許可リストにある送信者からのコマンドのみのメッセージは即座に処理されます（キュー + モデルをバイパス）。
+* **グループメンションゲーティング:** 許可リストにある送信者からのコマンドのみのメッセージはメンション要件をバイパスします。
+* **インラインショートカット（許可された送信者のみ）:** 特定のコマンドは通常のメッセージに埋め込まれている場合にも機能し、モデルが残りのテキストを見る前に削除されます。
+  * 例: `hey /status` はステータス応答をトリガーし、残りのテキストは通常のフローを続けます。
+* 現在: `/help`, `/commands`, `/status`, `/whoami` (`/id`)。
+* 認可されていないコマンドのみのメッセージは静かに無視され、インライン `/...` トークンはプレーンテキストとして扱われます。
+* **スキルコマンド:** `user-invocable` スキルはスラッシュコマンドとして公開されます。名前は `a-z0-9_` にサニタイズされます（最大 32 文字）；衝突がある場合は数値サフィックスが付加されます（例: `_2`）。
+  * `/skill <name> [input]` は名前でスキルを実行します（ネイティブコマンドの制限がスキルごとのコマンドを妨げる場合に便利です）。
+  * デフォルトでは、スキルコマンドは通常のリクエストとしてモデルに転送されます。
+  * スキルはオプションで `command-dispatch: tool` を宣言して、コマンドをツールに直接ルーティングできます（決定論的、モデルなし）。
+  * 例: `/prose`（OpenProse プラグイン） — 詳細は [OpenProse](/prose) を参照。
+* **ネイティブコマンド引数:** Discord は動的オプションのためにオートコンプリートを使用します（必須引数を省略した場合のボタンメニュー）。Telegram と Slack は、コマンドが選択肢をサポートしていて引数を省略した場合にボタンメニューを表示します。
 
 ## Usage surfaces (what shows where)
 
-* **Provider usage/quota** (example: “Claude 80% left”) shows up in `/status` for the current model provider when usage tracking is enabled.
-* **Per-response tokens/cost** is controlled by `/usage off|tokens|full` (appended to normal replies).
-* `/model status` is about **models/auth/endpoints**, not usage.
+* **プロバイダーの使用状況/クォータ**（例: “Claude 80% left”）は、使用状況追跡が有効な場合、現在のモデルプロバイダーの `/status` に表示されます。
+* **応答ごとのトークン/コスト**は `/usage off|tokens|full` によって制御されます（通常の応答に追加されます）。
+* `/model status` は **モデル/認証/エンドポイント** に関するもので、使用状況ではありません。
 
 ## Model selection (`/model`)
 
-`/model` is implemented as a directive.
+`/model` はディレクティブとして実装されています。
 
-Examples:
+例:
 
 ```
 /model
@@ -163,18 +160,18 @@ Examples:
 /model status
 ```
 
-Notes:
+ノート:
 
-* `/model` and `/model list` show a compact, numbered picker (model family + available providers).
-* On Discord, `/model` and `/models` open an interactive picker with provider and model dropdowns plus a Submit step.
-* `/model <#>` selects from that picker (and prefers the current provider when possible).
-* `/model status` shows the detailed view, including configured provider endpoint (`baseUrl`) and API mode (`api`) when available.
+* `/model` と `/model list` はコンパクトな番号付きピッカーを表示します（モデルファミリー + 利用可能なプロバイダー）。
+* Discord では、`/model` と `/models` はプロバイダーとモデルのドロップダウンを持つインタラクティブピッカーを開き、送信ステップがあります。
+* `/model <#>` はそのピッカーから選択します（可能な場合は現在のプロバイダーを優先します）。
+* `/model status` は、構成されたプロバイダーエンドポイント（`baseUrl`）と API モード（`api`）を含む詳細ビューを表示します（利用可能な場合）。
 
 ## Debug overrides
 
-`/debug` lets you set **runtime-only** config overrides (memory, not disk). Owner-only. Disabled by default; enable with `commands.debug: true`.
+`/debug` を使用すると、**ランタイム専用**の設定オーバーライドを設定できます（メモリ、ディスクではありません）。所有者専用。デフォルトでは無効です; `commands.debug: true` で有効にします。
 
-Examples:
+例:
 
 ```
 /debug show
@@ -184,16 +181,16 @@ Examples:
 /debug reset
 ```
 
-Notes:
+ノート:
 
-* Overrides apply immediately to new config reads, but do **not** write to `openclaw.json`.
-* Use `/debug reset` to clear all overrides and return to the on-disk config.
+* オーバーライドは新しい設定の読み取りに即座に適用されますが、`openclaw.json` には書き込まれません。
+* `/debug reset` を使用してすべてのオーバーライドをクリアし、ディスク上の設定に戻ります。
 
 ## Config updates
 
-`/config` writes to your on-disk config (`openclaw.json`). Owner-only. Disabled by default; enable with `commands.config: true`.
+`/config` はディスク上の設定（`openclaw.json`）に書き込みます。所有者専用。デフォルトでは無効です; `commands.config: true` で有効にします。
 
-Examples:
+例:
 
 ```
 /config show
@@ -203,18 +200,18 @@ Examples:
 /config unset messages.responsePrefix
 ```
 
-Notes:
+ノート:
 
-* Config is validated before write; invalid changes are rejected.
-* `/config` updates persist across restarts.
+* 設定は書き込む前に検証され、不正な変更は拒否されます。
+* `/config` の更新は再起動を超えて持続します。
 
 ## Surface notes
 
-* **Text commands** run in the normal chat session (DMs share `main`, groups have their own session).
-* **Native commands** use isolated sessions:
+* **テキストコマンド**は通常のチャットセッションで実行されます（DM は `main` を共有し、グループは独自のセッションを持ちます）。
+* **ネイティブコマンド**は隔離されたセッションを使用します：
   * Discord: `agent:<agentId>:discord:slash:<userId>`
-  * Slack: `agent:<agentId>:slack:slash:<userId>` (prefix configurable via `channels.slack.slashCommand.sessionPrefix`)
-  * Telegram: `telegram:slash:<userId>` (targets the chat session via `CommandTargetSessionKey`)
-* **`/stop`** targets the active chat session so it can abort the current run.
-* **Slack:** `channels.slack.slashCommand` is still supported for a single `/openclaw`-style command. If you enable `commands.native`, you must create one Slack slash command per built-in command (same names as `/help`). Command argument menus for Slack are delivered as ephemeral Block Kit buttons.
-  * Slack native exception: register `/agentstatus` (not `/status`) because Slack reserves `/status`. Text `/status` still works in Slack messages.
+  * Slack: `agent:<agentId>:slack:slash:<userId>`（プレフィックスは `channels.slack.slashCommand.sessionPrefix` で設定可能）
+  * Telegram: `telegram:slash:<userId>`（`CommandTargetSessionKey` を介してチャットセッションをターゲットにします）
+* **`/stop`** はアクティブなチャットセッションをターゲットにし、現在の実行を中止できます。
+* **Slack:** `channels.slack.slashCommand` は、単一の `/openclaw` スタイルのコマンドに対してまだサポートされています。`commands.native` を有効にすると、組み込みコマンドごとに一つの Slack スラッシュコマンドを作成する必要があります（`/help` と同じ名前）。Slack のコマンド引数メニューは、一時的な Block Kit ボタンとして配信されます。
+  * Slack のネイティブ例外: `/status` は予約されているため、`/agentstatus` を登録します。テキスト `/status` は Slack メッセージ内でまだ機能します。

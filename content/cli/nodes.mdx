@@ -6,15 +6,15 @@ title: "nodes"
 
 # `openclaw nodes`
 
-Manage paired nodes (devices) and invoke node capabilities.
+ペアリングされたノード（デバイス）を管理し、ノードの機能を呼び出します。
 
-Related:
+関連情報:
 
-* Nodes overview: [Nodes](/nodes)
-* Camera: [Camera nodes](/nodes/camera)
-* Images: [Image nodes](/nodes/images)
+* ノードの概要: [Nodes](/nodes)
+* カメラ: [Camera nodes](/nodes/camera)
+* 画像: [Image nodes](/nodes/images)
 
-Common options:
+一般的なオプション:
 
 * `--url`, `--token`, `--timeout`, `--json`
 
@@ -31,9 +31,8 @@ openclaw nodes status --connected
 openclaw nodes status --last-connected 24h
 ```
 
-`nodes list` prints pending/paired tables. Paired rows include the most recent connect age (Last Connect).
-Use `--connected` to only show currently-connected nodes. Use `--last-connected <duration>` to
-filter to nodes that connected within a duration (e.g. `24h`, `7d`).
+`nodes list`は保留中/ペアリングされたテーブルを表示します。ペアリングされた行には最新の接続時間（Last Connect）が含まれます。
+`--connected`を使用すると、現在接続されているノードのみを表示します。`--last-connected <duration>`を使用して、指定した期間内に接続されたノードをフィルタリングします（例: `24h`, `7d`）。
 
 ## Invoke / run
 
@@ -44,30 +43,30 @@ openclaw nodes run --raw "git status"
 openclaw nodes run --agent main --node <id|name|ip> --raw "git status"
 ```
 
-Invoke flags:
+呼び出しフラグ:
 
-* `--params <json>`: JSON object string (default `{}`).
-* `--invoke-timeout <ms>`: node invoke timeout (default `15000`).
-* `--idempotency-key <key>`: optional idempotency key.
+* `--params <json>`: JSONオブジェクト文字列（デフォルトは`{}`）。
+* `--invoke-timeout <ms>`: ノード呼び出しのタイムアウト（デフォルトは`15000`）。
+* `--idempotency-key <key>`: オプションの冪等性キー。
 
-### Exec-style defaults
+### Execスタイルのデフォルト
 
-`nodes run` mirrors the model’s exec behavior (defaults + approvals):
+`nodes run`はモデルのexec動作を反映します（デフォルト + 承認）:
 
-* Reads `tools.exec.*` (plus `agents.list[].tools.exec.*` overrides).
-* Uses exec approvals (`exec.approval.request`) before invoking `system.run`.
-* `--node` can be omitted when `tools.exec.node` is set.
-* Requires a node that advertises `system.run` (macOS companion app or headless node host).
+* `tools.exec.*`（および`agents.list[].tools.exec.*`のオーバーライド）を読み込みます。
+* `system.run`を呼び出す前にexec承認（`exec.approval.request`）を使用します。
+* `tools.exec.node`が設定されている場合、`--node`は省略できます。
+* `system.run`を広告するノードが必要です（macOSコンパニオンアプリまたはヘッドレスノードホスト）。
 
-Flags:
+フラグ:
 
-* `--cwd <path>`: working directory.
-* `--env <key=val>`: env override (repeatable). Note: node hosts ignore `PATH` overrides (and `tools.exec.pathPrepend` is not applied to node hosts).
-* `--command-timeout <ms>`: command timeout.
-* `--invoke-timeout <ms>`: node invoke timeout (default `30000`).
-* `--needs-screen-recording`: require screen recording permission.
-* `--raw <command>`: run a shell string (`/bin/sh -lc` or `cmd.exe /c`).
-  In allowlist mode on Windows node hosts, `cmd.exe /c` shell-wrapper runs require approval
-  (allowlist entry alone does not auto-allow the wrapper form).
-* `--agent <id>`: agent-scoped approvals/allowlists (defaults to configured agent).
-* `--ask <off|on-miss|always>`, `--security <deny|allowlist|full>`: overrides.
+* `--cwd <path>`: 作業ディレクトリ。
+* `--env <key=val>`: 環境のオーバーライド（繰り返し可能）。注意: ノードホストは`PATH`のオーバーライドを無視します（`tools.exec.pathPrepend`はノードホストには適用されません）。
+* `--command-timeout <ms>`: コマンドのタイムアウト。
+* `--invoke-timeout <ms>`: ノード呼び出しのタイムアウト（デフォルトは`30000`）。
+* `--needs-screen-recording`: スクリーン録画の許可を要求します。
+* `--raw <command>`: シェル文字列を実行します（`/bin/sh -lc`または`cmd.exe /c`）。
+  Windowsノードホストの許可リストモードでは、`cmd.exe /c`シェルラッパーの実行には承認が必要です
+  （許可リストのエントリだけではラッパー形式を自動的に許可しません）。
+* `--agent <id>`: エージェントスコープの承認/許可リスト（構成されたエージェントがデフォルト）。
+* `--ask <off|on-miss|always>`, `--security <deny|allowlist|full>`: オーバーライド。

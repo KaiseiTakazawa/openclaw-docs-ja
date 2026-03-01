@@ -6,21 +6,21 @@ title: "環境変数"
 
 # Environment variables
 
-OpenClaw pulls environment variables from multiple sources. The rule is **never override existing values**.
+OpenClawは複数のソースから環境変数を取得します。ルールは**既存の値を上書きしないこと**です。
 
-## Precedence (highest → lowest)
+## 優先順位 (高い → 低い)
 
-1. **Process environment** (what the Gateway process already has from the parent shell/daemon).
-2. **`.env` in the current working directory** (dotenv default; does not override).
-3. **Global `.env`** at `~/.openclaw/.env` (aka `$OPENCLAW_STATE_DIR/.env`; does not override).
-4. **Config `env` block** in `~/.openclaw/openclaw.json` (applied only if missing).
-5. **Optional login-shell import** (`env.shellEnv.enabled` or `OPENCLAW_LOAD_SHELL_ENV=1`), applied only for missing expected keys.
+1. **プロセス環境**（Gatewayプロセスが親シェル/デーモンから持っているもの）。
+2. **現在の作業ディレクトリの`.env`**（dotenvのデフォルト; 上書きしない）。
+3. **グローバル`.env`** `~/.openclaw/.env`（別名`$OPENCLAW_STATE_DIR/.env`; 上書きしない）。
+4. **`~/.openclaw/openclaw.json`のConfig `env`ブロック**（欠損している場合のみ適用）。
+5. **オプショナルなログインシェルインポート**（`env.shellEnv.enabled`または`OPENCLAW_LOAD_SHELL_ENV=1`）、期待されるキーが欠損している場合のみ適用。
 
-If the config file is missing entirely, step 4 is skipped; shell import still runs if enabled.
+設定ファイルが完全に欠損している場合、ステップ4はスキップされます; シェルインポートは有効になっていれば実行されます。
 
-## Config `env` block
+## Config `env`ブロック
 
-Two equivalent ways to set inline env vars (both are non-overriding):
+インライン環境変数を設定するための2つの同等の方法（どちらも上書きしない）：
 
 ```json5
 {
@@ -33,9 +33,9 @@ Two equivalent ways to set inline env vars (both are non-overriding):
 }
 ```
 
-## Shell env import
+## シェル環境インポート
 
-`env.shellEnv` runs your login shell and imports only **missing** expected keys:
+`env.shellEnv`はあなたのログインシェルを実行し、**欠損している**期待されるキーのみをインポートします：
 
 ```json5
 {
@@ -48,14 +48,14 @@ Two equivalent ways to set inline env vars (both are non-overriding):
 }
 ```
 
-Env var equivalents:
+環境変数の同等物：
 
 * `OPENCLAW_LOAD_SHELL_ENV=1`
 * `OPENCLAW_SHELL_ENV_TIMEOUT_MS=15000`
 
-## Env var substitution in config
+## 設定内の環境変数の置換
 
-You can reference env vars directly in config string values using `${VAR_NAME}` syntax:
+`${VAR_NAME}`構文を使用して、設定の文字列値内で環境変数を直接参照できます：
 
 ```json5
 {
@@ -69,38 +69,38 @@ You can reference env vars directly in config string values using `${VAR_NAME}` 
 }
 ```
 
-See [Configuration: Env var substitution](/gateway/configuration#env-var-substitution-in-config) for full details.
+詳細については、[Configuration: Env var substitution](/gateway/configuration#env-var-substitution-in-config)を参照してください。
 
-## Secret refs vs `${ENV}` strings
+## Secret refsと`${ENV}`文字列
 
-OpenClaw supports two env-driven patterns:
+OpenClawは2つの環境駆動パターンをサポートしています：
 
-* `${VAR}` string substitution in config values.
-* SecretRef objects (`{ source: "env", provider: "default", id: "VAR" }`) for fields that support secrets references.
+* 設定値内の`${VAR}`文字列置換。
+* 秘密参照オブジェクト（`{ source: "env", provider: "default", id: "VAR" }`）で、秘密参照をサポートするフィールド用。
 
-Both resolve from process env at activation time. SecretRef details are documented in [Secrets Management](/gateway/secrets).
+どちらもアクティベーション時にプロセス環境から解決されます。SecretRefの詳細は[Secrets Management](/gateway/secrets)に記載されています。
 
-## Path-related env vars
+## パス関連の環境変数
 
-| Variable               | Purpose                                                                                                                                                                          |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENCLAW_HOME`        | Override the home directory used for all internal path resolution (`~/.openclaw/`, agent dirs, sessions, credentials). Useful when running OpenClaw as a dedicated service user. |
-| `OPENCLAW_STATE_DIR`   | Override the state directory (default `~/.openclaw`).                                                                                                                            |
-| `OPENCLAW_CONFIG_PATH` | Override the config file path (default `~/.openclaw/openclaw.json`).                                                                                                             |
+| 変数                   | 目的                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `OPENCLAW_HOME`        | すべての内部パス解決に使用されるホームディレクトリを上書きします（`~/.openclaw/`、エージェントディレクトリ、セッション、資格情報）。専用のサービスユーザーとしてOpenClawを実行する際に便利です。 |
+| `OPENCLAW_STATE_DIR`   | ステートディレクトリを上書きします（デフォルトは`~/.openclaw`）。                                                                                                          |
+| `OPENCLAW_CONFIG_PATH` | 設定ファイルのパスを上書きします（デフォルトは`~/.openclaw/openclaw.json`）。                                                                                                 |
 
 ## ロギング
 
-| Variable             | Purpose                                                                                                                                                                                      |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OPENCLAW_LOG_LEVEL` | Override log level for both file and console (e.g. `debug`, `trace`). Takes precedence over `logging.level` and `logging.consoleLevel` in config. Invalid values are ignored with a warning. |
+| 変数                   | 目的                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `OPENCLAW_LOG_LEVEL`   | ファイルとコンソールの両方のログレベルを上書きします（例：`debug`、`trace`）。設定内の`logging.level`および`logging.consoleLevel`よりも優先されます。無効な値は警告と共に無視されます。 |
 
 ### `OPENCLAW_HOME`
 
-When set, `OPENCLAW_HOME` replaces the system home directory (`$HOME` / `os.homedir()`) for all internal path resolution. This enables full filesystem isolation for headless service accounts.
+設定すると、`OPENCLAW_HOME`はすべての内部パス解決のためにシステムのホームディレクトリ（`$HOME` / `os.homedir()`）を置き換えます。これにより、ヘッドレスサービスアカウントのための完全なファイルシステムの隔離が可能になります。
 
-**Precedence:** `OPENCLAW_HOME` > `$HOME` > `USERPROFILE` > `os.homedir()`
+**優先順位:** `OPENCLAW_HOME` > `$HOME` > `USERPROFILE` > `os.homedir()`
 
-**Example** (macOS LaunchDaemon):
+**例**（macOS LaunchDaemon）：
 
 ```xml
 <key>EnvironmentVariables</key>
@@ -110,7 +110,7 @@ When set, `OPENCLAW_HOME` replaces the system home directory (`$HOME` / `os.home
 </dict>
 ```
 
-`OPENCLAW_HOME` can also be set to a tilde path (e.g. `~/svc`), which gets expanded using `$HOME` before use.
+`OPENCLAW_HOME`はチルダパス（例：`~/svc`）に設定することもでき、使用前に`$HOME`を使って展開されます。
 
 ## 関連
 

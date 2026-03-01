@@ -8,43 +8,43 @@ title: "位置情報コマンド"
 
 ## TL;DR
 
-* `location.get` is a node command (via `node.invoke`).
-* Off by default.
-* Settings use a selector: Off / While Using / Always.
-* Separate toggle: Precise Location.
+* `location.get` はノードコマンドです（`node.invoke`経由）。
+* デフォルトではオフ。
+* 設定はセレクタを使用します: オフ / 使用中 / 常に。
+* 別のトグル: 精密位置情報。
 
-## Why a selector (not just a switch)
+## なぜセレクタが必要なのか（単なるスイッチではない理由）
 
-OS permissions are multi-level. We can expose a selector in-app, but the OS still decides the actual grant.
+OSの権限は多層的です。アプリ内でセレクタを表示することはできますが、実際の許可はOSが決定します。
 
-* iOS/macOS: user can choose **While Using** or **Always** in system prompts/Settings. App can request upgrade, but OS may require Settings.
-* Android: background location is a separate permission; on Android 10+ it often requires a Settings flow.
-* Precise location is a separate grant (iOS 14+ “Precise”, Android “fine” vs “coarse”).
+* iOS/macOS: ユーザーはシステムのプロンプト/設定で**使用中**または**常に**を選択できます。アプリはアップグレードをリクエストできますが、OSは設定を必要とする場合があります。
+* Android: バックグラウンド位置情報は別の権限です。Android 10以上では、設定フローが必要なことが多いです。
+* 精密位置情報は別の許可です（iOS 14以上の「精密」、Androidの「fine」対「coarse」）。
 
-Selector in UI drives our requested mode; actual grant lives in OS settings.
+UIのセレクタは、私たちが要求するモードを決定します。実際の許可はOSの設定にあります。
 
-## Settings model
+## 設定モデル
 
-Per node device:
+ノードデバイスごとに:
 
 * `location.enabledMode`: `off | whileUsing | always`
 * `location.preciseEnabled`: bool
 
-UI behavior:
+UIの動作:
 
-* Selecting `whileUsing` requests foreground permission.
-* Selecting `always` first ensures `whileUsing`, then requests background (or sends user to Settings if required).
-* If OS denies requested level, revert to the highest granted level and show status.
+* `whileUsing`を選択すると、フォアグラウンドの権限を要求します。
+* `always`を選択すると、まず`whileUsing`が確保され、その後バックグラウンドを要求します（必要な場合はユーザーを設定に送ります）。
+* OSが要求されたレベルを拒否した場合、最も高い許可されたレベルに戻り、ステータスを表示します。
 
-## Permissions mapping (node.permissions)
+## 権限マッピング (node.permissions)
 
-Optional. macOS node reports `location` via the permissions map; iOS/Android may omit it.
+オプションです。macOSノードは権限マップを介して`location`を報告しますが、iOS/Androidでは省略されることがあります。
 
-## Command: `location.get`
+## コマンド: `location.get`
 
-Called via `node.invoke`.
+`node.invoke`経由で呼び出されます。
 
-Params (suggested):
+パラメータ（推奨）:
 
 ```json
 {
@@ -54,7 +54,7 @@ Params (suggested):
 }
 ```
 
-Response payload:
+レスポンスペイロード:
 
 ```json
 {
@@ -70,42 +70,42 @@ Response payload:
 }
 ```
 
-Errors (stable codes):
+エラー（安定したコード）:
 
-* `LOCATION_DISABLED`: selector is off.
-* `LOCATION_PERMISSION_REQUIRED`: permission missing for requested mode.
-* `LOCATION_BACKGROUND_UNAVAILABLE`: app is backgrounded but only While Using allowed.
-* `LOCATION_TIMEOUT`: no fix in time.
-* `LOCATION_UNAVAILABLE`: system failure / no providers.
+* `LOCATION_DISABLED`: セレクタがオフです。
+* `LOCATION_PERMISSION_REQUIRED`: 要求されたモードの権限が不足しています。
+* `LOCATION_BACKGROUND_UNAVAILABLE`: アプリはバックグラウンドですが、使用中のみが許可されています。
+* `LOCATION_TIMEOUT`: 時間内に位置情報を取得できませんでした。
+* `LOCATION_UNAVAILABLE`: システムの障害 / プロバイダーがありません。
 
-## Background behavior (future)
+## バックグラウンド動作（将来）
 
-Goal: model can request location even when node is backgrounded, but only when:
+目標: モデルはノードがバックグラウンドにあるときでも位置情報を要求できるが、次の条件を満たす場合のみ:
 
-* User selected **Always**.
-* OS grants background location.
-* App is allowed to run in background for location (iOS background mode / Android foreground service or special allowance).
+* ユーザーが**常に**を選択した。
+* OSがバックグラウンド位置情報を許可した。
+* アプリが位置情報のためにバックグラウンドで実行されることが許可されている（iOSバックグラウンドモード / Androidフォアグラウンドサービスまたは特別な許可）。
 
-Push-triggered flow (future):
+プッシュトリガーされたフロー（将来）:
 
-1. Gateway sends a push to the node (silent push or FCM data).
-2. Node wakes briefly and requests location from the device.
-3. Node forwards payload to Gateway.
+1. Gatewayがノードにプッシュを送信します（サイレントプッシュまたはFCMデータ）。
+2. ノードが短時間ウェイクアップし、デバイスから位置情報を要求します。
+3. ノードがペイロードをGatewayに転送します。
 
-Notes:
+注意:
 
-* iOS: Always permission + background location mode required. Silent push may be throttled; expect intermittent failures.
-* Android: background location may require a foreground service; otherwise, expect denial.
+* iOS: 常にの権限 + バックグラウンド位置情報モードが必要です。サイレントプッシュは制限される場合があります; 不定期な失敗が予想されます。
+* Android: バックグラウンド位置情報はフォアグラウンドサービスを必要とする場合があります; そうでなければ、拒否されることが予想されます。
 
-## Model/tooling integration
+## モデル/ツール統合
 
-* Tool surface: `nodes` tool adds `location_get` action (node required).
-* CLI: `openclaw nodes location get --node <id>`.
-* Agent guidelines: only call when user enabled location and understands the scope.
+* ツールサーフェス: `nodes`ツールは`location_get`アクションを追加します（ノードが必要）。
+* CLI: `openclaw nodes location get --node <id>`。
+* エージェントガイドライン: ユーザーが位置情報を有効にし、範囲を理解している場合のみ呼び出します。
 
-## UX copy (suggested)
+## UXコピー（推奨）
 
-* Off: “Location sharing is disabled.”
-* While Using: “Only when OpenClaw is open.”
-* Always: “Allow background location. Requires system permission.”
-* Precise: “Use precise GPS location. Toggle off to share approximate location.”
+* オフ: “位置情報共有は無効です。”
+* 使用中: “OpenClawが開いているときのみ。”
+* 常に: “バックグラウンド位置情報を許可します。システムの権限が必要です。”
+* 精密: “精密GPS位置情報を使用します。おおよその位置情報を共有するにはオフにしてください。”

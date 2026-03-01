@@ -4,36 +4,30 @@ title: "LINE"
 
 # LINE
 # LINE (plugin)
-LINE connects to OpenClaw via the LINE Messaging API. The plugin runs as a webhook
-receiver on the gateway and uses your channel access token + channel secret for
-authentication.
-Status: supported via plugin. Direct messages, group chats, media, locations, Flex
-messages, template messages, and quick replies are supported. Reactions and threads
-are not supported.
-## Plugin required
-Install the LINE plugin:
+LINEは、LINE Messaging APIを介してOpenClawに接続します。このプラグインは、ゲートウェイ上でWebhook受信者として実行され、認証にはチャンネルアクセストークンとチャンネルシークレットを使用します。
+ステータス: プラグインを介してサポートされています。ダイレクトメッセージ、グループチャット、メディア、位置情報、Flexメッセージ、テンプレートメッセージ、およびクイック返信がサポートされています。リアクションとスレッドはサポートされていません。
+## プラグインの必要性
+LINEプラグインをインストールします:
 ```bash
 openclaw plugins install @openclaw/line
 ```
-Local checkout (when running from a git repo):
+ローカルチェックアウト（gitリポジトリから実行する場合）:
 ```bash
 openclaw plugins install ./extensions/line
 ```
 ## セットアップ
-1. Create a LINE Developers account and open the Console:
+1. LINE Developersアカウントを作成し、コンソールを開きます:
 [https://developers.line.biz/console/](https://developers.line.biz/console/)
-2. Create (or pick) a Provider and add a \*\*Messaging API\*\* channel.
-3. Copy the \*\*Channel access token\*\* and \*\*Channel secret\*\* from the channel settings.
-4. Enable \*\*Use webhook\*\* in the Messaging API settings.
-5. Set the webhook URL to your gateway endpoint (HTTPS required):
+2. プロバイダーを作成（または選択）し、**Messaging API**チャンネルを追加します。
+3. チャンネル設定から**Channel access token**と**Channel secret**をコピーします。
+4. Messaging API設定で**Use webhook**を有効にします。
+5. Webhook URLをゲートウェイエンドポイントに設定します（HTTPSが必要）:
 ```
 https://gateway-host/line/webhook
 ```
-The gateway responds to LINE’s webhook verification (GET) and inbound events (POST).
-If you need a custom path, set `channels.line.webhookPath` or
-`channels.line.accounts..webhookPath` and update the URL accordingly.
-## Configure
-Minimal config:
+ゲートウェイは、LINEのWebhook検証（GET）および受信イベント（POST）に応答します。カスタムパスが必要な場合は、`channels.line.webhookPath`または`channels.line.accounts..webhookPath`を設定し、URLを適宜更新してください。
+## 設定
+最小限の設定:
 ```json5
 {
 channels: {
@@ -46,10 +40,10 @@ dmPolicy: "pairing",
 },
 }
 ```
-Env vars (default account only):
-\* `LINE\_CHANNEL\_ACCESS\_TOKEN`
-\* `LINE\_CHANNEL\_SECRET`
-Token/secret files:
+環境変数（デフォルトアカウントのみ）:
+* `LINE\_CHANNEL\_ACCESS\_TOKEN`
+* `LINE\_CHANNEL\_SECRET`
+トークン/シークレットファイル:
 ```json5
 {
 channels: {
@@ -60,7 +54,7 @@ secretFile: "/path/to/line-secret.txt",
 },
 }
 ```
-Multiple accounts:
+複数アカウント:
 ```json5
 {
 channels: {
@@ -76,33 +70,30 @@ webhookPath: "/line/marketing",
 },
 }
 ```
-## Access control
-Direct messages default to pairing. Unknown senders get a pairing code and their
-messages are ignored until approved.
+## アクセス制御
+ダイレクトメッセージはデフォルトでペアリングになります。未知の送信者にはペアリングコードが付与され、そのメッセージは承認されるまで無視されます。
 ```bash
 openclaw pairing list line
-openclaw pairing approve line ```` ```
-Allowlists and policies:
+openclaw pairing approve line
+```
+許可リストとポリシー:
 * `channels.line.dmPolicy`: `pairing | allowlist | open | disabled`
-* `channels.line.allowFrom`: allowlisted LINE user IDs for DMs
+* `channels.line.allowFrom`: ダイレクトメッセージ用の許可リストに登録されたLINEユーザーID
 * `channels.line.groupPolicy`: `allowlist | open | disabled`
-* `channels.line.groupAllowFrom`: allowlisted LINE user IDs for groups
-* Per-group overrides: `channels.line.groups..allowFrom`
-* Runtime note: if `channels.line` is completely missing, runtime falls back to `groupPolicy="allowlist"` for group checks (even if `channels.defaults.groupPolicy` is set).
-LINE IDs are case-sensitive. Valid IDs look like:
-* User: `U` + 32 hex chars
-* Group: `C` + 32 hex chars
-* Room: `R` + 32 hex chars
-## Message behavior
-* Text is chunked at 5000 characters.
-* Markdown formatting is stripped; code blocks and tables are converted into Flex
-cards when possible.
-* Streaming responses are buffered; LINE receives full chunks with a loading
-animation while the agent works.
-* Media downloads are capped by `channels.line.mediaMaxMb` (default 10).
-## Channel data (rich messages)
-Use `channelData.line` to send quick replies, locations, Flex cards, or template
-messages.
+* `channels.line.groupAllowFrom`: グループ用の許可リストに登録されたLINEユーザーID
+* グループごとのオーバーライド: `channels.line.groups..allowFrom`
+* ランタイムノート: `channels.line`が完全に欠落している場合、ランタイムはグループチェックのために`groupPolicy="allowlist"`にフォールバックします（`channels.defaults.groupPolicy`が設定されていても）。
+LINE IDは大文字と小文字を区別します。有効なIDは以下の形式です:
+* ユーザー: `U` + 32の16進数文字
+* グループ: `C` + 32の16進数文字
+* ルーム: `R` + 32の16進数文字
+## メッセージの動作
+* テキストは5000文字で分割されます。
+* Markdown形式は削除されます; コードブロックとテーブルは可能な限りFlexカードに変換されます。
+* ストリーミングレスポンスはバッファリングされます; LINEはエージェントが作業している間、ローディングアニメーションと共に完全なチャンクを受け取ります。
+* メディアのダウンロードは`channels.line.mediaMaxMb`（デフォルト10）によって制限されます。
+## チャンネルデータ（リッチメッセージ）
+`channelData.line`を使用してクイック返信、位置情報、Flexカード、またはテンプレートメッセージを送信します。
 ```json5
 {
 text: "Here you go",
@@ -118,7 +109,7 @@ longitude: 139.767125,
 flexMessage: {
 altText: "Status card",
 contents: {
-/* Flex payload */
+/* Flexペイロード */
 },
 },
 templateMessage: {
@@ -133,14 +124,11 @@ cancelData: "no",
 },
 }
 ```
-The LINE plugin also ships a `/card` command for Flex message presets:
+LINEプラグインには、Flexメッセージのプリセット用に`/card`コマンドも含まれています:
 ```
 /card info "Welcome" "Thanks for joining!"
 ```
-## Troubleshooting
-* **Webhook verification fails:** ensure the webhook URL is HTTPS and the
-`channelSecret` matches the LINE console.
-* **No inbound events:** confirm the webhook path matches `channels.line.webhookPath`
-and that the gateway is reachable from LINE.
-* **Media download errors:** raise `channels.line.mediaMaxMb` if media exceeds the
-default limit. ````
+## トラブルシューティング
+* **Webhook検証に失敗:** Webhook URLがHTTPSであり、`channelSecret`がLINEコンソールと一致していることを確認してください。
+* **受信イベントがない:** Webhookパスが`channels.line.webhookPath`と一致していること、そしてゲートウェイがLINEから到達可能であることを確認してください。
+* **メディアダウンロードエラー:** メディアがデフォルトの制限を超える場合は、`channels.line.mediaMaxMb`を引き上げてください。

@@ -6,66 +6,66 @@ title: "画像とメディアサポート"
 
 # Image & Media Support — 2025-12-05
 
-The WhatsApp channel runs via **Baileys Web**. This document captures the current media handling rules for send, gateway, and agent replies.
+WhatsAppチャネルは**Baileys Web**を介して動作します。このドキュメントは、送信、ゲートウェイ、およびエージェントの応答に関する現在のメディア処理ルールをまとめたものです。
 
-## Goals
+## 目標
 
-* Send media with optional captions via `openclaw message send --media`.
-* Allow auto-replies from the web inbox to include media alongside text.
-* Keep per-type limits sane and predictable.
+* `openclaw message send --media`を使用して、オプションのキャプション付きでメディアを送信する。
+* ウェブ受信トレイからの自動応答にテキストと一緒にメディアを含めることを許可する。
+* タイプごとの制限を健全で予測可能なものに保つ。
 
-## CLI Surface
+## CLIインターフェース
 
 * `openclaw message send --media <path-or-url> [--message <caption>]`
-  * `--media` optional; caption can be empty for media-only sends.
-  * `--dry-run` prints the resolved payload; `--json` emits `{ channel, to, messageId, mediaUrl, caption }`.
+  * `--media`はオプションであり、キャプションはメディアのみの送信の場合は空にできます。
+  * `--dry-run`は解決されたペイロードを表示します; `--json`は`{ channel, to, messageId, mediaUrl, caption }`を出力します。
 
-## WhatsApp Web channel behavior
+## WhatsApp Webチャネルの動作
 
-* Input: local file path **or** HTTP(S) URL.
-* Flow: load into a Buffer, detect media kind, and build the correct payload:
-  * **Images:** resize & recompress to JPEG (max side 2048px) targeting `agents.defaults.mediaMaxMb` (default 5 MB), capped at 6 MB.
-  * **Audio/Voice/Video:** pass-through up to 16 MB; audio is sent as a voice note (`ptt: true`).
-  * **Documents:** anything else, up to 100 MB, with filename preserved when available.
-* WhatsApp GIF-style playback: send an MP4 with `gifPlayback: true` (CLI: `--gif-playback`) so mobile clients loop inline.
-* MIME detection prefers magic bytes, then headers, then file extension.
-* Caption comes from `--message` or `reply.text`; empty caption is allowed.
-* Logging: non-verbose shows `↩️`/`✅`; verbose includes size and source path/URL.
+* 入力: ローカルファイルパス**または**HTTP(S) URL。
+* フロー: バッファにロードし、メディアの種類を検出し、正しいペイロードを構築します:
+  * **画像:** JPEGにリサイズおよび再圧縮（最大サイド2048px）、`agents.defaults.mediaMaxMb`（デフォルト5MB）をターゲットにし、6MBに制限。
+  * **音声/ボイス/ビデオ:** 最大16MBまでパススルー; 音声はボイスノートとして送信されます（`ptt: true`）。
+  * **ドキュメント:** その他すべて、最大100MBで、利用可能な場合はファイル名を保持します。
+* WhatsApp GIFスタイルの再生: `gifPlayback: true`を指定してMP4を送信します（CLI: `--gif-playback`）ので、モバイルクライアントはインラインでループします。
+* MIME検出はマジックバイトを優先し、その後ヘッダー、ファイル拡張子の順です。
+* キャプションは`--message`または`reply.text`から取得され、空のキャプションも許可されます。
+* ロギング: 非冗長表示は`↩️`/`✅`を示します; 冗長表示にはサイズとソースパス/URLが含まれます。
 
-## Auto-Reply Pipeline
+## 自動応答パイプライン
 
-* `getReplyFromConfig` returns `{ text?, mediaUrl?, mediaUrls? }`.
-* When media is present, the web sender resolves local paths or URLs using the same pipeline as `openclaw message send`.
-* Multiple media entries are sent sequentially if provided.
+* `getReplyFromConfig`は`{ text?, mediaUrl?, mediaUrls? }`を返します。
+* メディアが存在する場合、ウェブ送信者は`openclaw message send`と同じパイプラインを使用してローカルパスまたはURLを解決します。
+* 複数のメディアエントリは、提供された場合、順次送信されます。
 
-## Inbound Media to Commands (Pi)
+## コマンドへの受信メディア (Pi)
 
-* When inbound web messages include media, OpenClaw downloads to a temp file and exposes templating variables:
-  * `{{MediaUrl}}` pseudo-URL for the inbound media.
-  * `{{MediaPath}}` local temp path written before running the command.
-* When a per-session Docker sandbox is enabled, inbound media is copied into the sandbox workspace and `MediaPath`/`MediaUrl` are rewritten to a relative path like `media/inbound/<filename>`.
-* Media understanding (if configured via `tools.media.*` or shared `tools.media.models`) runs before templating and can insert `[Image]`, `[Audio]`, and `[Video]` blocks into `Body`.
-  * Audio sets `{{Transcript}}` and uses the transcript for command parsing so slash commands still work.
-  * Video and image descriptions preserve any caption text for command parsing.
-* By default only the first matching image/audio/video attachment is processed; set `tools.media.<cap>.attachments` to process multiple attachments.
+* 受信ウェブメッセージにメディアが含まれている場合、OpenClawは一時ファイルにダウンロードし、テンプレート変数を公開します:
+  * `{{MediaUrl}}`は受信メディアの擬似URLです。
+  * `{{MediaPath}}`はコマンドを実行する前に書き込まれたローカルの一時パスです。
+* セッションごとのDockerサンドボックスが有効な場合、受信メディアはサンドボックスのワークスペースにコピーされ、`MediaPath`/`MediaUrl`は`media/inbound/<filename>`のような相対パスに書き換えられます。
+* メディア理解（`tools.media.*`または共有`tools.media.models`を介して構成された場合）は、テンプレート処理の前に実行され、`Body`に`[Image]`、`[Audio]`、および`[Video]`ブロックを挿入できます。
+  * 音声は`{{Transcript}}`を設定し、コマンド解析のためにトランスクリプトを使用するため、スラッシュコマンドは引き続き機能します。
+  * ビデオおよび画像の説明は、コマンド解析のためにキャプションテキストを保持します。
+* デフォルトでは、最初の一致する画像/音声/ビデオ添付ファイルのみが処理されます; 複数の添付ファイルを処理するには`tools.media.<cap>.attachments`を設定します。
 
-## Limits & Errors
+## 制限とエラー
 
-**Outbound send caps (WhatsApp web send)**
+**送信制限 (WhatsAppウェブ送信)**
 
-* Images: \~6 MB cap after recompression.
-* Audio/voice/video: 16 MB cap; documents: 100 MB cap.
-* Oversize or unreadable media → clear error in logs and the reply is skipped.
+* 画像: 再圧縮後の約6MB制限。
+* 音声/ボイス/ビデオ: 16MB制限; ドキュメント: 100MB制限。
+* サイズオーバーまたは読み取れないメディア → ログに明確なエラーが表示され、応答はスキップされます。
 
-**Media understanding caps (transcription/description)**
+**メディア理解の制限 (文字起こし/説明)**
 
-* Image default: 10 MB (`tools.media.image.maxBytes`).
-* Audio default: 20 MB (`tools.media.audio.maxBytes`).
-* Video default: 50 MB (`tools.media.video.maxBytes`).
-* Oversize media skips understanding, but replies still go through with the original body.
+* 画像デフォルト: 10MB (`tools.media.image.maxBytes`)。
+* 音声デフォルト: 20MB (`tools.media.audio.maxBytes`)。
+* ビデオデフォルト: 50MB (`tools.media.video.maxBytes`)。
+* サイズオーバーのメディアは理解をスキップしますが、応答は元の本文で通過します。
 
-## Notes for Tests
+## テストのための注意事項
 
-* Cover send + reply flows for image/audio/document cases.
-* Validate recompression for images (size bound) and voice-note flag for audio.
-* Ensure multi-media replies fan out as sequential sends.
+* 画像/音声/ドキュメントのケースに対して送信+応答フローをカバーします。
+* 画像の再圧縮（サイズ制限）と音声のボイスノートフラグを検証します。
+* マルチメディアの応答が順次送信としてファンアウトすることを確認します。

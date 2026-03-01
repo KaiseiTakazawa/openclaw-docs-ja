@@ -6,37 +6,34 @@ title: "Web UI"
 
 # Web (Gateway)
 
-The Gateway serves a small **browser Control UI** (Vite + Lit) from the same port as the Gateway WebSocket:
+Gatewayは、Gateway WebSocketと同じポートから小さな**ブラウザコントロールUI**（Vite + Lit）を提供します。
 
-* default: `http://<host>:18789/`
-* optional prefix: set `gateway.controlUi.basePath` (e.g. `/openclaw`)
+* デフォルト: `http://<host>:18789/`
+* オプションのプレフィックス: `gateway.controlUi.basePath`を設定（例: `/openclaw`）
 
-Capabilities live in [Control UI](/web/control-ui).
-This page focuses on bind modes, security, and web-facing surfaces.
+機能は[Control UI](/web/control-ui)にあります。このページでは、バインドモード、セキュリティ、およびウェブ向けのインターフェースに焦点を当てています。
 
 ## Webhook
 
-When `hooks.enabled=true`, the Gateway also exposes a small webhook endpoint on the same HTTP server.
-See [Gateway configuration](/gateway/configuration) → `hooks` for auth + payloads.
+`hooks.enabled=true`のとき、Gatewayは同じHTTPサーバー上に小さなWebhookエンドポイントも公開します。認証とペイロードについては[Gateway configuration](/gateway/configuration) → `hooks`を参照してください。
 
 ## Config (default-on)
 
-The Control UI is **enabled by default** when assets are present (`dist/control-ui`).
-You can control it via config:
+アセットが存在する場合（`dist/control-ui`）、コントロールUIは**デフォルトで有効**です。設定を通じて制御できます：
 
 ```json5
 {
   gateway: {
-    controlUi: { enabled: true, basePath: "/openclaw" }, // basePath optional
+    controlUi: { enabled: true, basePath: "/openclaw" }, // basePathはオプション
   },
 }
 ```
 
-## Tailscale access
+## Tailscaleアクセス
 
-### Integrated Serve (recommended)
+### 統合サーブ（推奨）
 
-Keep the Gateway on loopback and let Tailscale Serve proxy it:
+Gatewayをループバックに保ち、Tailscale Serveにプロキシさせます：
 
 ```json5
 {
@@ -47,17 +44,17 @@ Keep the Gateway on loopback and let Tailscale Serve proxy it:
 }
 ```
 
-Then start the gateway:
+次に、Gatewayを起動します：
 
 ```bash
 openclaw gateway
 ```
 
-Open:
+開く：
 
-* `https://<magicdns>/` (or your configured `gateway.controlUi.basePath`)
+* `https://<magicdns>/`（または設定した`gateway.controlUi.basePath`）
 
-### Tailnet bind + token
+### Tailnetバインド + トークン
 
 ```json5
 {
@@ -69,50 +66,43 @@ Open:
 }
 ```
 
-Then start the gateway (token required for non-loopback binds):
+次に、Gatewayを起動します（ループバック以外のバインドにはトークンが必要です）：
 
 ```bash
 openclaw gateway
 ```
 
-Open:
+開く：
 
-* `http://<tailscale-ip>:18789/` (or your configured `gateway.controlUi.basePath`)
+* `http://<tailscale-ip>:18789/`（または設定した`gateway.controlUi.basePath`）
 
-### Public internet (Funnel)
+### 公共インターネット（ファンネル）
 
 ```json5
 {
   gateway: {
     bind: "loopback",
     tailscale: { mode: "funnel" },
-    auth: { mode: "password" }, // or OPENCLAW_GATEWAY_PASSWORD
+    auth: { mode: "password" }, // または OPENCLAW_GATEWAY_PASSWORD
   },
 }
 ```
 
-## Security notes
+## セキュリティノート
 
-* Gateway auth is required by default (token/password or Tailscale identity headers).
-* Non-loopback binds still **require** a shared token/password (`gateway.auth` or env).
-* The wizard generates a gateway token by default (even on loopback).
-* The UI sends `connect.params.auth.token` or `connect.params.auth.password`.
-* For non-loopback Control UI deployments, set `gateway.controlUi.allowedOrigins`
-  explicitly (full origins). Without it, gateway startup is refused by default.
-* `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true` enables
-  Host-header origin fallback mode, but is a dangerous security downgrade.
-* With Serve, Tailscale identity headers can satisfy Control UI/WebSocket auth
-  when `gateway.auth.allowTailscale` is `true` (no token/password required).
-  HTTP API endpoints still require token/password. Set
-  `gateway.auth.allowTailscale: false` to require explicit credentials. See
-  [Tailscale](/gateway/tailscale) and [Security](/gateway/security). This
-  tokenless flow assumes the gateway host is trusted.
-* `gateway.tailscale.mode: "funnel"` requires `gateway.auth.mode: "password"` (shared password).
+* Gatewayの認証はデフォルトで必要です（トークン/パスワードまたはTailscaleのアイデンティティヘッダー）。
+* 非ループバックバインドには、共有トークン/パスワード（`gateway.auth`または環境変数）が**必要**です。
+* ウィザードはデフォルトでGatewayトークンを生成します（ループバックでも）。
+* UIは`connect.params.auth.token`または`connect.params.auth.password`を送信します。
+* 非ループバックのControl UIデプロイメントでは、`gateway.controlUi.allowedOrigins`を明示的に設定する必要があります（完全なオリジン）。これがないと、デフォルトでGatewayの起動が拒否されます。
+* `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true`は、Hostヘッダーオリジンフォールバックモードを有効にしますが、これは危険なセキュリティの低下です。
+* Serveを使用すると、TailscaleのアイデンティティヘッダーがControl UI/WebSocketの認証を満たすことができます。これは`gateway.auth.allowTailscale`が`true`のときに限ります（トークン/パスワードは不要）。HTTP APIエンドポイントは依然としてトークン/パスワードが必要です。明示的な認証情報を要求するには、`gateway.auth.allowTailscale: false`を設定します。[Tailscale](/gateway/tailscale)および[Security](/gateway/security)を参照してください。このトークンなしのフローは、Gatewayホストが信頼されていることを前提としています。
+* `gateway.tailscale.mode: "funnel"`は、`gateway.auth.mode: "password"`（共有パスワード）を必要とします。
 
-## Building the UI
+## UIのビルド
 
-The Gateway serves static files from `dist/control-ui`. Build them with:
+Gatewayは`dist/control-ui`から静的ファイルを提供します。これらをビルドするには：
 
 ```bash
-pnpm ui:build # auto-installs UI deps on first run
+pnpm ui:build # 初回実行時にUIの依存関係を自動インストール
 ```

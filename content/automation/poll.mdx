@@ -4,46 +4,45 @@ title: "ポーリング"
 
 # ポーリング
 # ポーリング
-## Supported channels
-\* WhatsApp (web channel)
+## 対応チャネル
+\* WhatsApp (ウェブチャネル)
 \* Discord
-\* MS Teams (Adaptive Cards)
+\* MS Teams (アダプティブカード)
 ## CLI
 ```bash
 # WhatsApp
 openclaw message poll --target +15555550123 \
---poll-question "Lunch today?" --poll-option "Yes" --poll-option "No" --poll-option "Maybe"
+--poll-question "今日のランチは？" --poll-option "はい" --poll-option "いいえ" --poll-option "多分"
 openclaw message poll --target 123456789@g.us \
---poll-question "Meeting time?" --poll-option "10am" --poll-option "2pm" --poll-option "4pm" --poll-multi
+--poll-question "会議の時間は？" --poll-option "午前10時" --poll-option "午後2時" --poll-option "午後4時" --poll-multi
 # Discord
 openclaw message poll --channel discord --target channel:123456789 \
---poll-question "Snack?" --poll-option "Pizza" --poll-option "Sushi"
+--poll-question "おやつは？" --poll-option "ピザ" --poll-option "寿司"
 openclaw message poll --channel discord --target channel:123456789 \
---poll-question "Plan?" --poll-option "A" --poll-option "B" --poll-duration-hours 48
+--poll-question "計画は？" --poll-option "A" --poll-option "B" --poll-duration-hours 48
 # MS Teams
 openclaw message poll --channel msteams --target conversation:19:abc@thread.tacv2 \
---poll-question "Lunch?" --poll-option "Pizza" --poll-option "Sushi"
+--poll-question "ランチは？" --poll-option "ピザ" --poll-option "寿司"
 ```
-Options:
-\* `--channel`: `whatsapp` (default), `discord`, or `msteams`
-\* `--poll-multi`: allow selecting multiple options
-\* `--poll-duration-hours`: Discord-only (defaults to 24 when omitted)
+オプション:
+\* `--channel`: `whatsapp` (デフォルト), `discord`, または `msteams`
+\* `--poll-multi`: 複数のオプションを選択可能にする
+\* `--poll-duration-hours`: Discord専用（省略時は24時間）
 ## Gateway RPC
-Method: `poll`
-Params:
-\* `to` (string, required)
-\* `question` (string, required)
-\* `options` (string\[], required)
-\* `maxSelections` (number, optional)
-\* `durationHours` (number, optional)
-\* `channel` (string, optional, default: `whatsapp`)
-\* `idempotencyKey` (string, required)
-## Channel differences
-\* WhatsApp: 2-12 options, `maxSelections` must be within option count, ignores `durationHours`.
-\* Discord: 2-10 options, `durationHours` clamped to 1-768 hours (default 24). `maxSelections > 1` enables multi-select; Discord does not support a strict selection count.
-\* MS Teams: Adaptive Card polls (OpenClaw-managed). No native poll API; `durationHours` is ignored.
-## Agent tool (Message)
-Use the `message` tool with `poll` action (`to`, `pollQuestion`, `pollOption`, optional `pollMulti`, `pollDurationHours`, `channel`).
-Note: Discord has no “pick exactly N” mode; `pollMulti` maps to multi-select.
-Teams polls are rendered as Adaptive Cards and require the gateway to stay online
-to record votes in `~/.openclaw/msteams-polls.json`.
+メソッド: `poll`
+パラメータ:
+\* `to` (文字列, 必須)
+\* `question` (文字列, 必須)
+\* `options` (文字列\[], 必須)
+\* `maxSelections` (数値, 任意)
+\* `durationHours` (数値, 任意)
+\* `channel` (文字列, 任意, デフォルト: `whatsapp`)
+\* `idempotencyKey` (文字列, 必須)
+## チャネルの違い
+\* WhatsApp: 2-12オプション、`maxSelections`はオプション数内でなければならず、`durationHours`は無視される。
+\* Discord: 2-10オプション、`durationHours`は1-768時間に制限される（デフォルトは24）。`maxSelections > 1`はマルチ選択を有効にする; Discordは厳密な選択数をサポートしていない。
+\* MS Teams: アダプティブカードポール（OpenClaw管理）。ネイティブのポールAPIはなく、`durationHours`は無視される。
+## エージェントツール (メッセージ)
+`message`ツールを`poll`アクション（`to`, `pollQuestion`, `pollOption`, 任意の`pollMulti`, `pollDurationHours`, `channel`）で使用します。
+注意: Discordには「正確にNを選択する」モードはなく、`pollMulti`はマルチ選択にマッピングされます。
+Teamsのポールはアダプティブカードとしてレンダリングされ、投票を記録するためにゲートウェイがオンラインの状態である必要があります。`~/.openclaw/msteams-polls.json`に記録されます。

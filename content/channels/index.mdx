@@ -3,37 +3,34 @@ title: "チャットチャネル"
 ---
 
 # チャットチャネル
-# チャットチャネル
-OpenClaw can talk to you on any chat app you already use. Each channel connects via the Gateway.
-Text is supported everywhere; media and reactions vary by channel.
-## Supported channels
-\* [WhatsApp](/channels/whatsapp) — Most popular; uses Baileys and requires QR pairing.
-\* [Telegram](/channels/telegram) — Bot API via grammY; supports groups.
-\* [Discord](/channels/discord) — Discord Bot API + Gateway; supports servers, channels, and DMs.
-\* [IRC](/channels/irc) — Classic IRC servers; channels + DMs with pairing/allowlist controls.
-\* [Slack](/channels/slack) — Bolt SDK; workspace apps.
-\* [Feishu](/channels/feishu) — Feishu/Lark bot via WebSocket (plugin, installed separately).
-\* [Google Chat](/channels/googlechat) — Google Chat API app via HTTP webhook.
-\* [Mattermost](/channels/mattermost) — Bot API + WebSocket; channels, groups, DMs (plugin, installed separately).
-\* [Signal](/channels/signal) — signal-cli; privacy-focused.
-\* [BlueBubbles](/channels/bluebubbles) — \*\*Recommended for iMessage\*\*; uses the BlueBubbles macOS server REST API with full feature support (edit, unsend, effects, reactions, group management — edit currently broken on macOS 26 Tahoe).
-\* [iMessage (legacy)](/channels/imessage) — Legacy macOS integration via imsg CLI (deprecated, use BlueBubbles for new setups).
-\* [Microsoft Teams](/channels/msteams) — Bot Framework; enterprise support (plugin, installed separately).
-\* [Synology Chat](/channels/synology-chat) — Synology NAS Chat via outgoing+incoming webhooks (plugin, installed separately).
-\* [LINE](/channels/line) — LINE Messaging API bot (plugin, installed separately).
-\* [Nextcloud Talk](/channels/nextcloud-talk) — Self-hosted chat via Nextcloud Talk (plugin, installed separately).
-\* [Matrix](/channels/matrix) — Matrix protocol (plugin, installed separately).
-\* [Nostr](/channels/nostr) — Decentralized DMs via NIP-04 (plugin, installed separately).
-\* [Tlon](/channels/tlon) — Urbit-based messenger (plugin, installed separately).
-\* [Twitch](/channels/twitch) — Twitch chat via IRC connection (plugin, installed separately).
-\* [Zalo](/channels/zalo) — Zalo Bot API; Vietnam's popular messenger (plugin, installed separately).
-\* [Zalo Personal](/channels/zalouser) — Zalo personal account via QR login (plugin, installed separately).
-\* [WebChat](/web/webchat) — Gateway WebChat UI over WebSocket.
+OpenClawは、あなたがすでに使用している任意のチャットアプリで会話できます。各チャネルはGatewayを介して接続されます。テキストはどこでもサポートされていますが、メディアやリアクションはチャネルによって異なります。
+## 対応チャネル
+\* [WhatsApp](/channels/whatsapp) — 最も人気があり、Baileysを使用しQRペアリングが必要です。
+\* [Telegram](/channels/telegram) — grammY経由のBot API; グループをサポートしています。
+\* [Discord](/channels/discord) — Discord Bot API + Gateway; サーバー、チャネル、DMをサポートしています。
+\* [IRC](/channels/irc) — クラシックなIRCサーバー; チャネル + ペアリング/ホワイトリスト制御によるDM。
+\* [Slack](/channels/slack) — Bolt SDK; ワークスペースアプリ。
+\* [Feishu](/channels/feishu) — WebSocket経由のFeishu/Larkボット（プラグイン、別途インストール）。
+\* [Google Chat](/channels/googlechat) — HTTP Webhook経由のGoogle Chat APIアプリ。
+\* [Mattermost](/channels/mattermost) — Bot API + WebSocket; チャネル、グループ、DM（プラグイン、別途インストール）。
+\* [Signal](/channels/signal) — signal-cli; プライバシー重視。
+\* [BlueBubbles](/channels/bluebubbles) — \*\*iMessageに推奨\*\*; BlueBubbles macOSサーバーREST APIを使用し、フル機能をサポート（編集、取り消し、エフェクト、リアクション、グループ管理 — macOS 26 Tahoeでは現在編集が壊れています）。
+\* [iMessage (legacy)](/channels/imessage) — imsg CLI経由のレガシーmacOS統合（非推奨、新しいセットアップにはBlueBubblesを使用）。
+\* [Microsoft Teams](/channels/msteams) — Bot Framework; エンタープライズサポート（プラグイン、別途インストール）。
+\* [Synology Chat](/channels/synology-chat) — 出力+入力Webhook経由のSynology NAS Chat（プラグイン、別途インストール）。
+\* [LINE](/channels/line) — LINE Messaging APIボット（プラグイン、別途インストール）。
+\* [Nextcloud Talk](/channels/nextcloud-talk) — Nextcloud Talk経由のセルフホストチャット（プラグイン、別途インストール）。
+\* [Matrix](/channels/matrix) — Matrixプロトコル（プラグイン、別途インストール）。
+\* [Nostr](/channels/nostr) — NIP-04経由の分散型DM（プラグイン、別途インストール）。
+\* [Tlon](/channels/tlon) — Urbitベースのメッセンジャー（プラグイン、別途インストール）。
+\* [Twitch](/channels/twitch) — IRC接続経由のTwitchチャット（プラグイン、別途インストール）。
+\* [Zalo](/channels/zalo) — Zalo Bot API; ベトナムの人気メッセンジャー（プラグイン、別途インストール）。
+\* [Zalo Personal](/channels/zalouser) — QRログイン経由のZalo個人アカウント（プラグイン、別途インストール）。
+\* [WebChat](/web/webchat) — WebSocket経由のGateway WebChat UI。
 ## 注意事項
-\* Channels can run simultaneously; configure multiple and OpenClaw will route per chat.
-\* Fastest setup is usually \*\*Telegram\*\* (simple bot token). WhatsApp requires QR pairing and
-stores more state on disk.
-\* Group behavior varies by channel; see [Groups](/channels/groups).
-\* DM pairing and allowlists are enforced for safety; see [Security](/gateway/security).
-\* Troubleshooting: [Channel troubleshooting](/channels/troubleshooting).
-\* Model providers are documented separately; see [Model Providers](/providers/models).
+\* チャネルは同時に実行できます; 複数を設定するとOpenClawがチャットごとにルーティングします。
+\* 最も迅速なセットアップは通常\*\*Telegram\*\*（シンプルなボットトークン）です。WhatsAppはQRペアリングが必要で、ディスク上により多くの状態を保存します。
+\* グループの動作はチャネルによって異なります; [グループ](/channels/groups)を参照してください。
+\* DMのペアリングとホワイトリストは安全のために強制されます; [セキュリティ](/gateway/security)を参照してください。
+\* トラブルシューティング: [チャネルのトラブルシューティング](/channels/troubleshooting)。
+\* モデルプロバイダーは別途文書化されています; [モデルプロバイダー](/providers/models)を参照してください。

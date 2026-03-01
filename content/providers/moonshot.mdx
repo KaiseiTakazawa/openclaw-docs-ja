@@ -6,11 +6,9 @@ title: "Moonshot AI"
 
 # Moonshot AI (Kimi)
 
-Moonshot provides the Kimi API with OpenAI-compatible endpoints. Configure the
-provider and set the default model to `moonshot/kimi-k2.5`, or use
-Kimi Coding with `kimi-coding/k2p5`.
+Moonshotは、OpenAI互換のエンドポイントを持つKimi APIを提供します。プロバイダーを設定し、デフォルトモデルを`moonshot/kimi-k2.5`に設定するか、Kimi Codingを`kimi-coding/k2p5`で使用します。
 
-Current Kimi K2 model IDs:
+現在のKimi K2モデルID:
 
 {/_moonshot-kimi-k2-ids:start_/ && null}
 
@@ -31,9 +29,9 @@ Kimi Coding:
 openclaw onboard --auth-choice kimi-code-api-key
 ```
 
-Note: Moonshot and Kimi Coding are separate providers. Keys are not interchangeable, endpoints differ, and model refs differ (Moonshot uses `moonshot/...`, Kimi Coding uses `kimi-coding/...`).
+注意: MoonshotとKimi Codingは別々のプロバイダーです。キーは互換性がなく、エンドポイントが異なり、モデル参照も異なります（Moonshotは`moonshot/...`を使用し、Kimi Codingは`kimi-coding/...`を使用します）。
 
-## Config snippet (Moonshot API)
+## 設定スニペット (Moonshot API)
 
 ```json5
 {
@@ -132,8 +130,7 @@ Note: Moonshot and Kimi Coding are separate providers. Keys are not interchangea
 
 ## 注意事項
 
-* Moonshot model refs use `moonshot/<modelId>`. Kimi Coding model refs use `kimi-coding/<modelId>`.
-* Override pricing and context metadata in `models.providers` if needed.
-* If Moonshot publishes different context limits for a model, adjust
-  `contextWindow` accordingly.
-* Use `https://api.moonshot.ai/v1` for the international endpoint, and `https://api.moonshot.cn/v1` for the China endpoint.
+* Moonshotのモデル参照は`moonshot/<modelId>`を使用します。Kimi Codingのモデル参照は`kimi-coding/<modelId>`を使用します。
+* 必要に応じて、`models.providers`で価格設定とコンテキストメタデータをオーバーライドしてください。
+* Moonshotがモデルの異なるコンテキスト制限を公開した場合は、`contextWindow`を適宜調整してください。
+* 国際エンドポイントには`https://api.moonshot.ai/v1`を使用し、中国エンドポイントには`https://api.moonshot.cn/v1`を使用してください。

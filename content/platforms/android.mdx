@@ -8,141 +8,141 @@ title: "Android アプリ"
 
 ## Support snapshot
 
-* Role: companion node app (Android does not host the Gateway).
-* Gateway required: yes (run it on macOS, Linux, or Windows via WSL2).
-* Install: [Getting Started](/start/getting-started) + [Pairing](/gateway/pairing).
-* Gateway: [Runbook](/gateway) + [Configuration](/gateway/configuration).
-  * Protocols: [Gateway protocol](/gateway/protocol) (nodes + control plane).
+* 役割: コンパニオンノードアプリ (Android は Gateway をホストしません)。
+* Gateway 必要: はい (macOS、Linux、または Windows 上で WSL2 経由で実行)。
+* インストール: [Getting Started](/start/getting-started) + [Pairing](/gateway/pairing)。
+* Gateway: [Runbook](/gateway) + [Configuration](/gateway/configuration)。
+  * プロトコル: [Gateway protocol](/gateway/protocol) (ノード + コントロールプレーン)。
 
 ## System control
 
-System control (launchd/systemd) lives on the Gateway host. See [Gateway](/gateway).
+システムコントロール (launchd/systemd) は Gateway ホスト上に存在します。詳細は [Gateway](/gateway) を参照してください。
 
 ## Connection Runbook
 
-Android node app ⇄ (mDNS/NSD + WebSocket) ⇄ **Gateway**
+Android ノードアプリ ⇄ (mDNS/NSD + WebSocket) ⇄ **Gateway**
 
-Android connects directly to the Gateway WebSocket (default `ws://<host>:18789`) and uses Gateway-owned pairing.
+Android は直接 Gateway WebSocket に接続します (デフォルト `ws://<host>:18789`) そして Gateway 所有のペアリングを使用します。
 
 ### 前提条件
 
-* You can run the Gateway on the “master” machine.
-* Android device/emulator can reach the gateway WebSocket:
-  * Same LAN with mDNS/NSD, **or**
-  * Same Tailscale tailnet using Wide-Area Bonjour / unicast DNS-SD (see below), **or**
-  * Manual gateway host/port (fallback)
-* You can run the CLI (`openclaw`) on the gateway machine (or via SSH).
+* “マスター” マシン上で Gateway を実行できます。
+* Android デバイス/エミュレーターが Gateway WebSocket に到達できる:
+  * mDNS/NSD を使用した同じ LAN、**または**
+  * Wide-Area Bonjour / ユニキャスト DNS-SD を使用した同じ Tailscale テイルネット (下記参照)、**または**
+  * 手動 Gateway ホスト/ポート (フォールバック)
+* Gateway マシン上で CLI (`openclaw`) を実行できます (または SSH 経由で)。
 
-### 1) Start the Gateway
+### 1) Gateway を起動する
 
 ```bash
 openclaw gateway --port 18789 --verbose
 ```
 
-Confirm in logs you see something like:
+ログに以下のようなメッセージが表示されることを確認してください:
 
 * `listening on ws://0.0.0.0:18789`
 
-For tailnet-only setups (recommended for Vienna ⇄ London), bind the gateway to the tailnet IP:
+テイルネット専用のセットアップ (ウィーン ⇄ ロンドンに推奨) の場合、Gateway をテイルネット IP にバインドします:
 
-* Set `gateway.bind: "tailnet"` in `~/.openclaw/openclaw.json` on the gateway host.
-* Restart the Gateway / macOS menubar app.
+* Gateway ホストの `~/.openclaw/openclaw.json` に `gateway.bind: "tailnet"` を設定します。
+* Gateway / macOS メニューバーアプリを再起動します。
 
-### 2) Verify discovery (optional)
+### 2) 発見を確認する (オプション)
 
-From the gateway machine:
+Gateway マシンから:
 
 ```bash
 dns-sd -B _openclaw-gw._tcp local.
 ```
 
-More debugging notes: [Bonjour](/gateway/bonjour).
+さらなるデバッグノート: [Bonjour](/gateway/bonjour)。
 
-#### Tailnet (Vienna ⇄ London) discovery via unicast DNS-SD
+#### テイルネット (ウィーン ⇄ ロンドン) のユニキャスト DNS-SD を介した発見
 
-Android NSD/mDNS discovery won’t cross networks. If your Android node and the gateway are on different networks but connected via Tailscale, use Wide-Area Bonjour / unicast DNS-SD instead:
+Android の NSD/mDNS 発見はネットワークを越えません。Android ノードと Gateway が異なるネットワーク上にあるが Tailscale 経由で接続されている場合は、Wide-Area Bonjour / ユニキャスト DNS-SD を使用してください:
 
-1. Set up a DNS-SD zone (example `openclaw.internal.`) on the gateway host and publish `_openclaw-gw._tcp` records.
-2. Configure Tailscale split DNS for your chosen domain pointing at that DNS server.
+1. Gateway ホスト上で DNS-SD ゾーン (例: `openclaw.internal.`) を設定し、`_openclaw-gw._tcp` レコードを公開します。
+2. 選択したドメインに対してその DNS サーバーを指す Tailscale スプリット DNS を構成します。
 
-Details and example CoreDNS config: [Bonjour](/gateway/bonjour).
+詳細と例の CoreDNS 設定: [Bonjour](/gateway/bonjour)。
 
-### 3) Connect from Android
+### 3) Android から接続する
 
-In the Android app:
+Android アプリ内で:
 
-* The app keeps its gateway connection alive via a **foreground service** (persistent notification).
-* Open **Settings**.
-* Under **Discovered Gateways**, select your gateway and hit **Connect**.
-* If mDNS is blocked, use **Advanced → Manual Gateway** (host + port) and **Connect (Manual)**.
+* アプリは **フォアグラウンドサービス** (永続通知) を介して Gateway 接続を維持します。
+* **設定**を開きます。
+* **発見された Gateway** の下で、あなたの Gateway を選択し、**接続**をクリックします。
+* mDNS がブロックされている場合は、**詳細 → 手動 Gateway** (ホスト + ポート) を使用し、**接続 (手動)** をクリックします。
 
-After the first successful pairing, Android auto-reconnects on launch:
+最初のペアリングが成功した後、Android は起動時に自動的に再接続します:
 
-* Manual endpoint (if enabled), otherwise
-* The last discovered gateway (best-effort).
+* 手動エンドポイント (有効な場合)、さもなくば
+* 最後に発見された Gateway (ベストエフォート)。
 
-### 4) Approve pairing (CLI)
+### 4) ペアリングを承認する (CLI)
 
-On the gateway machine:
+Gateway マシン上で:
 
 ```bash
 openclaw nodes pending
 openclaw nodes approve <requestId>
 ```
 
-Pairing details: [Gateway pairing](/gateway/pairing).
+ペアリングの詳細: [Gateway pairing](/gateway/pairing)。
 
-### 5) Verify the node is connected
+### 5) ノードが接続されていることを確認する
 
-* Via nodes status:
+* ノードのステータスを介して:
 
   ```bash
   openclaw nodes status
   ```
 
-* Via Gateway:
+* Gateway を介して:
 
   ```bash
   openclaw gateway call node.list --params "{}"
   ```
 
-### 6) Chat + history
+### 6) チャット + 履歴
 
-The Android node’s Chat sheet uses the gateway’s **primary session key** (`main`), so history and replies are shared with WebChat and other clients:
+Android ノードのチャットシートは Gateway の **プライマリセッションキー** (`main`) を使用するため、履歴と返信は WebChat や他のクライアントと共有されます:
 
-* History: `chat.history`
-* Send: `chat.send`
-* Push updates (best-effort): `chat.subscribe` → `event:"chat"`
+* 履歴: `chat.history`
+* 送信: `chat.send`
+* プッシュ更新 (ベストエフォート): `chat.subscribe` → `event:"chat"`
 
-### 7) Canvas + camera
+### 7) Canvas + カメラ
 
-#### Gateway Canvas Host (recommended for web content)
+#### Gateway Canvas ホスト (ウェブコンテンツに推奨)
 
-If you want the node to show real HTML/CSS/JS that the agent can edit on disk, point the node at the Gateway canvas host.
+ノードがエージェントがディスク上で編集できる実際の HTML/CSS/JS を表示する場合、ノードを Gateway canvas ホストにポイントします。
 
-Note: nodes load canvas from the Gateway HTTP server (same port as `gateway.port`, default `18789`).
+注意: ノードは Gateway HTTP サーバーからキャンバスを読み込みます (同じポートは `gateway.port`、デフォルトは `18789`)。
 
-1. Create `~/.openclaw/workspace/canvas/index.html` on the gateway host.
+1. Gateway ホスト上に `~/.openclaw/workspace/canvas/index.html` を作成します。
 
-2. Navigate the node to it (LAN):
+2. ノードをそれにナビゲートします (LAN):
 
 ```bash
 openclaw nodes invoke --node "<Android Node>" --command canvas.navigate --params '{"url":"http://<gateway-hostname>.local:18789/__openclaw__/canvas/"}'
 ```
 
-Tailnet (optional): if both devices are on Tailscale, use a MagicDNS name or tailnet IP instead of `.local`, e.g. `http://<gateway-magicdns>:18789/__openclaw__/canvas/`.
+テイルネット (オプション): 両方のデバイスが Tailscale 上にある場合、`.local` の代わりに MagicDNS 名または テイルネット IP を使用します。例: `http://<gateway-magicdns>:18789/__openclaw__/canvas/`。
 
-This server injects a live-reload client into HTML and reloads on file changes.
-The A2UI host lives at `http://<gateway-host>:18789/__openclaw__/a2ui/`.
+このサーバーは HTML にライブリロードクライアントを注入し、ファイル変更時にリロードします。
+A2UI ホストは `http://<gateway-host>:18789/__openclaw__/a2ui/` にあります。
 
-Canvas commands (foreground only):
+Canvas コマンド (フォアグラウンドのみ):
 
-* `canvas.eval`, `canvas.snapshot`, `canvas.navigate` (use `{"url":""}` or `{"url":"/"}` to return to the default scaffold). `canvas.snapshot` returns `{ format, base64 }` (default `format="jpeg"`).
-* A2UI: `canvas.a2ui.push`, `canvas.a2ui.reset` (`canvas.a2ui.pushJSONL` legacy alias)
+* `canvas.eval`, `canvas.snapshot`, `canvas.navigate` (デフォルトのスカフォールドに戻るには `{"url":""}` または `{"url":"/"}` を使用)。 `canvas.snapshot` は `{ format, base64 }` を返します (デフォルト `format="jpeg"`).
+* A2UI: `canvas.a2ui.push`, `canvas.a2ui.reset` (`canvas.a2ui.pushJSONL` のレガシーエイリアス)
 
-Camera commands (foreground only; permission-gated):
+カメラコマンド (フォアグラウンドのみ; 権限が必要):
 
 * `camera.snap` (jpg)
 * `camera.clip` (mp4)
 
-See [Camera node](/nodes/camera) for parameters and CLI helpers.
+パラメータと CLI ヘルパーについては [Camera node](/nodes/camera) を参照してください。

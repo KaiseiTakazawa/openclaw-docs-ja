@@ -6,40 +6,40 @@ title: "ブラウザログイン"
 
 # Browser login + X/Twitter posting
 
-## Manual login (recommended)
+## 手動ログイン（推奨）
 
-When a site requires login, **sign in manually** in the **host** browser profile (the openclaw browser).
+サイトがログインを要求する場合は、**ホスト**ブラウザプロファイル（openclawブラウザ）で**手動でサインイン**してください。
 
-Do **not** give the model your credentials. Automated logins often trigger anti‑bot defenses and can lock the account.
+モデルにあなたの認証情報を提供しないでください。自動ログインはしばしばボット対策を引き起こし、アカウントがロックされる可能性があります。
 
-Back to the main browser docs: [Browser](/tools/browser).
+メインのブラウザドキュメントに戻る: [Browser](/tools/browser)。
 
-## Which Chrome profile is used?
+## どのChromeプロファイルが使用されているか？
 
-OpenClaw controls a **dedicated Chrome profile** (named `openclaw`, orange‑tinted UI). This is separate from your daily browser profile.
+OpenClawは**専用のChromeプロファイル**（`openclaw`という名前、オレンジ色のUI）を制御します。これはあなたの日常のブラウザプロファイルとは別です。
 
-Two easy ways to access it:
+アクセスするための簡単な方法は2つあります：
 
-1. **Ask the agent to open the browser** and then log in yourself.
-2. **Open it via CLI**:
+1. **エージェントにブラウザを開くように頼み**、自分でログインします。
+2. **CLI経由で開く**：
 
 ```bash
 openclaw browser start
 openclaw browser open https://x.com
 ```
 
-If you have multiple profiles, pass `--browser-profile <name>` (the default is `openclaw`).
+複数のプロファイルがある場合は、`--browser-profile <name>`を指定してください（デフォルトは`openclaw`です）。
 
-## X/Twitter: recommended flow
+## X/Twitter: 推奨フロー
 
-* **Read/search/threads:** use the **host** browser (manual login).
-* **Post updates:** use the **host** browser (manual login).
+* **読む/検索/スレッド:** **ホスト**ブラウザを使用（手動ログイン）。
+* **更新を投稿:** **ホスト**ブラウザを使用（手動ログイン）。
 
-## Sandboxing + host browser access
+## サンドボックス化 + ホストブラウザアクセス
 
-Sandboxed browser sessions are **more likely** to trigger bot detection. For X/Twitter (and other strict sites), prefer the **host** browser.
+サンドボックス化されたブラウザセッションは**ボット検出を引き起こす可能性が高い**です。X/Twitter（および他の厳しいサイト）では、**ホスト**ブラウザを優先してください。
 
-If the agent is sandboxed, the browser tool defaults to the sandbox. To allow host control:
+エージェントがサンドボックス化されている場合、ブラウザツールはデフォルトでサンドボックスに切り替わります。ホスト制御を許可するには：
 
 ```json5
 {
@@ -56,10 +56,10 @@ If the agent is sandboxed, the browser tool defaults to the sandbox. To allow ho
 }
 ```
 
-Then target the host browser:
+その後、ホストブラウザをターゲットにします：
 
 ```bash
 openclaw browser open https://x.com --browser-profile openclaw --target host
 ```
 
-Or disable sandboxing for the agent that posts updates.
+または、更新を投稿するエージェントのサンドボックス化を無効にします。

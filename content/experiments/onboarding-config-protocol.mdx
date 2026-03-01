@@ -6,35 +6,35 @@ title: "オンボーディングと設定プロトコル"
 
 # Onboarding + Config Protocol
 
-Purpose: shared onboarding + config surfaces across CLI, macOS app, and Web UI.
+目的: CLI、macOSアプリ、Web UI全体で共有されるオンボーディングと設定のインターフェース。
 
-## Components
+## コンポーネント
 
-* Wizard engine (shared session + prompts + onboarding state).
-* CLI onboarding uses the same wizard flow as the UI clients.
-* Gateway RPC exposes wizard + config schema endpoints.
-* macOS onboarding uses the wizard step model.
-* Web UI renders config forms from JSON Schema + UI hints.
+* ウィザードエンジン（共有セッション + プロンプト + オンボーディング状態）。
+* CLIのオンボーディングはUIクライアントと同じウィザードフローを使用します。
+* Gateway RPCはウィザードと設定スキーマのエンドポイントを公開します。
+* macOSのオンボーディングはウィザードステップモデルを使用します。
+* Web UIはJSON SchemaとUIヒントから設定フォームをレンダリングします。
 
 ## Gateway RPC
 
-* `wizard.start` params: `{ mode?: "local"|"remote", workspace?: string }`
-* `wizard.next` params: `{ sessionId, answer?: { stepId, value? } }`
-* `wizard.cancel` params: `{ sessionId }`
-* `wizard.status` params: `{ sessionId }`
-* `config.schema` params: `{}`
+* `wizard.start` パラメータ: `{ mode?: "local"|"remote", workspace?: string }`
+* `wizard.next` パラメータ: `{ sessionId, answer?: { stepId, value? } }`
+* `wizard.cancel` パラメータ: `{ sessionId }`
+* `wizard.status` パラメータ: `{ sessionId }`
+* `config.schema` パラメータ: `{}`
 
-Responses (shape)
+レスポンス（形状）
 
-* Wizard: `{ sessionId, done, step?, status?, error? }`
-* Config schema: `{ schema, uiHints, version, generatedAt }`
+* ウィザード: `{ sessionId, done, step?, status?, error? }`
+* 設定スキーマ: `{ schema, uiHints, version, generatedAt }`
 
-## UI Hints
+## UIヒント
 
-* `uiHints` keyed by path; optional metadata (label/help/group/order/advanced/sensitive/placeholder).
-* Sensitive fields render as password inputs; no redaction layer.
-* Unsupported schema nodes fall back to the raw JSON editor.
+* `uiHints`はパスでキー付けされる; オプションのメタデータ（ラベル/ヘルプ/グループ/順序/高度な/センシティブ/プレースホルダー）。
+* センシティブフィールドはパスワード入力としてレンダリングされる; レダクションレイヤーはなし。
+* サポートされていないスキーマノードは生のJSONエディタにフォールバックします。
 
 ## 注意事項
 
-* This doc is the single place to track protocol refactors for onboarding/config.
+* このドキュメントは、オンボーディング/設定のプロトコルリファクタリングを追跡する唯一の場所です。

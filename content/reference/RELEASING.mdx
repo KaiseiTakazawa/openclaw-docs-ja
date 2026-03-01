@@ -6,100 +6,98 @@ title: "リリースチェックリスト"
 
 # Release Checklist (npm + macOS)
 
-Use `pnpm` (Node 22+) from the repo root. Keep the working tree clean before tagging/publishing.
+リポジトリのルートから `pnpm` (Node 22+) を使用します。タグ付けや公開の前に作業ツリーをクリーンに保ちます。
 
-## Operator trigger
+## オペレーターのトリガー
 
-When the operator says “release”, immediately do this preflight (no extra questions unless blocked):
+オペレーターが「リリース」と言ったら、すぐにこのプレフライトを実施します（ブロックされない限り、余計な質問はしない）：
 
-* Read this doc and `docs/platforms/mac/release.md`.
-* Load env from `~/.profile` and confirm `SPARKLE_PRIVATE_KEY_FILE` + App Store Connect vars are set (SPARKLE\_PRIVATE\_KEY\_FILE should live in `~/.profile`).
-* Use Sparkle keys from `~/Library/CloudStorage/Dropbox/Backup/Sparkle` if needed.
+* このドキュメントと `docs/platforms/mac/release.md` を読みます。
+* `~/.profile` から環境を読み込み、`SPARKLE_PRIVATE_KEY_FILE` と App Store Connect の変数が設定されていることを確認します（SPARKLE\_PRIVATE\_KEY\_FILE は `~/.profile` に存在する必要があります）。
+* 必要に応じて、`~/Library/CloudStorage/Dropbox/Backup/Sparkle` から Sparkle キーを使用します。
 
-1. **Version & metadata**
+1. **バージョンとメタデータ**
 
-* [ ] Bump `package.json` version (e.g., `2026.1.29`).
-* [ ] Run `pnpm plugins:sync` to align extension package versions + changelogs.
-* [ ] Update CLI/version strings in [`src/version.ts`](https://github.com/openclaw/openclaw/blob/main/src/version.ts) and the Baileys user agent in [`src/web/session.ts`](https://github.com/openclaw/openclaw/blob/main/src/web/session.ts).
-* [ ] Confirm package metadata (name, description, repository, keywords, license) and `bin` map points to [`openclaw.mjs`](https://github.com/openclaw/openclaw/blob/main/openclaw.mjs) for `openclaw`.
-* [ ] If dependencies changed, run `pnpm install` so `pnpm-lock.yaml` is current.
+* [ ] `package.json` のバージョンを更新します（例: `2026.1.29`）。
+* [ ] `pnpm plugins:sync` を実行して、拡張パッケージのバージョンと変更ログを整合させます。
+* [ ] [`src/version.ts`](https://github.com/openclaw/openclaw/blob/main/src/version.ts) の CLI/バージョン文字列と [`src/web/session.ts`](https://github.com/openclaw/openclaw/blob/main/src/web/session.ts) の Baileys ユーザーエージェントを更新します。
+* [ ] パッケージメタデータ（名前、説明、リポジトリ、キーワード、ライセンス）を確認し、`bin` マップが `openclaw` 用の [`openclaw.mjs`](https://github.com/openclaw/openclaw/blob/main/openclaw.mjs) を指していることを確認します。
+* [ ] 依存関係が変更された場合、`pnpm install` を実行して `pnpm-lock.yaml` を最新の状態にします。
 
-2. **Build & artifacts**
+2. **ビルドとアーティファクト**
 
-* [ ] If A2UI inputs changed, run `pnpm canvas:a2ui:bundle` and commit any updated [`src/canvas-host/a2ui/a2ui.bundle.js`](https://github.com/openclaw/openclaw/blob/main/src/canvas-host/a2ui/a2ui.bundle.js).
-* [ ] `pnpm run build` (regenerates `dist/`).
-* [ ] Verify npm package `files` includes all required `dist/*` folders (notably `dist/node-host/**` and `dist/acp/**` for headless node + ACP CLI).
-* [ ] Confirm `dist/build-info.json` exists and includes the expected `commit` hash (CLI banner uses this for npm installs).
-* [ ] Optional: `npm pack --pack-destination /tmp` after the build; inspect the tarball contents and keep it handy for the GitHub release (do **not** commit it).
+* [ ] A2UI 入力が変更された場合、`pnpm canvas:a2ui:bundle` を実行し、更新された [`src/canvas-host/a2ui/a2ui.bundle.js`](https://github.com/openclaw/openclaw/blob/main/src/canvas-host/a2ui/a2ui.bundle.js) をコミットします。
+* [ ] `pnpm run build` （`dist/` を再生成します）。
+* [ ] npm パッケージの `files` にすべての必要な `dist/*` フォルダーが含まれていることを確認します（特にヘッドレスノード + ACP CLI 用の `dist/node-host/**` と `dist/acp/**`）。
+* [ ] `dist/build-info.json` が存在し、期待される `commit` ハッシュが含まれていることを確認します（CLI バナーはこれを npm インストールに使用します）。
+* [ ] オプション: ビルド後に `npm pack --pack-destination /tmp` を実行し、tarball の内容を確認して GitHub リリース用に手元に保管します（コミットしないこと）。
 
-3. **Changelog & docs**
+3. **変更ログとドキュメント**
 
-* [ ] Update `CHANGELOG.md` with user-facing highlights (create the file if missing); keep entries strictly descending by version.
-* [ ] Ensure README examples/flags match current CLI behavior (notably new commands or options).
+* [ ] ユーザー向けのハイライトで `CHANGELOG.md` を更新します（ファイルがない場合は作成）；エントリはバージョン順に厳密に降順で保ちます。
+* [ ] README の例/フラグが現在の CLI の動作と一致していることを確認します（特に新しいコマンドやオプション）。
 
-4. **Validation**
+4. **検証**
 
 * [ ] `pnpm build`
 * [ ] `pnpm check`
-* [ ] `pnpm test` (or `pnpm test:coverage` if you need coverage output)
-* [ ] `pnpm release:check` (verifies npm pack contents)
-* [ ] `OPENCLAW_INSTALL_SMOKE_SKIP_NONROOT=1 pnpm test:install:smoke` (Docker install smoke test, fast path; required before release)
-  * If the immediate previous npm release is known broken, set `OPENCLAW_INSTALL_SMOKE_PREVIOUS=<last-good-version>` or `OPENCLAW_INSTALL_SMOKE_SKIP_PREVIOUS=1` for the preinstall step.
-* [ ] (Optional) Full installer smoke (adds non-root + CLI coverage): `pnpm test:install:smoke`
-* [ ] (Optional) Installer E2E (Docker, runs `curl -fsSL https://openclaw.ai/install.sh | bash`, onboards, then runs real tool calls):
-  * `pnpm test:install:e2e:openai` (requires `OPENAI_API_KEY`)
-  * `pnpm test:install:e2e:anthropic` (requires `ANTHROPIC_API_KEY`)
-  * `pnpm test:install:e2e` (requires both keys; runs both providers)
-* [ ] (Optional) Spot-check the web gateway if your changes affect send/receive paths.
+* [ ] `pnpm test` （またはカバレッジ出力が必要な場合は `pnpm test:coverage`）
+* [ ] `pnpm release:check` （npm pack の内容を検証します）
+* [ ] `OPENCLAW_INSTALL_SMOKE_SKIP_NONROOT=1 pnpm test:install:smoke` （Docker インストールのスモークテスト、ファストパス；リリース前に必要）
+  * 直前の npm リリースが壊れていることが知られている場合、`OPENCLAW_INSTALL_SMOKE_PREVIOUS=<last-good-version>` または `OPENCLAW_INSTALL_SMOKE_SKIP_PREVIOUS=1` を設定してプレインストールステップを実行します。
+* [ ] （オプション）フルインストーラースモーク（非ルート + CLI カバレッジを追加）：`pnpm test:install:smoke`
+* [ ] （オプション）インストーラー E2E（Docker、`curl -fsSL https://openclaw.ai/install.sh | bash` を実行し、オンボーディング後に実際のツール呼び出しを実行）：
+  * `pnpm test:install:e2e:openai` （`OPENAI_API_KEY` が必要）
+  * `pnpm test:install:e2e:anthropic` （`ANTHROPIC_API_KEY` が必要）
+  * `pnpm test:install:e2e` （両方のキーが必要；両方のプロバイダーを実行）
+* [ ] （オプション）変更が送信/受信パスに影響を与える場合は、Web Gateway をスポットチェックします。
 
-5. **macOS app (Sparkle)**
+5. **macOS アプリ (Sparkle)**
 
-* [ ] Build + sign the macOS app, then zip it for distribution.
-* [ ] Generate the Sparkle appcast (HTML notes via [`scripts/make_appcast.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/make_appcast.sh)) and update `appcast.xml`.
-* [ ] Keep the app zip (and optional dSYM zip) ready to attach to the GitHub release.
-* [ ] Follow [macOS release](/platforms/mac/release) for the exact commands and required env vars.
-  * `APP_BUILD` must be numeric + monotonic (no `-beta`) so Sparkle compares versions correctly.
-  * If notarizing, use the `openclaw-notary` keychain profile created from App Store Connect API env vars (see [macOS release](/platforms/mac/release)).
+* [ ] macOS アプリをビルド + サインし、配布用に ZIP します。
+* [ ] Sparkle アプキャストを生成します（[`scripts/make_appcast.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/make_appcast.sh) を介して HTML ノート）し、`appcast.xml` を更新します。
+* [ ] アプリの ZIP（およびオプションの dSYM ZIP）を GitHub リリースに添付できるように準備します。
+* [ ] 正確なコマンドと必要な環境変数については [macOS release](/platforms/mac/release) に従います。
+  * `APP_BUILD` は数値で単調でなければならず（`-beta` は不可）、Sparkle がバージョンを正しく比較できるようにします。
+  * ノータライズする場合は、App Store Connect API 環境変数から作成された `openclaw-notary` キーチェーンプロファイルを使用します（[macOS release](/platforms/mac/release) を参照）。
 
-6. **Publish (npm)**
+6. **公開 (npm)**
 
-* [ ] Confirm git status is clean; commit and push as needed.
-* [ ] `npm login` (verify 2FA) if needed.
-* [ ] `npm publish --access public` (use `--tag beta` for pre-releases).
-* [ ] Verify the registry: `npm view openclaw version`, `npm view openclaw dist-tags`, and `npx -y openclaw@X.Y.Z --version` (or `--help`).
+* [ ] git ステータスがクリーンであることを確認します；必要に応じてコミットしてプッシュします。
+* [ ] 必要に応じて `npm login` （2FA を確認）。
+* [ ] `npm publish --access public` （プレリリースの場合は `--tag beta` を使用）。
+* [ ] レジストリを確認します：`npm view openclaw version`、`npm view openclaw dist-tags`、および `npx -y openclaw@X.Y.Z --version` （または `--help`）。
 
-### Troubleshooting (notes from 2.0.0-beta2 release)
+### トラブルシューティング (2.0.0-beta2 リリースのメモ)
 
-* **npm pack/publish hangs or produces huge tarball**: the macOS app bundle in `dist/OpenClaw.app` (and release zips) get swept into the package. Fix by whitelisting publish contents via `package.json` `files` (include dist subdirs, docs, skills; exclude app bundles). Confirm with `npm pack --dry-run` that `dist/OpenClaw.app` is not listed.
-* **npm auth web loop for dist-tags**: use legacy auth to get an OTP prompt:
+* **npm pack/publish がハングするか巨大な tarball を生成する**：`dist/OpenClaw.app`（およびリリース ZIP）がパッケージに含まれます。`package.json` の `files` を介して公開内容をホワイトリストにすることで修正します（dist サブディレクトリ、ドキュメント、スキルを含め、アプリバンドルを除外）。`npm pack --dry-run` で `dist/OpenClaw.app` がリストに含まれていないことを確認します。
+* **npm 認証ウェブループが dist-tags に対して発生する**：レガシー認証を使用して OTP プロンプトを取得します：
   * `NPM_CONFIG_AUTH_TYPE=legacy npm dist-tag add openclaw@X.Y.Z latest`
-* **`npx` verification fails with `ECOMPROMISED: Lock compromised`**: retry with a fresh cache:
+* **`npx` 検証が `ECOMPROMISED: Lock compromised` で失敗する**：新しいキャッシュで再試行します：
   * `NPM_CONFIG_CACHE=/tmp/npm-cache-$(date +%s) npx -y openclaw@X.Y.Z --version`
-* **Tag needs repointing after a late fix**: force-update and push the tag, then ensure the GitHub release assets still match:
+* **遅れた修正後にタグの再ポイントが必要**：タグを強制更新してプッシュし、GitHub リリースアセットがまだ一致していることを確認します：
   * `git tag -f vX.Y.Z && git push -f origin vX.Y.Z`
 
-7. **GitHub release + appcast**
+7. **GitHub リリース + アプキャスト**
 
-* [ ] Tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z` (or `git push --tags`).
-* [ ] Create/refresh the GitHub release for `vX.Y.Z` with **title `openclaw X.Y.Z`** (not just the tag); body should include the **full** changelog section for that version (Highlights + Changes + Fixes), inline (no bare links), and **must not repeat the title inside the body**.
-* [ ] Attach artifacts: `npm pack` tarball (optional), `OpenClaw-X.Y.Z.zip`, and `OpenClaw-X.Y.Z.dSYM.zip` (if generated).
-* [ ] Commit the updated `appcast.xml` and push it (Sparkle feeds from main).
-* [ ] From a clean temp directory (no `package.json`), run `npx -y openclaw@X.Y.Z send --help` to confirm install/CLI entrypoints work.
-* [ ] Announce/share release notes.
+* [ ] タグを付けてプッシュします：`git tag vX.Y.Z && git push origin vX.Y.Z` （または `git push --tags`）。
+* [ ] `vX.Y.Z` の GitHub リリースを作成/更新し、**タイトルを `openclaw X.Y.Z`** にします（タグだけではなく）；本文にはそのバージョンの **完全な** 変更ログセクション（ハイライト + 変更 + 修正）をインラインで含め（裸のリンクは不可）、**本文内にタイトルを繰り返さない**ようにします。
+* [ ] アーティファクトを添付します：`npm pack` tarball（オプション）、`OpenClaw-X.Y.Z.zip`、および `OpenClaw-X.Y.Z.dSYM.zip`（生成された場合）。
+* [ ] 更新された `appcast.xml` をコミットしてプッシュします（Sparkle はメインからフィードを取得します）。
+* [ ] クリーンな一時ディレクトリ（`package.json` がない）から、`npx -y openclaw@X.Y.Z send --help` を実行してインストール/CLI エントリポイントが機能することを確認します。
+* [ ] リリースノートを発表/共有します。
 
-## Plugin publish scope (npm)
+## プラグイン公開スコープ (npm)
 
-We only publish **existing npm plugins** under the `@openclaw/*` scope. Bundled
-plugins that are not on npm stay **disk-tree only** (still shipped in
-`extensions/**`).
+私たちは、`@openclaw/*` スコープの下でのみ **既存の npm プラグイン** を公開します。npm にないバンドルプラグインは **ディスクツリーのみ**（`extensions/**` に含まれますが、出荷されます）。
 
-Process to derive the list:
+リストを導出するプロセス：
 
-1. `npm search @openclaw --json` and capture the package names.
-2. Compare with `extensions/*/package.json` names.
-3. Publish only the **intersection** (already on npm).
+1. `npm search @openclaw --json` を実行し、パッケージ名をキャプチャします。
+2. `extensions/*/package.json` の名前と比較します。
+3. **交差部分**（すでに npm にあるもの）だけを公開します。
 
-Current npm plugin list (update as needed):
+現在の npm プラグインリスト（必要に応じて更新）：
 
 * @openclaw/bluebubbles
 * @openclaw/diagnostics-otel
@@ -114,5 +112,4 @@ Current npm plugin list (update as needed):
 * @openclaw/zalo
 * @openclaw/zalouser
 
-Release notes must also call out **new optional bundled plugins** that are **not
-on by default** (example: `tlon`).
+リリースノートには、**デフォルトでオフになっている新しいオプションのバンドルプラグイン**（例：`tlon`）も記載する必要があります。

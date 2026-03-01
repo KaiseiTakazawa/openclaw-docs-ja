@@ -4,30 +4,30 @@ title: "ヘルスチェック"
 
 # ヘルスチェック
 
-# Health Checks on macOS
+# macOSでのヘルスチェック
 
-How to see whether the linked channel is healthy from the menu bar app.
+メニューバーアプリからリンクされたチャネルが正常かどうかを確認する方法。
 
-## Menu bar
+## メニューバー
 
-* Status dot now reflects Baileys health:
-  * Green: linked + socket opened recently.
-  * Orange: connecting/retrying.
-  * Red: logged out or probe failed.
-* Secondary line reads "linked · auth 12m" or shows the failure reason.
-* "Run Health Check" menu item triggers an on-demand probe.
+* ステータスドットは現在Baileysの健康状態を反映しています：
+  * 緑：リンク済み + ソケットが最近開かれた。
+  * オレンジ：接続中/再試行中。
+  * 赤：ログアウトまたはプローブ失敗。
+* 二次行には「linked · auth 12m」と表示されるか、失敗理由が示されます。
+* 「ヘルスチェックを実行」メニュー項目はオンデマンドプローブをトリガーします。
 
-## Settings
+## 設定
 
-* General tab gains a Health card showing: linked auth age, session-store path/count, last check time, last error/status code, and buttons for Run Health Check / Reveal Logs.
-* Uses a cached snapshot so the UI loads instantly and falls back gracefully when offline.
-* **Channels tab** surfaces channel status + controls for WhatsApp/Telegram (login QR, logout, probe, last disconnect/error).
+* 一般タブには、リンクされた認証の年齢、セッションストアのパス/カウント、最終チェック時間、最終エラー/ステータスコード、ヘルスチェックを実行するボタンとログを表示するボタンを示すヘルスカードが追加されます。
+* キャッシュされたスナップショットを使用するため、UIは瞬時に読み込まれ、オフライン時には優雅にフォールバックします。
+* **チャネルタブ**では、WhatsApp/Telegramのチャネルステータスとコントロール（ログインQR、ログアウト、プローブ、最終切断/エラー）が表示されます。
 
-## How the probe works
+## プローブの動作
 
-* App runs `openclaw health --json` via `ShellExecutor` every \~60s and on demand. The probe loads creds and reports status without sending messages.
-* Cache the last good snapshot and the last error separately to avoid flicker; show the timestamp of each.
+* アプリは`ShellExecutor`を介して約60秒ごとに`openclaw health --json`を実行し、オンデマンドでも実行します。プローブはクレデンシャルを読み込み、メッセージを送信せずにステータスを報告します。
+* 最後の良好なスナップショットと最後のエラーを別々にキャッシュしてちらつきを避け、各タイムスタンプを表示します。
 
-## When in doubt
+## 疑問がある場合
 
-* You can still use the CLI flow in [Gateway health](/gateway/health) (`openclaw status`, `openclaw status --deep`, `openclaw health --json`) and tail `/tmp/openclaw/openclaw-*.log` for `web-heartbeat` / `web-reconnect`.
+* [Gateway health](/gateway/health)のCLIフロー（`openclaw status`、`openclaw status --deep`、`openclaw health --json`）を使用し続けることができ、`/tmp/openclaw/openclaw-*.log`を尾行して`web-heartbeat` / `web-reconnect`を確認できます。

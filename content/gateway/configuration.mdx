@@ -4,23 +4,19 @@ title: "設定"
 
 # 設定
 
-# 設定
+OpenClawは、`~/.openclaw/openclaw.json`からオプションの**JSON5**設定を読み込みます。
 
-OpenClaw reads an optional **JSON5** config from `~/.openclaw/openclaw.json`.
+ファイルが存在しない場合、OpenClawは安全なデフォルト設定を使用します。設定を追加する一般的な理由は次のとおりです：
 
-If the file is missing, OpenClaw uses safe defaults. Common reasons to add a config:
+* チャンネルを接続し、ボットにメッセージを送信できる人を制御する
+* モデル、ツール、サンドボックス、または自動化（cron、フック）を設定する
+* セッション、メディア、ネットワーキング、またはUIを調整する
 
-* Connect channels and control who can message the bot
-* Set models, tools, sandboxing, or automation (cron, hooks)
-* Tune sessions, media, networking, or UI
+利用可能なすべてのフィールドについては、[完全なリファレンス](/gateway/configuration-reference)を参照してください。
 
-See the [full reference](/gateway/configuration-reference) for every available field.
+**設定に不安がありますか？** インタラクティブなセットアップのために`openclaw onboard`を使用するか、完全なコピー＆ペースト設定のために[設定例](/gateway/configuration-examples)ガイドをチェックしてください。
 
-
-  **New to configuration?** Start with `openclaw onboard` for interactive setup, or check out the [Configuration Examples](/gateway/configuration-examples) guide for complete copy-paste configs.
-
-
-## Minimal config
+## 最小限の設定
 
 ```json5
 // ~/.openclaw/openclaw.json
@@ -30,318 +26,282 @@ See the [full reference](/gateway/configuration-reference) for every available f
 }
 ```
 
-## Editing config
+## 設定の編集
 
+```bash
+openclaw onboard       # フルセットアップウィザード
+openclaw configure     # 設定ウィザード
+```
 
-  
-    ```bash
-    openclaw onboard       # full setup wizard
-    openclaw configure     # config wizard
-    ```
-  
+```bash
+openclaw config get agents.defaults.workspace
+openclaw config set agents.defaults.heartbeat.every "2h"
+openclaw config unset tools.web.search.apiKey
+```
 
-  
-    ```bash
-    openclaw config get agents.defaults.workspace
-    openclaw config set agents.defaults.heartbeat.every "2h"
-    openclaw config unset tools.web.search.apiKey
-    ```
-  
+[http://127.0.0.1:18789](http://127.0.0.1:18789)を開き、**Config**タブを使用します。
+Control UIは設定スキーマからフォームをレンダリングし、**Raw JSON**エディタをエスケープハッチとして提供します。
 
-  
-    Open [http://127.0.0.1:18789](http://127.0.0.1:18789) and use the **Config** tab.
-    The Control UI renders a form from the config schema, with a **Raw JSON** editor as an escape hatch.
-  
+`~/.openclaw/openclaw.json`を直接編集します。Gatewayはファイルを監視し、自動的に変更を適用します（[ホットリロード](#config-hot-reload)を参照）。
 
-  
-    Edit `~/.openclaw/openclaw.json` directly. The Gateway watches the file and applies changes automatically (see [hot reload](#config-hot-reload)).
-  
+## 厳密な検証
 
+OpenClawは、スキーマに完全に一致する設定のみを受け入れます。未知のキー、誤った型、または無効な値があると、Gatewayは**起動を拒否します**。唯一のルートレベルの例外は`$schema`（文字列）であり、エディタはJSONスキーマメタデータを添付できます。
 
-## Strict validation
+検証に失敗した場合：
 
+* Gatewayは起動しません
+* 診断コマンドのみが機能します（`openclaw doctor`、`openclaw logs`、`openclaw health`、`openclaw status`）
+* `openclaw doctor`を実行して正確な問題を確認します
+* `openclaw doctor --fix`（または`--yes`）を実行して修正を適用します
 
-  OpenClaw only accepts configurations that fully match the schema. Unknown keys, malformed types, or invalid values cause the Gateway to **refuse to start**. The only root-level exception is `$schema` (string), so editors can attach JSON Schema metadata.
+## よくある作業
 
+各チャンネルには`channels.<provider>`の下に独自の設定セクションがあります。設定手順については、専用のチャンネルページを参照してください：
 
-When validation fails:
+* [WhatsApp](/channels/whatsapp) — `channels.whatsapp`
+* [Telegram](/channels/telegram) — `channels.telegram`
+* [Discord](/channels/discord) — `channels.discord`
+* [Slack](/channels/slack) — `channels.slack`
+* [Signal](/channels/signal) — `channels.signal`
+* [iMessage](/channels/imessage) — `channels.imessage`
+* [Google Chat](/channels/googlechat) — `channels.googlechat`
+* [Mattermost](/channels/mattermost) — `channels.mattermost`
+* [MS Teams](/channels/msteams) — `channels.msteams`
 
-* The Gateway does not boot
-* Only diagnostic commands work (`openclaw doctor`, `openclaw logs`, `openclaw health`, `openclaw status`)
-* Run `openclaw doctor` to see exact issues
-* Run `openclaw doctor --fix` (or `--yes`) to apply repairs
+すべてのチャンネルは同じDMポリシーパターンを共有します：
 
-## Common tasks
+```json5
+{
+  channels: {
+    telegram: {
+      enabled: true,
+      botToken: "123:abc",
+      dmPolicy: "pairing",   // pairing | allowlist | open | disabled
+      allowFrom: ["tg:123"], // allowlist/open用
+    },
+  },
+}
+```
 
+主要なモデルとオプションのフォールバックを設定します：
 
-  
-    Each channel has its own config section under `channels.<provider>`. See the dedicated channel page for setup steps:
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-sonnet-4-5",
+        fallbacks: ["openai/gpt-5.2"],
+      },
+      models: {
+        "anthropic/claude-sonnet-4-5": { alias: "Sonnet" },
+        "openai/gpt-5.2": { alias: "GPT" },
+      },
+    },
+  },
+}
+```
 
-    * [WhatsApp](/channels/whatsapp) — `channels.whatsapp`
-    * [Telegram](/channels/telegram) — `channels.telegram`
-    * [Discord](/channels/discord) — `channels.discord`
-    * [Slack](/channels/slack) — `channels.slack`
-    * [Signal](/channels/signal) — `channels.signal`
-    * [iMessage](/channels/imessage) — `channels.imessage`
-    * [Google Chat](/channels/googlechat) — `channels.googlechat`
-    * [Mattermost](/channels/mattermost) — `channels.mattermost`
-    * [MS Teams](/channels/msteams) — `channels.msteams`
+* `agents.defaults.models`はモデルカタログを定義し、`/model`のための許可リストとして機能します。
+* モデル参照は`provider/model`形式を使用します（例：`anthropic/claude-opus-4-6`）。
+* `agents.defaults.imageMaxDimensionPx`はトランスクリプト/ツールの画像のダウンサイジングを制御します（デフォルトは`1200`）；低い値は通常、スクリーンショットが多い実行時のビジョントークンの使用を減少させます。
+* チャット内でモデルを切り替えるための[Models CLI](/concepts/models)や、認証ローテーションとフォールバック動作のための[Model Failover](/concepts/model-failover)を参照してください。
+* カスタム/自己ホストプロバイダーについては、リファレンスの[Custom providers](/gateway/configuration-reference#custom-providers-and-base-urls)を参照してください。
 
-    All channels share the same DM policy pattern:
+DMアクセスは`dmPolicy`を介してチャンネルごとに制御されます：
 
-    ```json5
-    {
-      channels: {
-        telegram: {
-          enabled: true,
-          botToken: "123:abc",
-          dmPolicy: "pairing",   // pairing | allowlist | open | disabled
-          allowFrom: ["tg:123"], // only for allowlist/open
+* `"pairing"`（デフォルト）：不明な送信者には承認のための一度限りのペアリングコードが与えられます
+* `"allowlist"`：`allowFrom`に含まれる送信者のみ（またはペアリングされた許可ストア）
+* `"open"`：すべての受信DMを許可します（`allowFrom: ["*"]`が必要）
+* `"disabled"`：すべてのDMを無視します
+
+グループの場合は、`groupPolicy` + `groupAllowFrom`またはチャンネル固有の許可リストを使用します。
+
+チャンネルごとの詳細については、[完全なリファレンス](/gateway/configuration-reference#dm-and-group-access)を参照してください。
+
+グループメッセージはデフォルトで**メンションを必要とする**に設定されています。エージェントごとにパターンを構成します：
+
+```json5
+{
+  agents: {
+    list: [
+      {
+        id: "main",
+        groupChat: {
+          mentionPatterns: ["@openclaw", "openclaw"],
         },
       },
-    }
-    ```
-  
+    ],
+  },
+  channels: {
+    whatsapp: {
+      groups: { "*": { requireMention: true } },
+    },
+  },
+}
+```
 
-  
-    Set the primary model and optional fallbacks:
+* **メタデータメンション**：ネイティブの@メンション（WhatsAppのタップ・トゥ・メンション、Telegramの@botなど）
+* **テキストパターン**：`mentionPatterns`内の正規表現パターン
+* チャンネルごとのオーバーライドや自己チャットモードについては、[完全なリファレンス](/gateway/configuration-reference#group-chat-mention-gating)を参照してください。
 
-    ```json5
-    {
-      agents: {
-        defaults: {
-          model: {
-            primary: "anthropic/claude-sonnet-4-5",
-            fallbacks: ["openai/gpt-5.2"],
-          },
-          models: {
-            "anthropic/claude-sonnet-4-5": { alias: "Sonnet" },
-            "openai/gpt-5.2": { alias: "GPT" },
-          },
-        },
+セッションは会話の継続性と隔離を制御します：
+
+```json5
+{
+  session: {
+    dmScope: "per-channel-peer",  // マルチユーザーに推奨
+    threadBindings: {
+      enabled: true,
+      idleHours: 24,
+      maxAgeHours: 0,
+    },
+    reset: {
+      mode: "daily",
+      atHour: 4,
+      idleMinutes: 120,
+    },
+  },
+}
+```
+
+* `dmScope`: `main`（共有） | `per-peer` | `per-channel-peer` | `per-account-channel-peer`
+* `threadBindings`: スレッドバウンドセッションルーティングのためのグローバルデフォルト（Discordは`/focus`、`/unfocus`、`/agents`、`/session idle`、`/session max-age`をサポートします）。
+* スコープ、アイデンティティリンク、送信ポリシーについては[セッション管理](/concepts/session)を参照してください。
+* すべてのフィールドについては[完全なリファレンス](/gateway/configuration-reference#session)を参照してください。
+
+エージェントセッションを隔離されたDockerコンテナで実行します：
+
+```json5
+{
+  agents: {
+    defaults: {
+      sandbox: {
+        mode: "non-main",  // off | non-main | all
+        scope: "agent",    // session | agent | shared
       },
-    }
-    ```
+    },
+  },
+}
+```
 
-    * `agents.defaults.models` defines the model catalog and acts as the allowlist for `/model`.
-    * Model refs use `provider/model` format (e.g. `anthropic/claude-opus-4-6`).
-    * `agents.defaults.imageMaxDimensionPx` controls transcript/tool image downscaling (default `1200`); lower values usually reduce vision-token usage on screenshot-heavy runs.
-    * See [Models CLI](/concepts/models) for switching models in chat and [Model Failover](/concepts/model-failover) for auth rotation and fallback behavior.
-    * For custom/self-hosted providers, see [Custom providers](/gateway/configuration-reference#custom-providers-and-base-urls) in the reference.
-  
+最初にイメージをビルドします：`scripts/sandbox-setup.sh`
 
-  
-    DM access is controlled per channel via `dmPolicy`:
+完全なガイドについては[サンドボックス](/gateway/sandboxing)を参照し、すべてのオプションについては[完全なリファレンス](/gateway/configuration-reference#sandbox)を参照してください。
 
-    * `"pairing"` (default): unknown senders get a one-time pairing code to approve
-    * `"allowlist"`: only senders in `allowFrom` (or the paired allow store)
-    * `"open"`: allow all inbound DMs (requires `allowFrom: ["*"]`)
-    * `"disabled"`: ignore all DMs
-
-    For groups, use `groupPolicy` + `groupAllowFrom` or channel-specific allowlists.
-
-    See the [full reference](/gateway/configuration-reference#dm-and-group-access) for per-channel details.
-  
-
-  
-    Group messages default to **require mention**. Configure patterns per agent:
-
-    ```json5
-    {
-      agents: {
-        list: [
-          {
-            id: "main",
-            groupChat: {
-              mentionPatterns: ["@openclaw", "openclaw"],
-            },
-          },
-        ],
+```json5
+{
+  agents: {
+    defaults: {
+      heartbeat: {
+        every: "30m",
+        target: "last",
       },
-      channels: {
-        whatsapp: {
-          groups: { "*": { requireMention: true } },
-        },
+    },
+  },
+}
+```
+
+* `every`: 期間文字列（`30m`、`2h`）。無効にするには`0m`を設定します。
+* `target`: `last` | `whatsapp` | `telegram` | `discord` | `none`
+* `directPolicy`: DMスタイルのハートビートターゲットのための`allow`（デフォルト）または`block`
+* 完全なガイドについては[ハートビート](/gateway/heartbeat)を参照してください。
+
+```json5
+{
+  cron: {
+    enabled: true,
+    maxConcurrentRuns: 2,
+    sessionRetention: "24h",
+    runLog: {
+      maxBytes: "2mb",
+      keepLines: 2000,
+    },
+  },
+}
+```
+
+* `sessionRetention`: 完了した隔離実行セッションを`sessions.json`から削除します（デフォルトは`24h`；無効にするには`false`を設定）。
+* `runLog`: サイズと保持行数によって`cron/runs/<jobId>.jsonl`を削除します。
+* 機能の概要とCLIの例については[cronジョブ](/automation/cron-jobs)を参照してください。
+
+GatewayでHTTPウェブフックエンドポイントを有効にします：
+
+```json5
+{
+  hooks: {
+    enabled: true,
+    token: "shared-secret",
+    path: "/hooks",
+    defaultSessionKey: "hook:ingress",
+    allowRequestSessionKey: false,
+    allowedSessionKeyPrefixes: ["hook:"],
+    mappings: [
+      {
+        match: { path: "gmail" },
+        action: "agent",
+        agentId: "main",
+        deliver: true,
       },
-    }
-    ```
+    ],
+  },
+}
+```
 
-    * **Metadata mentions**: native @-mentions (WhatsApp tap-to-mention, Telegram @bot, etc.)
-    * **Text patterns**: regex patterns in `mentionPatterns`
-    * See [full reference](/gateway/configuration-reference#group-chat-mention-gating) for per-channel overrides and self-chat mode.
-  
+すべてのマッピングオプションとGmail統合については[完全なリファレンス](/gateway/configuration-reference#hooks)を参照してください。
 
-  
-    Sessions control conversation continuity and isolation:
+複数の隔離されたエージェントを別々のワークスペースとセッションで実行します：
 
-    ```json5
-    {
-      session: {
-        dmScope: "per-channel-peer",  // recommended for multi-user
-        threadBindings: {
-          enabled: true,
-          idleHours: 24,
-          maxAgeHours: 0,
-        },
-        reset: {
-          mode: "daily",
-          atHour: 4,
-          idleMinutes: 120,
-        },
-      },
-    }
-    ```
+```json5
+{
+  agents: {
+    list: [
+      { id: "home", default: true, workspace: "~/.openclaw/workspace-home" },
+      { id: "work", workspace: "~/.openclaw/workspace-work" },
+    ],
+  },
+  bindings: [
+    { agentId: "home", match: { channel: "whatsapp", accountId: "personal" } },
+    { agentId: "work", match: { channel: "whatsapp", accountId: "biz" } },
+  ],
+}
+```
 
-    * `dmScope`: `main` (shared) | `per-peer` | `per-channel-peer` | `per-account-channel-peer`
-    * `threadBindings`: global defaults for thread-bound session routing (Discord supports `/focus`, `/unfocus`, `/agents`, `/session idle`, and `/session max-age`).
-    * See [Session Management](/concepts/session) for scoping, identity links, and send policy.
-    * See [full reference](/gateway/configuration-reference#session) for all fields.
-  
+バインディングルールとエージェントごとのアクセスプロファイルについては、[マルチエージェント](/concepts/multi-agent)および[完全なリファレンス](/gateway/configuration-reference#multi-agent-routing)を参照してください。
 
-  
-    Run agent sessions in isolated Docker containers:
+大規模な設定を整理するために`$include`を使用します：
 
-    ```json5
-    {
-      agents: {
-        defaults: {
-          sandbox: {
-            mode: "non-main",  // off | non-main | all
-            scope: "agent",    // session | agent | shared
-          },
-        },
-      },
-    }
-    ```
+```json5
+// ~/.openclaw/openclaw.json
+{
+  gateway: { port: 18789 },
+  agents: { $include: "./agents.json5" },
+  broadcast: {
+    $include: ["./clients/a.json5", "./clients/b.json5"],
+  },
+}
+```
 
-    Build the image first: `scripts/sandbox-setup.sh`
+* **単一ファイル**：含まれるオブジェクトを置き換えます
+* **ファイルの配列**：順番に深くマージされます（後のものが勝ち）
+* **兄弟キー**：インクルード後にマージされます（含まれた値を上書き）
+* **ネストされたインクルード**：最大10レベルまでサポートされています
+* **相対パス**：インクルードファイルに対して相対的に解決されます
+* **エラーハンドリング**：欠落ファイル、解析エラー、循環インクルードに対する明確なエラー
 
-    See [Sandboxing](/gateway/sandboxing) for the full guide and [full reference](/gateway/configuration-reference#sandbox) for all options.
-  
+## 設定のホットリロード
 
-  
-    ```json5
-    {
-      agents: {
-        defaults: {
-          heartbeat: {
-            every: "30m",
-            target: "last",
-          },
-        },
-      },
-    }
-    ```
+Gatewayは`~/.openclaw/openclaw.json`を監視し、自動的に変更を適用します — ほとんどの設定に対して手動での再起動は必要ありません。
 
-    * `every`: duration string (`30m`, `2h`). Set `0m` to disable.
-    * `target`: `last` | `whatsapp` | `telegram` | `discord` | `none`
-    * `directPolicy`: `allow` (default) or `block` for DM-style heartbeat targets
-    * See [Heartbeat](/gateway/heartbeat) for the full guide.
-  
+### リロードモード
 
-  
-    ```json5
-    {
-      cron: {
-        enabled: true,
-        maxConcurrentRuns: 2,
-        sessionRetention: "24h",
-        runLog: {
-          maxBytes: "2mb",
-          keepLines: 2000,
-        },
-      },
-    }
-    ```
-
-    * `sessionRetention`: prune completed isolated run sessions from `sessions.json` (default `24h`; set `false` to disable).
-    * `runLog`: prune `cron/runs/<jobId>.jsonl` by size and retained lines.
-    * See [Cron jobs](/automation/cron-jobs) for feature overview and CLI examples.
-  
-
-  
-    Enable HTTP webhook endpoints on the Gateway:
-
-    ```json5
-    {
-      hooks: {
-        enabled: true,
-        token: "shared-secret",
-        path: "/hooks",
-        defaultSessionKey: "hook:ingress",
-        allowRequestSessionKey: false,
-        allowedSessionKeyPrefixes: ["hook:"],
-        mappings: [
-          {
-            match: { path: "gmail" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-          },
-        ],
-      },
-    }
-    ```
-
-    See [full reference](/gateway/configuration-reference#hooks) for all mapping options and Gmail integration.
-  
-
-  
-    Run multiple isolated agents with separate workspaces and sessions:
-
-    ```json5
-    {
-      agents: {
-        list: [
-          { id: "home", default: true, workspace: "~/.openclaw/workspace-home" },
-          { id: "work", workspace: "~/.openclaw/workspace-work" },
-        ],
-      },
-      bindings: [
-        { agentId: "home", match: { channel: "whatsapp", accountId: "personal" } },
-        { agentId: "work", match: { channel: "whatsapp", accountId: "biz" } },
-      ],
-    }
-    ```
-
-    See [Multi-Agent](/concepts/multi-agent) and [full reference](/gateway/configuration-reference#multi-agent-routing) for binding rules and per-agent access profiles.
-  
-
-  
-    Use `$include` to organize large configs:
-
-    ```json5
-    // ~/.openclaw/openclaw.json
-    {
-      gateway: { port: 18789 },
-      agents: { $include: "./agents.json5" },
-      broadcast: {
-        $include: ["./clients/a.json5", "./clients/b.json5"],
-      },
-    }
-    ```
-
-    * **Single file**: replaces the containing object
-    * **Array of files**: deep-merged in order (later wins)
-    * **Sibling keys**: merged after includes (override included values)
-    * **Nested includes**: supported up to 10 levels deep
-    * **Relative paths**: resolved relative to the including file
-    * **Error handling**: clear errors for missing files, parse errors, and circular includes
-  
-
-
-## Config hot reload
-
-The Gateway watches `~/.openclaw/openclaw.json` and applies changes automatically — no manual restart needed for most settings.
-
-### Reload modes
-
-| Mode                   | Behavior                                                                                |
+| モード                   | 動作                                                                                |
 | ---------------------- | --------------------------------------------------------------------------------------- |
-| **`hybrid`** (default) | Hot-applies safe changes instantly. Automatically restarts for critical ones.           |
-| **`hot`**              | Hot-applies safe changes only. Logs a warning when a restart is needed — you handle it. |
-| **`restart`**          | Restarts the Gateway on any config change, safe or not.                                 |
-| **`off`**              | Disables file watching. Changes take effect on the next manual restart.                 |
+| **`hybrid`** (デフォルト) | 安全な変更を即座に適用します。重要な変更には自動的に再起動します。           |
+| **`hot`**              | 安全な変更のみを即座に適用します。再起動が必要な場合は警告をログに記録します — あなたが処理します。 |
+| **`restart`**          | 設定変更があれば、たとえ安全であってもGatewayを再起動します。                                 |
+| **`off`**              | ファイル監視を無効にします。変更は次の手動再起動で有効になります。                 |
 
 ```json5
 {
@@ -351,90 +311,79 @@ The Gateway watches `~/.openclaw/openclaw.json` and applies changes automaticall
 }
 ```
 
-### What hot-applies vs what needs a restart
+### ホット適用されるものと再起動が必要なもの
 
-Most fields hot-apply without downtime. In `hybrid` mode, restart-required changes are handled automatically.
+ほとんどのフィールドはダウンタイムなしでホット適用されます。`hybrid`モードでは、再起動が必要な変更は自動的に処理されます。
 
-| Category            | Fields                                                               | Restart needed? |
+| カテゴリ            | フィールド                                                               | 再起動が必要ですか？ |
 | ------------------- | -------------------------------------------------------------------- | --------------- |
-| Channels            | `channels.*`, `web` (WhatsApp) — all built-in and extension channels | No              |
-| Agent & models      | `agent`, `agents`, `models`, `routing`                               | No              |
-| Automation          | `hooks`, `cron`, `agent.heartbeat`                                   | No              |
-| Sessions & messages | `session`, `messages`                                                | No              |
-| Tools & media       | `tools`, `browser`, `skills`, `audio`, `talk`                        | No              |
-| UI & misc           | `ui`, `logging`, `identity`, `bindings`                              | No              |
-| Gateway server      | `gateway.*` (port, bind, auth, tailscale, TLS, HTTP)                 | **Yes**         |
-| Infrastructure      | `discovery`, `canvasHost`, `plugins`                                 | **Yes**         |
+| チャンネル            | `channels.*`、`web`（WhatsApp） — すべての組み込みおよび拡張チャンネル | いいえ              |
+| エージェント & モデル      | `agent`、`agents`、`models`、`routing`                               | いいえ              |
+| 自動化          | `hooks`、`cron`、`agent.heartbeat`                                   | いいえ              |
+| セッション & メッセージ | `session`、`messages`                                                | いいえ              |
+| ツール & メディア       | `tools`、`browser`、`skills`、`audio`、`talk`                        | いいえ              |
+| UI & その他           | `ui`、`logging`、`identity`、`bindings`                              | いいえ              |
+| Gatewayサーバ      | `gateway.*`（port、bind、auth、tailscale、TLS、HTTP）                 | **はい**         |
+| インフラストラクチャ      | `discovery`、`canvasHost`、`plugins`                                 | **はい**         |
 
+`gateway.reload`と`gateway.remote`は例外です — これらを変更しても再起動はトリガーされません。
 
-  `gateway.reload` and `gateway.remote` are exceptions — changing them does **not** trigger a restart.
+## 設定RPC（プログラムによる更新）
 
+コントロールプレーンの書き込みRPC（`config.apply`、`config.patch`、`update.run`）は、**デバイスID+クライアントIPごとに60秒あたり3リクエスト**に制限されています。制限されると、RPCは`UNAVAILABLE`を返し、`retryAfterMs`を提供します。
 
-## Config RPC (programmatic updates)
+完全な設定を検証して書き込み、Gatewayを一度のステップで再起動します。
 
+`config.apply`は**設定全体**を置き換えます。部分的な更新には`config.patch`を使用するか、単一のキーには`openclaw config set`を使用します。
 
-  Control-plane write RPCs (`config.apply`, `config.patch`, `update.run`) are rate-limited to **3 requests per 60 seconds** per `deviceId+clientIp`. When limited, the RPC returns `UNAVAILABLE` with `retryAfterMs`.
+パラメータ：
 
+* `raw`（文字列） — 設定全体のJSON5ペイロード
+* `baseHash`（オプション） — `config.get`からの設定ハッシュ（設定が存在する場合は必須）
+* `sessionKey`（オプション） — 再起動後のウェイクアップpingのためのセッションキー
+* `note`（オプション） — 再起動セントリーのためのノート
+* `restartDelayMs`（オプション） — 再起動前の遅延（デフォルト2000）
 
-  
-    Validates + writes the full config and restarts the Gateway in one step.
+再起動リクエストは、すでに保留中/進行中のものがある間は統合され、再起動サイクル間に30秒のクールダウンが適用されます。
 
-    
-      `config.apply` replaces the **entire config**. Use `config.patch` for partial updates, or `openclaw config set` for single keys.
-    
+```bash
+openclaw gateway call config.get --params '{}'  # payload.hashをキャプチャ
+openclaw gateway call config.apply --params '{
+  "raw": "{ agents: { defaults: { workspace: \"~/.openclaw/workspace\" } } }",
+  "baseHash": "<hash>",
+  "sessionKey": "agent:main:whatsapp:dm:+15555550123"
+}'
+```
 
-    Params:
+部分的な更新を既存の設定にマージします（JSONマージパッチのセマンティクス）：
 
-    * `raw` (string) — JSON5 payload for the entire config
-    * `baseHash` (optional) — config hash from `config.get` (required when config exists)
-    * `sessionKey` (optional) — session key for the post-restart wake-up ping
-    * `note` (optional) — note for the restart sentinel
-    * `restartDelayMs` (optional) — delay before restart (default 2000)
+* オブジェクトは再帰的にマージされます
+* `null`はキーを削除します
+* 配列は置き換えます
 
-    Restart requests are coalesced while one is already pending/in-flight, and a 30-second cooldown applies between restart cycles.
+パラメータ：
 
-    ```bash
-    openclaw gateway call config.get --params '{}'  # capture payload.hash
-    openclaw gateway call config.apply --params '{
-      "raw": "{ agents: { defaults: { workspace: \"~/.openclaw/workspace\" } } }",
-      "baseHash": "<hash>",
-      "sessionKey": "agent:main:whatsapp:dm:+15555550123"
-    }'
-    ```
-  
+* `raw`（文字列） — 変更するキーのみのJSON5
+* `baseHash`（必須） — `config.get`からの設定ハッシュ
+* `sessionKey`、`note`、`restartDelayMs` — `config.apply`と同様
 
-  
-    Merges a partial update into the existing config (JSON merge patch semantics):
+再起動の動作は`config.apply`に一致します：保留中の再起動を統合し、再起動サイクル間に30秒のクールダウンが適用されます。
 
-    * Objects merge recursively
-    * `null` deletes a key
-    * Arrays replace
+```bash
+openclaw gateway call config.patch --params '{
+  "raw": "{ channels: { telegram: { groups: { \"*\": { requireMention: false } } } } }",
+  "baseHash": "<hash>"
+}'
+```
 
-    Params:
+## 環境変数
 
-    * `raw` (string) — JSON5 with just the keys to change
-    * `baseHash` (required) — config hash from `config.get`
-    * `sessionKey`, `note`, `restartDelayMs` — same as `config.apply`
+OpenClawは親プロセスからenv変数を読み込み、さらに：
 
-    Restart behavior matches `config.apply`: coalesced pending restarts plus a 30-second cooldown between restart cycles.
+* 現在の作業ディレクトリからの`.env`（存在する場合）
+* `~/.openclaw/.env`（グローバルフォールバック）
 
-    ```bash
-    openclaw gateway call config.patch --params '{
-      "raw": "{ channels: { telegram: { groups: { \"*\": { requireMention: false } } } } }",
-      "baseHash": "<hash>"
-    }'
-    ```
-  
-
-
-## Environment variables
-
-OpenClaw reads env vars from the parent process plus:
-
-* `.env` from the current working directory (if present)
-* `~/.openclaw/.env` (global fallback)
-
-Neither file overrides existing env vars. You can also set inline env vars in config:
+どちらのファイルも既存のenv変数を上書きしません。また、設定内でインラインenv変数を設定することもできます：
 
 ```json5
 {
@@ -445,79 +394,75 @@ Neither file overrides existing env vars. You can also set inline env vars in co
 }
 ```
 
+有効になっていて期待されるキーが設定されていない場合、OpenClawはログインシェルを実行し、欠落しているキーのみをインポートします：
 
-  If enabled and expected keys aren't set, OpenClaw runs your login shell and imports only the missing keys:
+```json5
+{
+  env: {
+    shellEnv: { enabled: true, timeoutMs: 15000 },
+  },
+}
+```
 
-  ```json5
-  {
-    env: {
-      shellEnv: { enabled: true, timeoutMs: 15000 },
+env変数の同等物：`OPENCLAW_LOAD_SHELL_ENV=1`
+
+任意の設定文字列値で環境変数を`${VAR_NAME}`として参照できます：
+
+```json5
+{
+  gateway: { auth: { token: "${OPENCLAW_GATEWAY_TOKEN}" } },
+  models: { providers: { custom: { apiKey: "${CUSTOM_API_KEY}" } } },
+}
+```
+
+ルール：
+
+* 大文字の名前のみが一致します：[A-Z_][A-Z0-9_]*
+* 欠落または空の変数はロード時にエラーをスローします
+* リテラル出力のために`$${VAR}`でエスケープします
+* `$include`ファイル内でも機能します
+* インライン置換：`"${BASE}/v1"` → `"https://api.example.com/v1"`
+
+SecretRefオブジェクトをサポートするフィールドには、次のように使用できます：
+
+```json5
+{
+  models: {
+    providers: {
+      openai: { apiKey: { source: "env", provider: "default", id: "OPENAI_API_KEY" } },
     },
-  }
-  ```
-
-  Env var equivalent: `OPENCLAW_LOAD_SHELL_ENV=1`
-
-
-  Reference env vars in any config string value with `${VAR_NAME}`:
-
-  ```json5
-  {
-    gateway: { auth: { token: "${OPENCLAW_GATEWAY_TOKEN}" } },
-    models: { providers: { custom: { apiKey: "${CUSTOM_API_KEY}" } } },
-  }
-  ```
-
-  Rules:
-
-  * Only uppercase names matched: `[A-Z_][A-Z0-9_]*`
-  * Missing/empty vars throw an error at load time
-  * Escape with `$${VAR}` for literal output
-  * Works inside `$include` files
-  * Inline substitution: `"${BASE}/v1"` → `"https://api.example.com/v1"`
-
-
-  For fields that support SecretRef objects, you can use:
-
-  ```json5
-  {
-    models: {
-      providers: {
-        openai: { apiKey: { source: "env", provider: "default", id: "OPENAI_API_KEY" } },
-      },
-    },
-    skills: {
-      entries: {
-        "nano-banana-pro": {
-          apiKey: {
-            source: "file",
-            provider: "filemain",
-            id: "/skills/entries/nano-banana-pro/apiKey",
-          },
+  },
+  skills: {
+    entries: {
+      "nano-banana-pro": {
+        apiKey: {
+          source: "file",
+          provider: "filemain",
+          id: "/skills/entries/nano-banana-pro/apiKey",
         },
       },
     },
-    channels: {
-      googlechat: {
-        serviceAccountRef: {
-          source: "exec",
-          provider: "vault",
-          id: "channels/googlechat/serviceAccount",
-        },
+  },
+  channels: {
+    googlechat: {
+      serviceAccountRef: {
+        source: "exec",
+        provider: "vault",
+        id: "channels/googlechat/serviceAccount",
       },
     },
-  }
-  ```
+  },
+}
+```
 
-  SecretRef details (including `secrets.providers` for `env`/`file`/`exec`) are in [Secrets Management](/gateway/secrets).
+SecretRefの詳細（`env`/`file`/`exec`用の`secrets.providers`を含む）は[Secrets Management](/gateway/secrets)にあります。
 
+完全な優先順位とソースについては[環境](/help/environment)を参照してください。
 
-See [Environment](/help/environment) for full precedence and sources.
+## 完全なリファレンス
 
-## Full reference
-
-For the complete field-by-field reference, see **[Configuration Reference](/gateway/configuration-reference)**.
+フィールドごとの完全なリファレンスについては、**[設定リファレンス](/gateway/configuration-reference)**を参照してください。
 
 ***
 
-*Related: [Configuration Examples](/gateway/configuration-examples) · [Configuration Reference](/gateway/configuration-reference) · [Doctor](/gateway/doctor)*
+*関連: [設定例](/gateway/configuration-examples) · [設定リファレンス](/gateway/configuration-reference) · [Doctor](/gateway/doctor)*

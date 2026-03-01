@@ -3,24 +3,24 @@ title: "Zalo Personal"
 ---
 
 # Zalo Personal
-# Zalo Personal (unofficial)
-Status: experimental. This integration automates a \*\*personal Zalo account\*\* via `zca-cli`.
-> \*\*Warning:\*\* This is an unofficial integration and may result in account suspension/ban. Use at your own risk.
-## Plugin required
-Zalo Personal ships as a plugin and is not bundled with the core install.
-\* Install via CLI: `openclaw plugins install @openclaw/zalouser`
-\* Or from a source checkout: `openclaw plugins install ./extensions/zalouser`
-\* Details: [Plugins](/tools/plugin)
-## Prerequisite: zca-cli
-The Gateway machine must have the `zca` binary available in `PATH`.
-\* Verify: `zca --version`
-\* If missing, install zca-cli (see `extensions/zalouser/README.md` or the upstream zca-cli docs).
-## Quick setup (beginner)
-1. Install the plugin (see above).
-2. Login (QR, on the Gateway machine):
-\* `openclaw channels login --channel zalouser`
-\* Scan the QR code in the terminal with the Zalo mobile app.
-3. Enable the channel:
+# Zalo Personal (非公式)
+ステータス: 実験的。この統合は `zca-cli` を介して **個人の Zalo アカウント** を自動化します。
+> **警告:** これは非公式の統合であり、アカウントの停止や禁止につながる可能性があります。自己責任で使用してください。
+## 必要なプラグイン
+Zalo Personal はプラグインとして提供され、コアインストールには含まれていません。
+* CLI 経由でインストール: `openclaw plugins install @openclaw/zalouser`
+* またはソースチェックアウトから: `openclaw plugins install ./extensions/zalouser`
+* 詳細: [Plugins](/tools/plugin)
+## 前提条件: zca-cli
+Gateway マシンには `PATH` に `zca` バイナリが利用可能である必要があります。
+* 確認: `zca --version`
+* 不足している場合は zca-cli をインストールしてください（`extensions/zalouser/README.md` または上流の zca-cli ドキュメントを参照）。
+## クイックセットアップ (初心者向け)
+1. プラグインをインストールします（上記参照）。
+2. ログイン (QR、Gateway マシンで):
+* `openclaw channels login --channel zalouser`
+* ターミナルの QR コードを Zalo モバイルアプリでスキャンします。
+3. チャンネルを有効にします:
 ```json5
 {
 channels: {
@@ -31,39 +31,39 @@ dmPolicy: "pairing",
 },
 }
 ```
-4. Restart the Gateway (or finish onboarding).
-5. DM access defaults to pairing; approve the pairing code on first contact.
-## What it is
-\* Uses `zca listen` to receive inbound messages.
-\* Uses `zca msg ...` to send replies (text/media/link).
-\* Designed for “personal account” use cases where Zalo Bot API is not available.
-## Naming
-Channel id is `zalouser` to make it explicit this automates a \*\*personal Zalo user account\*\* (unofficial). We keep `zalo` reserved for a potential future official Zalo API integration.
-## Finding IDs (directory)
-Use the directory CLI to discover peers/groups and their IDs:
+4. Gateway を再起動します（またはオンボーディングを完了します）。
+5. DM アクセスはデフォルトでペアリングになっています。最初の接触時にペアリングコードを承認してください。
+## それは何か
+* `zca listen` を使用して受信メッセージを受け取ります。
+* `zca msg ...` を使用して返信（テキスト/メディア/リンク）を送信します。
+* Zalo Bot API が利用できない「個人アカウント」ユースケース向けに設計されています。
+## 名称
+チャンネル ID は `zalouser` で、これは **個人の Zalo ユーザーアカウント**（非公式）を自動化することを明示しています。将来の公式 Zalo API 統合のために `zalo` は予約されています。
+## ID の取得 (ディレクトリ)
+ディレクトリ CLI を使用してピア/グループとその ID を発見します:
 ```bash
 openclaw directory self --channel zalouser
 openclaw directory peers list --channel zalouser --query "name"
 openclaw directory groups list --channel zalouser --query "work"
 ```
-## Limits
-\* Outbound text is chunked to \~2000 characters (Zalo client limits).
-\* Streaming is blocked by default.
-## Access control (DMs)
-`channels.zalouser.dmPolicy` supports: `pairing | allowlist | open | disabled` (default: `pairing`).
-`channels.zalouser.allowFrom` accepts user IDs or names. The wizard resolves names to IDs via `zca friend find` when available.
-Approve via:
-\* `openclaw pairing list zalouser`
-\* `openclaw pairing approve zalouser ```` `
-## Group access (optional)
-* Default: `channels.zalouser.groupPolicy = "open"` (groups allowed). Use `channels.defaults.groupPolicy` to override the default when unset.
-* Restrict to an allowlist with:
+## 制限
+* アウトバウンドテキストは約 2000 文字に分割されます（Zalo クライアントの制限）。
+* ストリーミングはデフォルトでブロックされています。
+## アクセス制御 (DM)
+`channels.zalouser.dmPolicy` は次の値をサポートします: `pairing | allowlist | open | disabled`（デフォルト: `pairing`）。
+`channels.zalouser.allowFrom` はユーザー ID または名前を受け入れます。ウィザードは利用可能な場合、名前を ID に解決します。
+承認は次のコマンドで行います:
+* `openclaw pairing list zalouser`
+* `openclaw pairing approve zalouser ```` `
+## グループアクセス (オプション)
+* デフォルト: `channels.zalouser.groupPolicy = "open"`（グループが許可されます）。未設定時にデフォルトを上書きするには `channels.defaults.groupPolicy` を使用します。
+* アロウリストで制限するには:
 * `channels.zalouser.groupPolicy = "allowlist"`
-* `channels.zalouser.groups` (keys are group IDs or names)
-* Block all groups: `channels.zalouser.groupPolicy = "disabled"`.
-* The configure wizard can prompt for group allowlists.
-* On startup, OpenClaw resolves group/user names in allowlists to IDs and logs the mapping; unresolved entries are kept as typed.
-Example:
+* `channels.zalouser.groups`（キーはグループ ID または名前）
+* すべてのグループをブロック: `channels.zalouser.groupPolicy = "disabled"`。
+* 設定ウィザードはグループアロウリストの入力を促すことができます。
+* 起動時に、OpenClaw はアロウリスト内のグループ/ユーザー名を ID に解決し、マッピングをログに記録します。未解決のエントリはそのまま保持されます。
+例:
 ```json5
 {
 channels: {
@@ -77,8 +77,8 @@ groups: {
 },
 }
 ```
-## Multi-account
-Accounts map to zca profiles. Example:
+## マルチアカウント
+アカウントは zca プロファイルにマッピングされます。例:
 ```json5
 {
 channels: {
@@ -93,8 +93,8 @@ work: { enabled: true, profile: "work" },
 }
 ```
 ## トラブルシューティング
-**`zca` not found:**
-* Install zca-cli and ensure it’s on `PATH` for the Gateway process.
-**Login doesn’t stick:**
+**`zca` が見つかりません:**
+* zca-cli をインストールし、Gateway プロセスの `PATH` に含まれていることを確認してください。
+**ログインが持続しない:**
 * `openclaw channels status --probe`
-* Re-login: `openclaw channels logout --channel zalouser && openclaw channels login --channel zalouser` ````
+* 再ログイン: `openclaw channels logout --channel zalouser && openclaw channels login --channel zalouser` ````

@@ -4,71 +4,68 @@ title: "acp"
 
 # acp
 # acp
-Run the [Agent Client Protocol (ACP)](https://agentclientprotocol.com/) bridge that talks to a OpenClaw Gateway.
-This command speaks ACP over stdio for IDEs and forwards prompts to the Gateway
-over WebSocket. It keeps ACP sessions mapped to Gateway session keys.
+OpenClaw Gatewayと通信する[Agent Client Protocol (ACP)](https://agentclientprotocol.com/)ブリッジを実行します。
+このコマンドは、IDE用にstd.io経由でACPを話し、WebSocketを介してGatewayにプロンプトを転送します。
+それは、GatewayセッションキーにマッピングされたACPセッションを保持します。
 ## 使い方
 ```bash
 openclaw acp
-# Remote Gateway
+# リモートGateway
 openclaw acp --url wss://gateway-host:18789 --token 
-# Remote Gateway (token from file)
+# リモートGateway（ファイルからのトークン）
 openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
-# Attach to an existing session key
+# 既存のセッションキーにアタッチ
 openclaw acp --session agent:main:main
-# Attach by label (must already exist)
+# ラベルでアタッチ（既に存在する必要があります）
 openclaw acp --session-label "support inbox"
-# Reset the session key before the first prompt
+# 最初のプロンプトの前にセッションキーをリセット
 openclaw acp --session agent:main:main --reset-session
 ```
-## ACP client (debug)
-Use the built-in ACP client to sanity-check the bridge without an IDE.
-It spawns the ACP bridge and lets you type prompts interactively.
+## ACPクライアント（デバッグ）
+IDEなしでブリッジの健全性をチェックするために、組み込みのACPクライアントを使用します。
+それはACPブリッジを起動し、インタラクティブにプロンプトを入力することを許可します。
 ```bash
 openclaw acp client
-# Point the spawned bridge at a remote Gateway
+# 起動したブリッジをリモートGatewayにポイント
 openclaw acp client --server-args --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
-# Override the server command (default: openclaw)
+# サーバーコマンドをオーバーライド（デフォルト：openclaw）
 openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://127.0.0.1:19001
 ```
-Permission model (client debug mode):
-\* Auto-approval is allowlist-based and only applies to trusted core tool IDs.
-\* `read` auto-approval is scoped to the current working directory (`--cwd` when set).
-\* Unknown/non-core tool names, out-of-scope reads, and dangerous tools always require explicit prompt approval.
-\* Server-provided `toolCall.kind` is treated as untrusted metadata (not an authorization source).
-## How to use this
-Use ACP when an IDE (or other client) speaks Agent Client Protocol and you want
-it to drive a OpenClaw Gateway session.
-1. Ensure the Gateway is running (local or remote).
-2. Configure the Gateway target (config or flags).
-3. Point your IDE to run `openclaw acp` over stdio.
-Example config (persisted):
+権限モデル（クライアントデバッグモード）：
+\* 自動承認は許可リストベースで、信頼されたコアツールIDにのみ適用されます。
+\* `read`の自動承認は、現在の作業ディレクトリにスコープされます（設定されている場合は`--cwd`）。
+\* 不明またはコアツール名、スコープ外の読み取り、および危険なツールは常に明示的なプロンプト承認を必要とします。
+\* サーバー提供の`toolCall.kind`は信頼されていないメタデータとして扱われます（認可ソースではありません）。
+## 使い方
+IDE（または他のクライアント）がAgent Client Protocolを話し、OpenClaw Gatewayセッションを駆動する必要があるときにACPを使用します。
+1. Gatewayが実行中であることを確認します（ローカルまたはリモート）。
+2. Gatewayターゲットを設定します（設定またはフラグ）。
+3. IDEを`openclaw acp`をstd.io経由で実行するようにポイントします。
+例の設定（永続化）：
 ```bash
 openclaw config set gateway.remote.url wss://gateway-host:18789
 openclaw config set gateway.remote.token 
 ```
-Example direct run (no config write):
+例の直接実行（設定の書き込みなし）：
 ```bash
 openclaw acp --url wss://gateway-host:18789 --token 
-# preferred for local process safety
+# ローカルプロセスの安全性のために推奨
 openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
 ```
-## Selecting agents
-ACP does not pick agents directly. It routes by the Gateway session key.
-Use agent-scoped session keys to target a specific agent:
+## エージェントの選択
+ACPはエージェントを直接選択しません。Gatewayセッションキーによってルーティングされます。
+エージェントスコープのセッションキーを使用して特定のエージェントをターゲットにします：
 ```bash
 openclaw acp --session agent:main:main
 openclaw acp --session agent:design:main
 openclaw acp --session agent:qa:bug-123
 ```
-Each ACP session maps to a single Gateway session key. One agent can have many
-sessions; ACP defaults to an isolated `acp:` session unless you override
-the key or label.
-## Zed editor setup
-Add a custom ACP agent in `~/.config/zed/settings.json` (or use Zed’s Settings UI):
+各ACPセッションは単一のGatewayセッションキーにマッピングされます。1つのエージェントは多くのセッションを持つことができ、ACPはキーまたはラベルをオーバーライドしない限り、孤立した`acp:`セッションをデフォルトとします。
+## Zedエディタの設定
+`~/.config/zed/settings.json`にカスタムACPエージェントを追加します（またはZedの設定UIを使用）：
 ```json
 {
-"agent\_servers": {
+"agent_servers": {
 "OpenClaw ACP": {
 "type": "custom",
 "command": "openclaw",
@@ -78,10 +75,10 @@ Add a custom ACP agent in `~/.config/zed/settings.json` (or use Zed’s Settings
 }
 }
 ```
-To target a specific Gateway or agent:
+特定のGatewayまたはエージェントをターゲットにするには：
 ```json
 {
-"agent\_servers": {
+"agent_servers": {
 "OpenClaw ACP": {
 "type": "custom",
 "command": "openclaw",
@@ -99,42 +96,42 @@ To target a specific Gateway or agent:
 }
 }
 ```
-In Zed, open the Agent panel and select “OpenClaw ACP” to start a thread.
-## Session mapping
-By default, ACP sessions get an isolated Gateway session key with an `acp:` prefix.
-To reuse a known session, pass a session key or label:
-\* `--session `: use a specific Gateway session key.
-\* `--session-label `: resolve an existing session by label.
-\* `--reset-session`: mint a fresh session id for that key (same key, new transcript).
-If your ACP client supports metadata, you can override per session:
+Zedで、エージェントパネルを開き、「OpenClaw ACP」を選択してスレッドを開始します。
+## セッションマッピング
+デフォルトでは、ACPセッションは`acp:`プレフィックスを持つ孤立したGatewayセッションキーを取得します。
+既知のセッションを再利用するには、セッションキーまたはラベルを渡します：
+\* `--session `: 特定のGatewayセッションキーを使用します。
+\* `--session-label `: ラベルによって既存のセッションを解決します。
+\* `--reset-session`: そのキーの新しいセッションIDを生成します（同じキー、新しいトランスクリプト）。
+あなたのACPクライアントがメタデータをサポートしている場合、セッションごとにオーバーライドできます：
 ```json
 {
-"\_meta": {
+"_meta": {
 "sessionKey": "agent:main:main",
 "sessionLabel": "support inbox",
 "resetSession": true
 }
 }
 ```
-Learn more about session keys at [/concepts/session](/concepts/session).
+セッションキーについての詳細は[/concepts/session](/concepts/session)を参照してください。
 ## オプション
-\* `--url `: Gateway WebSocket URL (defaults to gateway.remote.url when configured).
-\* `--token `: Gateway auth token.
-\* `--token-file `: read Gateway auth token from file.
-\* `--password `: Gateway auth password.
-\* `--password-file `: read Gateway auth password from file.
-\* `--session `: default session key.
-\* `--session-label `: default session label to resolve.
-\* `--require-existing`: fail if the session key/label does not exist.
-\* `--reset-session`: reset the session key before first use.
-\* `--no-prefix-cwd`: do not prefix prompts with the working directory.
-\* `--verbose, -v`: verbose logging to stderr.
-Security note:
-\* `--token` and `--password` can be visible in local process listings on some systems.
-\* Prefer `--token-file`/`--password-file` or environment variables (`OPENCLAW\_GATEWAY\_TOKEN`, `OPENCLAW\_GATEWAY\_PASSWORD`).
-### `acp client` options
-\* `--cwd `: working directory for the ACP session.
-\* `--server `: ACP server command (default: `openclaw`).
-\* `--server-args `: extra arguments passed to the ACP server.
-\* `--server-verbose`: enable verbose logging on the ACP server.
-\* `--verbose, -v`: verbose client logging.
+\* `--url `: Gateway WebSocket URL（設定されている場合はgateway.remote.urlがデフォルト）。
+\* `--token `: Gateway認証トークン。
+\* `--token-file `: ファイルからGateway認証トークンを読み取ります。
+\* `--password `: Gateway認証パスワード。
+\* `--password-file `: ファイルからGateway認証パスワードを読み取ります。
+\* `--session `: デフォルトのセッションキー。
+\* `--session-label `: 解決するデフォルトのセッションラベル。
+\* `--require-existing`: セッションキー/ラベルが存在しない場合は失敗します。
+\* `--reset-session`: 最初の使用前にセッションキーをリセットします。
+\* `--no-prefix-cwd`: プロンプトに作業ディレクトリをプレフィックスしません。
+\* `--verbose, -v`: stderrに詳細なログを出力します。
+セキュリティノート：
+\* `--token`と`--password`は、一部のシステムでローカルプロセスリストに表示される可能性があります。
+\* `--token-file`/`--password-file`または環境変数（`OPENCLAW_GATEWAY_TOKEN`、`OPENCLAW_GATEWAY_PASSWORD`）を使用することを推奨します。
+### `acp client`オプション
+\* `--cwd `: ACPセッションの作業ディレクトリ。
+\* `--server `: ACPサーバーコマンド（デフォルト：`openclaw`）。
+\* `--server-args `: ACPサーバーに渡される追加の引数。
+\* `--server-verbose`: ACPサーバーでの詳細なログを有効にします。
+\* `--verbose, -v`: 詳細なクライアントログ。

@@ -4,86 +4,86 @@ title: "Hetzner"
 
 # Hetzner
 
-# OpenClaw on Hetzner (Docker, Production VPS Guide)
+# HetznerでのOpenClaw（Docker、プロダクションVPSガイド）
 
-## Goal
+## 目標
 
-Run a persistent OpenClaw Gateway on a Hetzner VPS using Docker, with durable state, baked-in binaries, and safe restart behavior.
+Dockerを使用してHetzner VPS上で永続的なOpenClaw Gatewayを実行し、耐久性のある状態、組み込まれたバイナリ、安全な再起動動作を実現します。
 
-If you want “OpenClaw 24/7 for \~\$5”, this is the simplest reliable setup.
-Hetzner pricing changes; pick the smallest Debian/Ubuntu VPS and scale up if you hit OOMs.
+「OpenClawを24/7で\~\$5」で運用したい場合、これは最もシンプルで信頼性の高いセットアップです。
+Hetznerの価格は変動するため、最小のDebian/Ubuntu VPSを選択し、OOMが発生した場合はスケールアップしてください。
 
-Security model reminder:
+セキュリティモデルのリマインダー：
 
-* Company-shared agents are fine when everyone is in the same trust boundary and the runtime is business-only.
-* Keep strict separation: dedicated VPS/runtime + dedicated accounts; no personal Apple/Google/browser/password-manager profiles on that host.
-* If users are adversarial to each other, split by gateway/host/OS user.
+* 会社共有のエージェントは、全員が同じ信頼境界内にあり、ランタイムがビジネス専用であれば問題ありません。
+* 厳格な分離を維持してください：専用VPS/ランタイム + 専用アカウント；そのホスト上に個人のApple/Google/ブラウザ/パスワードマネージャープロフィールを持ち込まないでください。
+* ユーザー同士が対立する場合は、ゲートウェイ/ホスト/OSユーザーで分割してください。
 
-See [Security](/gateway/security) and [VPS hosting](/vps).
+詳細は[セキュリティ](/gateway/security)および[VPSホスティング](/vps)を参照してください。
 
-## What are we doing (simple terms)?
+## 何をするのか（簡単に言うと）
 
-* Rent a small Linux server (Hetzner VPS)
-* Install Docker (isolated app runtime)
-* Start the OpenClaw Gateway in Docker
-* Persist `~/.openclaw` + `~/.openclaw/workspace` on the host (survives restarts/rebuilds)
-* Access the Control UI from your laptop via an SSH tunnel
+* 小型のLinuxサーバー（Hetzner VPS）をレンタルする
+* Dockerをインストールする（隔離されたアプリケーションランタイム）
+* Docker内でOpenClaw Gatewayを起動する
+* ホスト上に`~/.openclaw` + `~/.openclaw/workspace`を永続化する（再起動/再構築に耐える）
+* SSHトンネルを介してノートパソコンからコントロールUIにアクセスする
 
-The Gateway can be accessed via:
+Gatewayには以下の方法でアクセスできます：
 
-* SSH port forwarding from your laptop
-* Direct port exposure if you manage firewalling and tokens yourself
+* ノートパソコンからのSSHポートフォワーディング
+* 自分でファイアウォールとトークンを管理する場合は直接ポートを公開
 
-This guide assumes Ubuntu or Debian on Hetzner.\
-If you are on another Linux VPS, map packages accordingly.
-For the generic Docker flow, see [Docker](/install/docker).
+このガイドは、Hetzner上のUbuntuまたはDebianを前提としています。\
+他のLinux VPSを使用している場合は、パッケージを適宜マッピングしてください。
+一般的なDockerフローについては、[Docker](/install/docker)を参照してください。
 
 ***
 
-## Quick path (experienced operators)
+## クイックパス（経験豊富なオペレーター向け）
 
-1. Provision Hetzner VPS
-2. Install Docker
-3. Clone OpenClaw repository
-4. Create persistent host directories
-5. Configure `.env` and `docker-compose.yml`
-6. Bake required binaries into the image
+1. Hetzner VPSをプロビジョニングする
+2. Dockerをインストールする
+3. OpenClawリポジトリをクローンする
+4. 永続的なホストディレクトリを作成する
+5. `.env`および`docker-compose.yml`を設定する
+6. 必要なバイナリをイメージに組み込む
 7. `docker compose up -d`
-8. Verify persistence and Gateway access
+8. 永続性とGatewayアクセスを確認する
 
 ***
 
-## What you need
+## 必要なもの
 
-* Hetzner VPS with root access
-* SSH access from your laptop
-* Basic comfort with SSH + copy/paste
-* \~20 minutes
-* Docker and Docker Compose
-* Model auth credentials
-* Optional provider credentials
+* ルートアクセスのあるHetzner VPS
+* ノートパソコンからのSSHアクセス
+* SSH + コピー/ペーストに対する基本的な快適さ
+* \~20分
+* DockerおよびDocker Compose
+* モデル認証資格情報
+* オプションのプロバイダー資格情報
   * WhatsApp QR
-  * Telegram bot token
+  * Telegramボットトークン
   * Gmail OAuth
 
 ***
 
-## 1) Provision the VPS
+## 1) VPSのプロビジョニング
 
-Create an Ubuntu or Debian VPS in Hetzner.
+HetznerでUbuntuまたはDebian VPSを作成します。
 
-Connect as root:
+ルートとして接続します：
 
 ```bash
 ssh root@YOUR_VPS_IP
 ```
 
-This guide assumes the VPS is stateful.
-Do not treat it as disposable infrastructure.
+このガイドは、VPSが状態を持つことを前提としています。
+使い捨てインフラとして扱わないでください。
 
 ***
 
-## 2) Install Docker (on the VPS)
+## 2) Dockerをインストールする（VPS上で）
 
 ```bash
 apt-get update
@@ -91,7 +91,7 @@ apt-get install -y git curl ca-certificates
 curl -fsSL https://get.docker.com | sh
 ```
 
-Verify:
+確認します：
 
 ```bash
 docker --version
@@ -100,34 +100,34 @@ docker compose version
 
 ***
 
-## 3) Clone the OpenClaw repository
+## 3) OpenClawリポジトリをクローンする
 
 ```bash
 git clone https://github.com/openclaw/openclaw.git
 cd openclaw
 ```
 
-This guide assumes you will build a custom image to guarantee binary persistence.
+このガイドは、バイナリの永続性を保証するためにカスタムイメージをビルドすることを前提としています。
 
 ***
 
-## 4) Create persistent host directories
+## 4) 永続的なホストディレクトリを作成する
 
-Docker containers are ephemeral.
-All long-lived state must live on the host.
+Dockerコンテナは一時的です。
+すべての長期的な状態はホスト上に存在する必要があります。
 
 ```bash
 mkdir -p /root/.openclaw/workspace
 
-# Set ownership to the container user (uid 1000):
+# コンテナユーザー（uid 1000）に所有権を設定：
 chown -R 1000:1000 /root/.openclaw
 ```
 
 ***
 
-## 5) Configure environment variables
+## 5) 環境変数を設定する
 
-Create `.env` in the repository root.
+リポジトリのルートに`.env`を作成します。
 
 ```bash
 OPENCLAW_IMAGE=openclaw:latest
@@ -142,19 +142,19 @@ GOG_KEYRING_PASSWORD=change-me-now
 XDG_CONFIG_HOME=/home/node/.openclaw
 ```
 
-Generate strong secrets:
+強力なシークレットを生成します：
 
 ```bash
 openssl rand -hex 32
 ```
 
-**Do not commit this file.**
+**このファイルをコミットしないでください。**
 
 ***
 
-## 6) Docker Compose configuration
+## 6) Docker Composeの設定
 
-Create or update `docker-compose.yml`.
+`docker-compose.yml`を作成または更新します。
 
 ```yaml
 services:
@@ -178,8 +178,8 @@ services:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
     ports:
-      # Recommended: keep the Gateway loopback-only on the VPS; access via SSH tunnel.
-      # To expose it publicly, remove the `127.0.0.1:` prefix and firewall accordingly.
+      # 推奨：VPS上でGatewayをループバック専用に保つ；SSHトンネル経由でアクセス。
+      # 公開するには、`127.0.0.1:`プレフィックスを削除し、ファイアウォールを適切に設定します。
       - "127.0.0.1:${OPENCLAW_GATEWAY_PORT}:18789"
     command:
       [
@@ -194,52 +194,52 @@ services:
       ]
 ```
 
-`--allow-unconfigured` is only for bootstrap convenience, it is not a replacement for a proper gateway configuration. Still set auth (`gateway.auth.token` or password) and use safe bind settings for your deployment.
+`--allow-unconfigured`はブートストラップの便宜のためだけであり、適切なゲートウェイ設定の代替ではありません。認証（`gateway.auth.token`またはパスワード）を設定し、デプロイメントのために安全なバインド設定を使用してください。
 
 ***
 
-## 7) Bake required binaries into the image (critical)
+## 7) 必要なバイナリをイメージに組み込む（重要）
 
-Installing binaries inside a running container is a trap.
-Anything installed at runtime will be lost on restart.
+実行中のコンテナ内にバイナリをインストールすることは罠です。
+ランタイムでインストールされたものは再起動時に失われます。
 
-All external binaries required by skills must be installed at image build time.
+スキルに必要なすべての外部バイナリは、イメージビルド時にインストールする必要があります。
 
-The examples below show three common binaries only:
+以下の例は、3つの一般的なバイナリのみを示しています：
 
-* `gog` for Gmail access
-* `goplaces` for Google Places
-* `wacli` for WhatsApp
+* Gmailアクセス用の`gog`
+* Google Places用の`goplaces`
+* WhatsApp用の`wacli`
 
-These are examples, not a complete list.
-You may install as many binaries as needed using the same pattern.
+これは例であり、完全なリストではありません。
+同じパターンを使用して、必要なだけ多くのバイナリをインストールできます。
 
-If you add new skills later that depend on additional binaries, you must:
+後で追加のバイナリに依存する新しいスキルを追加する場合は、次の手順を実行する必要があります：
 
-1. Update the Dockerfile
-2. Rebuild the image
-3. Restart the containers
+1. Dockerfileを更新する
+2. イメージを再ビルドする
+3. コンテナを再起動する
 
-**Example Dockerfile**
+**例 Dockerfile**
 
 ```dockerfile
 FROM node:22-bookworm
 
 RUN apt-get update && apt-get install -y socat && rm -rf /var/lib/apt/lists/*
 
-# Example binary 1: Gmail CLI
+# 例バイナリ1：Gmail CLI
 RUN curl -L https://github.com/steipete/gog/releases/latest/download/gog_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/gog
 
-# Example binary 2: Google Places CLI
+# 例バイナリ2：Google Places CLI
 RUN curl -L https://github.com/steipete/goplaces/releases/latest/download/goplaces_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/goplaces
 
-# Example binary 3: WhatsApp CLI
+# 例バイナリ3：WhatsApp CLI
 RUN curl -L https://github.com/steipete/wacli/releases/latest/download/wacli_Linux_x86_64.tar.gz \
   | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/wacli
 
-# Add more binaries below using the same pattern
+# 同じパターンを使用してさらにバイナリを追加
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
@@ -261,14 +261,14 @@ CMD ["node","dist/index.js"]
 
 ***
 
-## 8) Build and launch
+## 8) ビルドと起動
 
 ```bash
 docker compose build
 docker compose up -d openclaw-gateway
 ```
 
-Verify binaries:
+バイナリを確認します：
 
 ```bash
 docker compose exec openclaw-gateway which gog
@@ -276,7 +276,7 @@ docker compose exec openclaw-gateway which goplaces
 docker compose exec openclaw-gateway which wacli
 ```
 
-Expected output:
+期待される出力：
 
 ```
 /usr/local/bin/gog
@@ -286,67 +286,67 @@ Expected output:
 
 ***
 
-## 9) Verify Gateway
+## 9) Gatewayを確認する
 
 ```bash
 docker compose logs -f openclaw-gateway
 ```
 
-Success:
+成功：
 
 ```
 [gateway] listening on ws://0.0.0.0:18789
 ```
 
-From your laptop:
+ノートパソコンから：
 
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 root@YOUR_VPS_IP
 ```
 
-Open:
+開く：
 
 `http://127.0.0.1:18789/`
 
-Paste your gateway token.
+ゲートウェイトークンを貼り付けます。
 
 ***
 
-## What persists where (source of truth)
+## どこに何が永続化されるか（真実の源）
 
-OpenClaw runs in Docker, but Docker is not the source of truth.
-All long-lived state must survive restarts, rebuilds, and reboots.
+OpenClawはDocker内で実行されますが、Dockerは真実の源ではありません。
+すべての長期的な状態は再起動、再構築、再起動に耐える必要があります。
 
-| Component           | Location                          | Persistence mechanism  | Notes                            |
+| コンポーネント           | 場所                          | 永続化メカニズム  | ノート                            |
 | ------------------- | --------------------------------- | ---------------------- | -------------------------------- |
-| Gateway config      | `/home/node/.openclaw/`           | Host volume mount      | Includes `openclaw.json`, tokens |
-| Model auth profiles | `/home/node/.openclaw/`           | Host volume mount      | OAuth tokens, API keys           |
-| Skill configs       | `/home/node/.openclaw/skills/`    | Host volume mount      | Skill-level state                |
-| Agent workspace     | `/home/node/.openclaw/workspace/` | Host volume mount      | Code and agent artifacts         |
-| WhatsApp session    | `/home/node/.openclaw/`           | Host volume mount      | Preserves QR login               |
-| Gmail keyring       | `/home/node/.openclaw/`           | Host volume + password | Requires `GOG_KEYRING_PASSWORD`  |
-| External binaries   | `/usr/local/bin/`                 | Docker image           | Must be baked at build time      |
-| Node runtime        | Container filesystem              | Docker image           | Rebuilt every image build        |
-| OS packages         | Container filesystem              | Docker image           | Do not install at runtime        |
-| Docker container    | Ephemeral                         | Restartable            | Safe to destroy                  |
+| Gateway設定      | `/home/node/.openclaw/`           | ホストボリュームマウント      | `openclaw.json`、トークンを含む |
+| モデル認証プロファイル | `/home/node/.openclaw/`           | ホストボリュームマウント      | OAuthトークン、APIキー           |
+| スキル設定       | `/home/node/.openclaw/skills/`    | ホストボリュームマウント      | スキルレベルの状態                |
+| エージェントワークスペース     | `/home/node/.openclaw/workspace/` | ホストボリュームマウント      | コードとエージェントアーティファクト         |
+| WhatsAppセッション    | `/home/node/.openclaw/`           | ホストボリュームマウント      | QRログインを保持               |
+| Gmailキーニング       | `/home/node/.openclaw/`           | ホストボリューム + パスワード | `GOG_KEYRING_PASSWORD`が必要  |
+| 外部バイナリ   | `/usr/local/bin/`                 | Dockerイメージ           | ビルド時に組み込む必要があります      |
+| Nodeランタイム        | コンテナファイルシステム              | Dockerイメージ           | 各イメージビルドごとに再構築されます        |
+| OSパッケージ         | コンテナファイルシステム              | Dockerイメージ           | ランタイムでインストールしないでください        |
+| Dockerコンテナ    | 一時的                         | 再起動可能            | 削除しても安全                  |
 
 ***
 
-## Infrastructure as Code (Terraform)
+## コードとしてのインフラ（Terraform）
 
-For teams preferring infrastructure-as-code workflows, a community-maintained Terraform setup provides:
+インフラストラクチャをコードとして管理するワークフローを好むチームのために、コミュニティが管理するTerraformセットアップが提供されます：
 
-* Modular Terraform configuration with remote state management
-* Automated provisioning via cloud-init
-* Deployment scripts (bootstrap, deploy, backup/restore)
-* Security hardening (firewall, UFW, SSH-only access)
-* SSH tunnel configuration for gateway access
+* リモートステート管理を伴うモジュラーTerraform構成
+* cloud-initによる自動プロビジョニング
+* デプロイメントスクリプト（ブートストラップ、デプロイ、バックアップ/復元）
+* セキュリティ強化（ファイアウォール、UFW、SSH専用アクセス）
+* ゲートウェイアクセス用のSSHトンネル設定
 
-**Repositories:**
+**リポジトリ：**
 
-* Infrastructure: [openclaw-terraform-hetzner](https://github.com/andreesg/openclaw-terraform-hetzner)
-* Docker config: [openclaw-docker-config](https://github.com/andreesg/openclaw-docker-config)
+* インフラストラクチャ：[openclaw-terraform-hetzner](https://github.com/andreesg/openclaw-terraform-hetzner)
+* Docker設定：[openclaw-docker-config](https://github.com/andreesg/openclaw-docker-config)
 
-This approach complements the Docker setup above with reproducible deployments, version-controlled infrastructure, and automated disaster recovery.
+このアプローチは、再現可能なデプロイメント、バージョン管理されたインフラストラクチャ、自動災害復旧を提供する上で、上記のDockerセットアップを補完します。
 
-> **Note:** Community-maintained. For issues or contributions, see the repository links above.
+> **注意:** コミュニティが管理しています。問題や貢献については、上記のリポジトリリンクを参照してください。

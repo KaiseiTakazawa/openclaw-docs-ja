@@ -6,54 +6,49 @@ title: "macOS のゲートウェイ"
 
 # Gateway on macOS (external launchd)
 
-OpenClaw\.app no longer bundles Node/Bun or the Gateway runtime. The macOS app
-expects an **external** `openclaw` CLI install, does not spawn the Gateway as a
-child process, and manages a per‑user launchd service to keep the Gateway
-running (or attaches to an existing local Gateway if one is already running).
+OpenClaw\.app はもはや Node/Bun または Gateway ランタイムをバンドルしていません。macOS アプリは **外部** の `openclaw` CLI インストールを期待し、Gateway を子プロセスとして生成せず、ユーザーごとの launchd サービスを管理して Gateway を実行し続けます（すでに実行中のローカル Gateway に接続することもできます）。
 
-## Install the CLI (required for local mode)
+## CLI のインストール（ローカルモードに必要）
 
-You need Node 22+ on the Mac, then install `openclaw` globally:
+Mac に Node 22+ が必要で、その後 `openclaw` をグローバルにインストールします：
 
 ```bash
 npm install -g openclaw@<version>
 ```
 
-The macOS app’s **Install CLI** button runs the same flow via npm/pnpm (bun not recommended for Gateway runtime).
+macOS アプリの **Install CLI** ボタンは、npm/pnpm を介して同じフローを実行します（Gateway ランタイムには bun は推奨されません）。
 
 ## Launchd (Gateway as LaunchAgent)
 
-Label:
+ラベル:
 
-* `ai.openclaw.gateway` (or `ai.openclaw.<profile>`; legacy `com.openclaw.*` may remain)
+* `ai.openclaw.gateway`（または `ai.openclaw.<profile>`; 従来の `com.openclaw.*` が残る場合があります）
 
-Plist location (per‑user):
+Plist の場所（ユーザーごと）:
 
 * `~/Library/LaunchAgents/ai.openclaw.gateway.plist`
-  (or `~/Library/LaunchAgents/ai.openclaw.<profile>.plist`)
+  （または `~/Library/LaunchAgents/ai.openclaw.<profile>.plist`）
 
-Manager:
+マネージャー:
 
-* The macOS app owns LaunchAgent install/update in Local mode.
-* The CLI can also install it: `openclaw gateway install`.
+* macOS アプリはローカルモードでの LaunchAgent のインストール/更新を管理します。
+* CLI でもインストールできます: `openclaw gateway install`。
 
-Behavior:
+動作:
 
-* “OpenClaw Active” enables/disables the LaunchAgent.
-* App quit does **not** stop the gateway (launchd keeps it alive).
-* If a Gateway is already running on the configured port, the app attaches to
-  it instead of starting a new one.
+* “OpenClaw Active” は LaunchAgent を有効/無効にします。
+* アプリが終了しても **Gateway** は停止しません（launchd がそれを生かし続けます）。
+* 設定されたポートで既に Gateway が実行中の場合、アプリは新しいものを起動するのではなく、それに接続します。
 
-Logging:
+ログ:
 
 * launchd stdout/err: `/tmp/openclaw/openclaw-gateway.log`
 
-## Version compatibility
+## バージョン互換性
 
-The macOS app checks the gateway version against its own version. If they’re
-incompatible, update the global CLI to match the app version.
+macOS アプリは Gateway のバージョンを自身のバージョンと照合します。互換性がない場合は、グローバル CLI をアプリのバージョンに合わせて更新してください。
 
-## Smoke check
+## スモークチェック
 
 ```bash
 openclaw --version
@@ -63,7 +58,7 @@ OPENCLAW_SKIP_CANVAS_HOST=1 \
 openclaw gateway --port 18999 --bind loopback
 ```
 
-Then:
+その後:
 
 ```bash
 openclaw gateway call health --url ws://127.0.0.1:18999 --timeout 3000

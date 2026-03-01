@@ -6,13 +6,13 @@ title: "pairing"
 
 # `openclaw pairing`
 
-Approve or inspect DM pairing requests (for channels that support pairing).
+DMペアリングリクエストを承認または確認します（ペアリングをサポートするチャンネル用）。
 
-Related:
+関連:
 
-* Pairing flow: [Pairing](/channels/pairing)
+* ペアリングフロー: [Pairing](/channels/pairing)
 
-## Commands
+## コマンド
 
 ```bash
 openclaw pairing list telegram
@@ -25,7 +25,7 @@ openclaw pairing approve --channel telegram --account work <code> --notify
 
 ## 注意事項
 
-* Channel input: pass it positionally (`pairing list telegram`) or with `--channel <channel>`.
-* `pairing list` supports `--account <accountId>` for multi-account channels.
-* `pairing approve` supports `--account <accountId>` and `--notify`.
-* If only one pairing-capable channel is configured, `pairing approve <code>` is allowed.
+* チャンネル入力: 位置指定で渡すか（`pairing list telegram`）、`--channel <channel>`を使用します。
+* `pairing list`はマルチアカウントチャンネル用に`--account <accountId>`をサポートしています。
+* `pairing approve`は`--account <accountId>`と`--notify`をサポートしています。
+* ペアリング可能なチャンネルが1つだけ構成されている場合、`pairing approve <code>`が許可されます。

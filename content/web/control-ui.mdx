@@ -4,154 +4,138 @@ title: "Control UI"
 
 # Control UI
 
-# Control UI (browser)
+# Control UI (ブラウザ)
 
-The Control UI is a small **Vite + Lit** single-page app served by the Gateway:
+Control UIは、Gatewayによって提供される小さな**Vite + Lit**のシングルページアプリケーションです：
 
-* default: `http://<host>:18789/`
-* optional prefix: set `gateway.controlUi.basePath` (e.g. `/openclaw`)
+* デフォルト: `http://<host>:18789/`
+* オプションのプレフィックス: `gateway.controlUi.basePath`を設定（例: `/openclaw`）
 
-It speaks **directly to the Gateway WebSocket** on the same port.
+同じポートで**Gateway WebSocket**に直接通信します。
 
-## Quick open (local)
+## クイックオープン（ローカル）
 
-If the Gateway is running on the same computer, open:
+Gatewayが同じコンピュータ上で実行されている場合、次を開きます：
 
-* [http://127.0.0.1:18789/](http://127.0.0.1:18789/) (or [http://localhost:18789/](http://localhost:18789/))
+* [http://127.0.0.1:18789/](http://127.0.0.1:18789/)（または [http://localhost:18789/](http://localhost:18789/)）
 
-If the page fails to load, start the Gateway first: `openclaw gateway`.
+ページの読み込みに失敗した場合は、最初にGatewayを起動してください: `openclaw gateway`。
 
-Auth is supplied during the WebSocket handshake via:
+認証はWebSocketハンドシェイク中に次のように提供されます：
 
 * `connect.params.auth.token`
 * `connect.params.auth.password`
-  The dashboard settings panel lets you store a token; passwords are not persisted.
-  The onboarding wizard generates a gateway token by default, so paste it here on first connect.
+  ダッシュボード設定パネルではトークンを保存できます; パスワードは永続化されません。
+  オンボーディングウィザードはデフォルトでGatewayトークンを生成するので、最初の接続時にここに貼り付けてください。
 
-## Device pairing (first connection)
+## デバイスペアリング（初回接続）
 
-When you connect to the Control UI from a new browser or device, the Gateway
-requires a **one-time pairing approval** — even if you're on the same Tailnet
-with `gateway.auth.allowTailscale: true`. This is a security measure to prevent
-unauthorized access.
+新しいブラウザまたはデバイスからControl UIに接続すると、Gatewayは**一度限りのペアリング承認**を要求します — 同じTailnetにいる場合でも、`gateway.auth.allowTailscale: true`であってもです。これは不正アクセスを防ぐためのセキュリティ対策です。
 
-**What you'll see:** "disconnected (1008): pairing required"
+**表示されるメッセージ:** "disconnected (1008): pairing required"
 
-**To approve the device:**
+**デバイスを承認するには:**
 
 ```bash
-# List pending requests
+# 保留中のリクエストをリスト
 openclaw devices list
 
-# Approve by request ID
+# リクエストIDで承認
 openclaw devices approve <requestId>
 ```
 
-Once approved, the device is remembered and won't require re-approval unless
-you revoke it with `openclaw devices revoke --device <id> --role <role>`. See
-[Devices CLI](/cli/devices) for token rotation and revocation.
+承認されると、デバイスは記憶され、`openclaw devices revoke --device <id> --role <role>`で取り消さない限り再承認は必要ありません。トークンのローテーションと取り消しについては、[Devices CLI](/cli/devices)を参照してください。
 
-**Notes:**
+**注意:**
 
-* Local connections (`127.0.0.1`) are auto-approved.
-* Remote connections (LAN, Tailnet, etc.) require explicit approval.
-* Each browser profile generates a unique device ID, so switching browsers or
-  clearing browser data will require re-pairing.
+* ローカル接続（`127.0.0.1`）は自動承認されます。
+* リモート接続（LAN、Tailnetなど）は明示的な承認が必要です。
+* 各ブラウザプロファイルはユニークなデバイスIDを生成するため、ブラウザを切り替えたりブラウザデータをクリアしたりすると再ペアリングが必要になります。
 
-## What it can do (today)
+## 今日できること
 
-* Chat with the model via Gateway WS (`chat.history`, `chat.send`, `chat.abort`, `chat.inject`)
-* Stream tool calls + live tool output cards in Chat (agent events)
-* Channels: WhatsApp/Telegram/Discord/Slack + plugin channels (Mattermost, etc.) status + QR login + per-channel config (`channels.status`, `web.login.*`, `config.patch`)
-* Instances: presence list + refresh (`system-presence`)
-* Sessions: list + per-session thinking/verbose overrides (`sessions.list`, `sessions.patch`)
-* Cron jobs: list/add/edit/run/enable/disable + run history (`cron.*`)
-* Skills: status, enable/disable, install, API key updates (`skills.*`)
-* Nodes: list + caps (`node.list`)
-* Exec approvals: edit gateway or node allowlists + ask policy for `exec host=gateway/node` (`exec.approvals.*`)
-* Config: view/edit `~/.openclaw/openclaw.json` (`config.get`, `config.set`)
-* Config: apply + restart with validation (`config.apply`) and wake the last active session
-* Config writes include a base-hash guard to prevent clobbering concurrent edits
-* Config schema + form rendering (`config.schema`, including plugin + channel schemas); Raw JSON editor remains available
-* Debug: status/health/models snapshots + event log + manual RPC calls (`status`, `health`, `models.list`)
-* Logs: live tail of gateway file logs with filter/export (`logs.tail`)
-* Update: run a package/git update + restart (`update.run`) with a restart report
+* Gateway WSを介してモデルとチャット（`chat.history`, `chat.send`, `chat.abort`, `chat.inject`）
+* チャット内でのツール呼び出しのストリーミング + ライブツール出力カード（エージェントイベント）
+* チャンネル: WhatsApp/Telegram/Discord/Slack + プラグインチャンネル（Mattermostなど）ステータス + QRログイン + チャンネルごとの設定（`channels.status`, `web.login.*`, `config.patch`）
+* インスタンス: プレゼンスリスト + 更新（`system-presence`）
+* セッション: リスト + セッションごとの思考/冗長オーバーライド（`sessions.list`, `sessions.patch`）
+* Cronジョブ: リスト/追加/編集/実行/有効化/無効化 + 実行履歴（`cron.*`）
+* スキル: ステータス、有効化/無効化、インストール、APIキーの更新（`skills.*`）
+* ノード: リスト + キャップ（`node.list`）
+* Exec承認: Gatewayまたはノードの許可リストを編集 + `exec host=gateway/node`のポリシーを要求（`exec.approvals.*`）
+* 設定: `~/.openclaw/openclaw.json`の表示/編集（`config.get`, `config.set`）
+* 設定: 適用 + 検証付きで再起動（`config.apply`）し、最後にアクティブなセッションを起こす
+* 設定の書き込みには、同時編集を防ぐためのベースハッシュガードが含まれます
+* 設定スキーマ + フォームレンダリング（`config.schema`、プラグイン + チャンネルスキーマを含む）；生のJSONエディタは引き続き利用可能
+* デバッグ: ステータス/ヘルス/モデルのスナップショット + イベントログ + 手動RPC呼び出し（`status`, `health`, `models.list`）
+* ログ: フィルター/エクスポート付きのGatewayファイルログのライブテール（`logs.tail`）
+* 更新: パッケージ/gitの更新を実行 + 再起動（`update.run`）し、再起動レポートを取得
 
-Cron jobs panel notes:
+Cronジョブパネルの注意事項:
 
-* For isolated jobs, delivery defaults to announce summary. You can switch to none if you want internal-only runs.
-* Channel/target fields appear when announce is selected.
-* Webhook mode uses `delivery.mode = "webhook"` with `delivery.to` set to a valid HTTP(S) webhook URL.
-* For main-session jobs, webhook and none delivery modes are available.
-* Advanced edit controls include delete-after-run, clear agent override, cron exact/stagger options,
-  agent model/thinking overrides, and best-effort delivery toggles.
-* Form validation is inline with field-level errors; invalid values disable the save button until fixed.
-* Set `cron.webhookToken` to send a dedicated bearer token, if omitted the webhook is sent without an auth header.
-* Deprecated fallback: stored legacy jobs with `notify: true` can still use `cron.webhook` until migrated.
+* 隔離されたジョブの場合、配信はデフォルトで要約を発表します。内部専用の実行を希望する場合は、なしに切り替えることができます。
+* 発表が選択されると、チャンネル/ターゲットフィールドが表示されます。
+* Webhookモードは、`delivery.mode = "webhook"`を使用し、`delivery.to`を有効なHTTP(S) webhook URLに設定します。
+* メインセッションジョブの場合、Webhookとなしの配信モードが利用可能です。
+* 高度な編集コントロールには、実行後の削除、エージェントオーバーライドのクリア、cronの正確/スタッガーオプション、エージェントモデル/思考のオーバーライド、および最善の努力による配信トグルが含まれます。
+* フォームの検証はフィールドレベルのエラーとともにインラインで行われ、無効な値は修正されるまで保存ボタンを無効にします。
+* `cron.webhookToken`を設定して専用のベアラートークンを送信します。省略すると、認証ヘッダーなしでWebhookが送信されます。
+* 非推奨のフォールバック: `notify: true`を持つ保存されたレガシージョブは、移行されるまで`cron.webhook`を引き続き使用できます。
 
-## Chat behavior
+## チャットの動作
 
-* `chat.send` is **non-blocking**: it acks immediately with `{ runId, status: "started" }` and the response streams via `chat` events.
-* Re-sending with the same `idempotencyKey` returns `{ status: "in_flight" }` while running, and `{ status: "ok" }` after completion.
-* `chat.history` responses are size-bounded for UI safety. When transcript entries are too large, Gateway may truncate long text fields, omit heavy metadata blocks, and replace oversized messages with a placeholder (`[chat.history omitted: message too large]`).
-* `chat.inject` appends an assistant note to the session transcript and broadcasts a `chat` event for UI-only updates (no agent run, no channel delivery).
-* Stop:
-  * Click **Stop** (calls `chat.abort`)
-  * Type `/stop` (or standalone abort phrases like `stop`, `stop action`, `stop run`, `stop openclaw`, `please stop`) to abort out-of-band
-  * `chat.abort` supports `{ sessionKey }` (no `runId`) to abort all active runs for that session
-* Abort partial retention:
-  * When a run is aborted, partial assistant text can still be shown in the UI
-  * Gateway persists aborted partial assistant text into transcript history when buffered output exists
-  * Persisted entries include abort metadata so transcript consumers can tell abort partials from normal completion output
+* `chat.send`は**非ブロッキング**です: すぐに`{ runId, status: "started" }`で確認応答し、レスポンスは`chat`イベントを介してストリーミングされます。
+* 同じ`idempotencyKey`で再送信すると、実行中は`{ status: "in_flight" }`が返され、完了後は`{ status: "ok" }`が返されます。
+* `chat.history`のレスポンスはUIの安全のためにサイズ制限があります。トランスクリプトのエントリが大きすぎる場合、Gatewayは長いテキストフィールドを切り捨てたり、重いメタデータブロックを省略したり、サイズオーバーのメッセージをプレースホルダー（`[chat.history omitted: message too large]`）に置き換えたりすることがあります。
+* `chat.inject`はセッションのトランスクリプトにアシスタントノートを追加し、UI専用の更新のために`chat`イベントをブロードキャストします（エージェントの実行なし、チャンネル配信なし）。
+* 停止:
+  * **停止**をクリック（`chat.abort`を呼び出す）
+  * `/stop`を入力（または`stop`、`stop action`、`stop run`、`stop openclaw`、`please stop`のような単独の中止フレーズ）して、帯域外で中止
+  * `chat.abort`は`{ sessionKey }`（`runId`なし）をサポートし、そのセッションのすべてのアクティブな実行を中止します
+* 中止部分保持:
+  * 実行が中止されると、部分的なアシスタントテキストがUIに表示されることがあります
+  * Gatewayはバッファされた出力が存在する場合、中止された部分的なアシスタントテキストをトランスクリプト履歴に保持します
+  * 永続化されたエントリには中止メタデータが含まれているため、トランスクリプトの消費者は中止された部分を通常の完了出力から区別できます
 
-## Tailnet access (recommended)
+## Tailnetアクセス（推奨）
 
-### Integrated Tailscale Serve (preferred)
+### 統合されたTailscale Serve（推奨）
 
-Keep the Gateway on loopback and let Tailscale Serve proxy it with HTTPS:
+Gatewayをループバック上に保ち、Tailscale ServeにHTTPSでプロキシさせます：
 
 ```bash
 openclaw gateway --tailscale serve
 ```
 
-Open:
+次を開きます：
 
-* `https://<magicdns>/` (or your configured `gateway.controlUi.basePath`)
+* `https://<magicdns>/`（または設定した`gateway.controlUi.basePath`）
 
-By default, Control UI/WebSocket Serve requests can authenticate via Tailscale identity headers
-(`tailscale-user-login`) when `gateway.auth.allowTailscale` is `true`. OpenClaw
-verifies the identity by resolving the `x-forwarded-for` address with
-`tailscale whois` and matching it to the header, and only accepts these when the
-request hits loopback with Tailscale’s `x-forwarded-*` headers. Set
-`gateway.auth.allowTailscale: false` (or force `gateway.auth.mode: "password"`)
-if you want to require a token/password even for Serve traffic.
-Tokenless Serve auth assumes the gateway host is trusted. If untrusted local
-code may run on that host, require token/password auth.
+デフォルトでは、Control UI/WebSocket Serveリクエストは、`gateway.auth.allowTailscale`が`true`のときにTailscaleアイデンティティヘッダー（`tailscale-user-login`）を介して認証できます。OpenClawは、`x-forwarded-for`アドレスを`tailscale whois`で解決し、ヘッダーと一致させてアイデンティティを検証し、リクエストがループバックに到達したときにTailscaleの`x-forwarded-*`ヘッダーを持っている場合のみこれを受け入れます。トークン/パスワードを必要とする場合は、`gateway.auth.allowTailscale: false`（または強制的に`gateway.auth.mode: "password"`）を設定してください。
+トークンなしのServe認証は、Gatewayホストが信頼されていることを前提とします。信頼されていないローカルコードがそのホスト上で実行される可能性がある場合は、トークン/パスワード認証を要求してください。
 
-### Bind to tailnet + token
+### Tailnetにバインド + トークン
 
 ```bash
 openclaw gateway --bind tailnet --token "$(openssl rand -hex 32)"
 ```
 
-Then open:
+次を開きます：
 
-* `http://<tailscale-ip>:18789/` (or your configured `gateway.controlUi.basePath`)
+* `http://<tailscale-ip>:18789/`（または設定した`gateway.controlUi.basePath`）
 
-Paste the token into the UI settings (sent as `connect.params.auth.token`).
+トークンをUI設定に貼り付けます（`connect.params.auth.token`として送信されます）。
 
-## Insecure HTTP
+## 安全でないHTTP
 
-If you open the dashboard over plain HTTP (`http://<lan-ip>` or `http://<tailscale-ip>`),
-the browser runs in a **non-secure context** and blocks WebCrypto. By default,
-OpenClaw **blocks** Control UI connections without device identity.
+プレーンHTTP（`http://<lan-ip>`または`http://<tailscale-ip>`）でダッシュボードを開くと、ブラウザは**非安全なコンテキスト**で実行され、WebCryptoがブロックされます。デフォルトでは、OpenClawはデバイスアイデンティティなしでControl UI接続を**ブロック**します。
 
-**Recommended fix:** use HTTPS (Tailscale Serve) or open the UI locally:
+**推奨される修正:** HTTPS（Tailscale Serve）を使用するか、ローカルでUIを開きます：
 
-* `https://<magicdns>/` (Serve)
-* `http://127.0.0.1:18789/` (on the gateway host)
+* `https://<magicdns>/`（Serve）
+* `http://127.0.0.1:18789/`（Gatewayホスト上）
 
-**Insecure-auth toggle behavior:**
+**安全でない認証トグルの動作:**
 
 ```json5
 {
@@ -163,9 +147,9 @@ OpenClaw **blocks** Control UI connections without device identity.
 }
 ```
 
-`allowInsecureAuth` does not bypass Control UI device identity or pairing checks.
+`allowInsecureAuth`はControl UIデバイスアイデンティティやペアリングチェックをバイパスしません。
 
-**Break-glass only:**
+**緊急時のみ:**
 
 ```json5
 {
@@ -177,66 +161,60 @@ OpenClaw **blocks** Control UI connections without device identity.
 }
 ```
 
-`dangerouslyDisableDeviceAuth` disables Control UI device identity checks and is a
-severe security downgrade. Revert quickly after emergency use.
+`dangerouslyDisableDeviceAuth`はControl UIデバイスアイデンティティチェックを無効にし、重大なセキュリティダウングレードです。緊急使用後は迅速に元に戻してください。
 
-See [Tailscale](/gateway/tailscale) for HTTPS setup guidance.
+HTTPS設定ガイダンスについては、[Tailscale](/gateway/tailscale)を参照してください。
 
-## Building the UI
+## UIのビルド
 
-The Gateway serves static files from `dist/control-ui`. Build them with:
+Gatewayは`dist/control-ui`から静的ファイルを提供します。次のコマンドでビルドします：
 
 ```bash
-pnpm ui:build # auto-installs UI deps on first run
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
 ```
 
-Optional absolute base (when you want fixed asset URLs):
+オプションの絶対ベース（固定アセットURLが必要な場合）：
 
 ```bash
 OPENCLAW_CONTROL_UI_BASE_PATH=/openclaw/ pnpm ui:build
 ```
 
-For local development (separate dev server):
+ローカル開発用（別の開発サーバー）：
 
 ```bash
-pnpm ui:dev # auto-installs UI deps on first run
+pnpm ui:dev # 初回実行時にUI依存関係を自動インストール
 ```
 
-Then point the UI at your Gateway WS URL (e.g. `ws://127.0.0.1:18789`).
+その後、UIをGateway WS URL（例: `ws://127.0.0.1:18789`）にポイントします。
 
-## Debugging/testing: dev server + remote Gateway
+## デバッグ/テスト: 開発サーバー + リモートGateway
 
-The Control UI is static files; the WebSocket target is configurable and can be
-different from the HTTP origin. This is handy when you want the Vite dev server
-locally but the Gateway runs elsewhere.
+Control UIは静的ファイルであり、WebSocketターゲットは構成可能で、HTTPオリジンとは異なる場合があります。これは、Vite開発サーバーをローカルで使用したいが、Gatewayが他の場所で実行されている場合に便利です。
 
-1. Start the UI dev server: `pnpm ui:dev`
-2. Open a URL like:
+1. UI開発サーバーを起動: `pnpm ui:dev`
+2. 次のようなURLを開きます：
 
 ```text
 http://localhost:5173/?gatewayUrl=ws://<gateway-host>:18789
 ```
 
-Optional one-time auth (if needed):
+オプションの一時認証（必要な場合）：
 
 ```text
 http://localhost:5173/?gatewayUrl=wss://<gateway-host>:18789&token=<gateway-token>
 ```
 
-Notes:
+注意事項：
 
-* `gatewayUrl` is stored in localStorage after load and removed from the URL.
-* `token` is stored in localStorage; `password` is kept in memory only.
-* When `gatewayUrl` is set, the UI does not fall back to config or environment credentials.
-  Provide `token` (or `password`) explicitly. Missing explicit credentials is an error.
-* Use `wss://` when the Gateway is behind TLS (Tailscale Serve, HTTPS proxy, etc.).
-* `gatewayUrl` is only accepted in a top-level window (not embedded) to prevent clickjacking.
-* Non-loopback Control UI deployments must set `gateway.controlUi.allowedOrigins`
-  explicitly (full origins). This includes remote dev setups.
-* `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true` enables
-  Host-header origin fallback mode, but it is a dangerous security mode.
+* `gatewayUrl`は読み込み後にlocalStorageに保存され、URLから削除されます。
+* `token`はlocalStorageに保存され、`password`はメモリ内にのみ保持されます。
+* `gatewayUrl`が設定されている場合、UIは構成や環境の資格情報にフォールバックしません。`token`（または`password`）を明示的に提供してください。明示的な資格情報が欠落している場合はエラーです。
+* GatewayがTLSの背後にある場合（Tailscale Serve、HTTPSプロキシなど）、`wss://`を使用してください。
+* `gatewayUrl`はトップレベルウィンドウ（埋め込まれていない）でのみ受け入れられ、クリックジャッキングを防ぎます。
+* 非ループバックのControl UIデプロイメントは、`gateway.controlUi.allowedOrigins`を明示的に設定する必要があります（完全なオリジン）。これにはリモート開発セットアップが含まれます。
+* `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true`は、Hostヘッダーオリジンフォールバックモードを有効にしますが、これは危険なセキュリティモードです。
 
-Example:
+例：
 
 ```json5
 {
@@ -248,4 +226,4 @@ Example:
 }
 ```
 
-Remote access setup details: [Remote access](/gateway/remote).
+リモートアクセスのセットアップ詳細: [Remote access](/gateway/remote).

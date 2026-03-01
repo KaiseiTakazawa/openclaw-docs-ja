@@ -6,9 +6,9 @@ title: "update"
 
 # `openclaw update`
 
-Safely update OpenClaw and switch between stable/beta/dev channels.
+OpenClawを安全に更新し、安定版/ベータ版/開発版のチャンネルを切り替えます。
 
-If you installed via **npm/pnpm** (global install, no git metadata), updates happen via the package manager flow in [Updating](/install/updating).
+**npm/pnpm**を使用してインストールした場合（グローバルインストール、gitメタデータなし）、更新は[Updating](/install/updating)のパッケージマネージャーフローを介して行われます。
 
 ## 使い方
 
@@ -27,18 +27,18 @@ openclaw --update
 
 ## オプション
 
-* `--no-restart`: skip restarting the Gateway service after a successful update.
-* `--channel <stable|beta|dev>`: set the update channel (git + npm; persisted in config).
-* `--tag <dist-tag|version>`: override the npm dist-tag or version for this update only.
-* `--dry-run`: preview planned update actions (channel/tag/target/restart flow) without writing config, installing, syncing plugins, or restarting.
-* `--json`: print machine-readable `UpdateRunResult` JSON.
-* `--timeout <seconds>`: per-step timeout (default is 1200s).
+* `--no-restart`: 更新後にGatewayサービスを再起動しない。
+* `--channel <stable|beta|dev>`: 更新チャンネルを設定します（git + npm; 設定に保存されます）。
+* `--tag <dist-tag|version>`: この更新のためにnpmのdist-tagまたはバージョンを上書きします。
+* `--dry-run`: 設定を書き込まずに計画された更新アクション（チャンネル/タグ/ターゲット/再起動フロー）をプレビューします。
+* `--json`: 機械可読の`UpdateRunResult` JSONを出力します。
+* `--timeout <seconds>`: ステップごとのタイムアウト（デフォルトは1200秒）。
 
-Note: downgrades require confirmation because older versions can break configuration.
+注意: ダウングレードには確認が必要です。古いバージョンは設定を壊す可能性があります。
 
 ## `update status`
 
-Show the active update channel + git tag/branch/SHA (for source checkouts), plus update availability.
+アクティブな更新チャンネル + gitタグ/ブランチ/SHA（ソースチェックアウト用）を表示し、更新の可用性を示します。
 
 ```bash
 openclaw update status
@@ -46,55 +46,51 @@ openclaw update status --json
 openclaw update status --timeout 10
 ```
 
-Options:
+オプション:
 
-* `--json`: print machine-readable status JSON.
-* `--timeout <seconds>`: timeout for checks (default is 3s).
+* `--json`: 機械可読のステータスJSONを出力します。
+* `--timeout <seconds>`: チェックのタイムアウト（デフォルトは3秒）。
 
 ## `update wizard`
 
-Interactive flow to pick an update channel and confirm whether to restart the Gateway
-after updating (default is to restart). If you select `dev` without a git checkout, it
-offers to create one.
+更新チャンネルを選択し、更新後にGatewayを再起動するかどうかを確認するためのインタラクティブなフローです（デフォルトは再起動します）。gitチェックアウトなしで`dev`を選択すると、作成を提案します。
 
 ## What it does
 
-When you switch channels explicitly (`--channel ...`), OpenClaw also keeps the
-install method aligned:
+チャンネルを明示的に切り替えると（`--channel ...`）、OpenClawはインストール方法も整合させます：
 
-* `dev` → ensures a git checkout (default: `~/openclaw`, override with `OPENCLAW_GIT_DIR`),
-  updates it, and installs the global CLI from that checkout.
-* `stable`/`beta` → installs from npm using the matching dist-tag.
+* `dev` → gitチェックアウトを確保し（デフォルト: `~/openclaw`、`OPENCLAW_GIT_DIR`で上書き可能）、それを更新し、そこからグローバルCLIをインストールします。
+* `stable`/`beta` → 一致するdist-tagを使用してnpmからインストールします。
 
-The Gateway core auto-updater (when enabled via config) reuses this same update path.
+Gatewayコアの自動更新機能（設定で有効にした場合）は、この同じ更新パスを再利用します。
 
 ## Git checkout flow
 
-Channels:
+チャンネル:
 
-* `stable`: checkout the latest non-beta tag, then build + doctor.
-* `beta`: checkout the latest `-beta` tag, then build + doctor.
-* `dev`: checkout `main`, then fetch + rebase.
+* `stable`: 最新の非ベータタグをチェックアウトし、その後ビルド + doctorを実行します。
+* `beta`: 最新の`-beta`タグをチェックアウトし、その後ビルド + doctorを実行します。
+* `dev`: `main`をチェックアウトし、その後フェッチ + リベースを行います。
 
-High-level:
+高レベル:
 
-1. Requires a clean worktree (no uncommitted changes).
-2. Switches to the selected channel (tag or branch).
-3. Fetches upstream (dev only).
-4. Dev only: preflight lint + TypeScript build in a temp worktree; if the tip fails, walks back up to 10 commits to find the newest clean build.
-5. Rebases onto the selected commit (dev only).
-6. Installs deps (pnpm preferred; npm fallback).
-7. Builds + builds the Control UI.
-8. Runs `openclaw doctor` as the final “safe update” check.
-9. Syncs plugins to the active channel (dev uses bundled extensions; stable/beta uses npm) and updates npm-installed plugins.
+1. クリーンな作業ツリーが必要です（未コミットの変更がないこと）。
+2. 選択したチャンネル（タグまたはブランチ）に切り替えます。
+3. アップストリームをフェッチします（devのみ）。
+4. Devのみ: テンポラリ作業ツリーでの事前チェックリント + TypeScriptビルド; タイプが失敗した場合、最新のクリーンビルドを見つけるために最大10コミットまで遡ります。
+5. 選択したコミットにリベースします（devのみ）。
+6. 依存関係をインストールします（pnpmが推奨; npmがフォールバック）。
+7. Control UIをビルドします。
+8. 最終的な「安全な更新」チェックとして`openclaw doctor`を実行します。
+9. アクティブなチャンネルにプラグインを同期します（devはバンドルされた拡張機能を使用; stable/betaはnpmを使用）し、npmでインストールされたプラグインを更新します。
 
 ## `--update` shorthand
 
-`openclaw --update` rewrites to `openclaw update` (useful for shells and launcher scripts).
+`openclaw --update`は`openclaw update`に書き換えられます（シェルやランチャースクリプトに便利です）。
 
 ## 関連項目
 
-* `openclaw doctor` (offers to run update first on git checkouts)
+* `openclaw doctor`（gitチェックアウトで最初に更新を実行する提案をします）
 * [Development channels](/install/development-channels)
 * [Updating](/install/updating)
 * [CLI reference](/cli)

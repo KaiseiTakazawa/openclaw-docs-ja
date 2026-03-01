@@ -8,72 +8,64 @@ title: "プラグイン"
 
 ## Quick start (new to plugins?)
 
-A plugin is just a **small code module** that extends OpenClaw with extra
-features (commands, tools, and Gateway RPC).
+プラグインは、OpenClawに追加機能（コマンド、ツール、Gateway RPC）を拡張する**小さなコードモジュール**です。
 
-Most of the time, you’ll use plugins when you want a feature that’s not built
-into core OpenClaw yet (or you want to keep optional features out of your main
-install).
+ほとんどの場合、コアのOpenClawにまだ組み込まれていない機能が必要なときや、オプション機能をメインのインストールから外したいときにプラグインを使用します。
 
-Fast path:
+迅速な手順：
 
-1. See what’s already loaded:
+1. すでにロードされているものを確認します：
 
 ```bash
 openclaw plugins list
 ```
 
-2. Install an official plugin (example: Voice Call):
+2. 公式プラグインをインストールします（例：Voice Call）：
 
 ```bash
 openclaw plugins install @openclaw/voice-call
 ```
 
-Npm specs are **registry-only** (package name + optional version/tag). Git/URL/file
-specs are rejected.
+Npm仕様は**レジストリ専用**（パッケージ名 + オプションのバージョン/タグ）です。Git/URL/ファイル仕様は拒否されます。
 
-3. Restart the Gateway, then configure under `plugins.entries.<id>.config`.
+3. Gatewayを再起動し、`plugins.entries.<id>.config`で設定します。
 
-See [Voice Call](/plugins/voice-call) for a concrete example plugin.
-Looking for third-party listings? See [Community plugins](/plugins/community).
+具体的なプラグインの例については、[Voice Call](/plugins/voice-call)を参照してください。サードパーティのリストを探していますか？[Community plugins](/plugins/community)を参照してください。
 
 ## Available plugins (official)
 
-* Microsoft Teams is plugin-only as of 2026.1.15; install `@openclaw/msteams` if you use Teams.
-* Memory (Core) — bundled memory search plugin (enabled by default via `plugins.slots.memory`)
-* Memory (LanceDB) — bundled long-term memory plugin (auto-recall/capture; set `plugins.slots.memory = "memory-lancedb"`)
+* Microsoft Teamsは2026.1.15以降、プラグイン専用です。Teamsを使用している場合は`@openclaw/msteams`をインストールしてください。
+* Memory (Core) — バンドルされたメモリ検索プラグイン（デフォルトで`plugins.slots.memory`を介して有効）
+* Memory (LanceDB) — バンドルされた長期メモリプラグイン（自動リコール/キャプチャ；`plugins.slots.memory = "memory-lancedb"`を設定）
 * [Voice Call](/plugins/voice-call) — `@openclaw/voice-call`
 * [Zalo Personal](/plugins/zalouser) — `@openclaw/zalouser`
 * [Matrix](/channels/matrix) — `@openclaw/matrix`
 * [Nostr](/channels/nostr) — `@openclaw/nostr`
 * [Zalo](/channels/zalo) — `@openclaw/zalo`
 * [Microsoft Teams](/channels/msteams) — `@openclaw/msteams`
-* Google Antigravity OAuth (provider auth) — bundled as `google-antigravity-auth` (disabled by default)
-* Gemini CLI OAuth (provider auth) — bundled as `google-gemini-cli-auth` (disabled by default)
-* Qwen OAuth (provider auth) — bundled as `qwen-portal-auth` (disabled by default)
-* Copilot Proxy (provider auth) — local VS Code Copilot Proxy bridge; distinct from built-in `github-copilot` device login (bundled, disabled by default)
+* Google Antigravity OAuth (プロバイダー認証) — `google-antigravity-auth`としてバンドル（デフォルトで無効）
+* Gemini CLI OAuth (プロバイダー認証) — `google-gemini-cli-auth`としてバンドル（デフォルトで無効）
+* Qwen OAuth (プロバイダー認証) — `qwen-portal-auth`としてバンドル（デフォルトで無効）
+* Copilot Proxy (プロバイダー認証) — ローカルVS Code Copilot Proxyブリッジ；組み込みの`github-copilot`デバイスログインとは異なります（バンドルされており、デフォルトで無効）
 
-OpenClaw plugins are **TypeScript modules** loaded at runtime via jiti. **Config
-validation does not execute plugin code**; it uses the plugin manifest and JSON
-Schema instead. See [Plugin manifest](/plugins/manifest).
+OpenClawプラグインは、**TypeScriptモジュール**であり、jitiを介してランタイムでロードされます。**設定の検証はプラグインコードを実行しません**；代わりにプラグインマニフェストとJSON Schemaを使用します。詳細は[Plugin manifest](/plugins/manifest)を参照してください。
 
-Plugins can register:
+プラグインは以下を登録できます：
 
-* Gateway RPC methods
-* Gateway HTTP handlers
-* Agent tools
-* CLI commands
-* Background services
-* Optional config validation
-* **Skills** (by listing `skills` directories in the plugin manifest)
-* **Auto-reply commands** (execute without invoking the AI agent)
+* Gateway RPCメソッド
+* Gateway HTTPハンドラ
+* Agentツール
+* CLIコマンド
+* バックグラウンドサービス
+* オプションの設定検証
+* **スキル**（プラグインマニフェスト内の`skills`ディレクトリをリストすることによって）
+* **自動応答コマンド**（AIエージェントを呼び出さずに実行）
 
-Plugins run **in‑process** with the Gateway, so treat them as trusted code.
-Tool authoring guide: [Plugin agent tools](/plugins/agent-tools).
+プラグインはGatewayと**プロセス内**で実行されるため、信頼できるコードとして扱ってください。ツール作成ガイド：[Plugin agent tools](/plugins/agent-tools)。
 
 ## Runtime helpers
 
-Plugins can access selected core helpers via `api.runtime`. For telephony TTS:
+プラグインは、`api.runtime`を介して選択されたコアヘルパーにアクセスできます。電話用TTSの場合：
 
 ```ts
 const result = await api.runtime.tts.textToSpeechTelephony({
@@ -82,57 +74,52 @@ const result = await api.runtime.tts.textToSpeechTelephony({
 });
 ```
 
-Notes:
+注意：
 
-* Uses core `messages.tts` configuration (OpenAI or ElevenLabs).
-* Returns PCM audio buffer + sample rate. Plugins must resample/encode for providers.
-* Edge TTS is not supported for telephony.
+* コアの`messages.tts`設定を使用します（OpenAIまたはElevenLabs）。
+* PCMオーディオバッファ + サンプルレートを返します。プラグインはプロバイダー用にリサンプリング/エンコードする必要があります。
+* 電話用のEdge TTSはサポートされていません。
 
 ## Discovery & precedence
 
-OpenClaw scans, in order:
+OpenClawは、次の順序でスキャンします：
 
-1. Config paths
+1. 設定パス
 
-* `plugins.load.paths` (file or directory)
+* `plugins.load.paths`（ファイルまたはディレクトリ）
 
-2. Workspace extensions
+2. ワークスペース拡張
 
 * `<workspace>/.openclaw/extensions/*.ts`
 * `<workspace>/.openclaw/extensions/*/index.ts`
 
-3. Global extensions
+3. グローバル拡張
 
 * `~/.openclaw/extensions/*.ts`
 * `~/.openclaw/extensions/*/index.ts`
 
-4. Bundled extensions (shipped with OpenClaw, **disabled by default**)
+4. バンドルされた拡張（OpenClawに同梱、**デフォルトで無効**）
 
 * `<openclaw>/extensions/*`
 
-Bundled plugins must be enabled explicitly via `plugins.entries.<id>.enabled`
-or `openclaw plugins enable <id>`. Installed plugins are enabled by default,
-but can be disabled the same way.
+バンドルされたプラグインは、`plugins.entries.<id>.enabled`または`openclaw plugins enable <id>`を介して明示的に有効にする必要があります。インストールされたプラグインはデフォルトで有効ですが、同様の方法で無効にすることができます。
 
-Hardening notes:
+ハードニングノート：
 
-* If `plugins.allow` is empty and non-bundled plugins are discoverable, OpenClaw logs a startup warning with plugin ids and sources.
-* Candidate paths are safety-checked before discovery admission. OpenClaw blocks candidates when:
-  * extension entry resolves outside plugin root (including symlink/path traversal escapes),
-  * plugin root/source path is world-writable,
-  * path ownership is suspicious for non-bundled plugins (POSIX owner is neither current uid nor root).
-* Loaded non-bundled plugins without install/load-path provenance emit a warning so you can pin trust (`plugins.allow`) or install tracking (`plugins.installs`).
+* `plugins.allow`が空で、非バンドルプラグインが発見可能な場合、OpenClawはプラグインIDとソースを含むスタートアップ警告をログに記録します。
+* 候補パスは、発見の承認前に安全チェックされます。OpenClawは、以下の条件で候補をブロックします：
+  * 拡張エントリがプラグインルートの外部に解決される場合（シンボリックリンク/パストラバーサルのエスケープを含む）、
+  * プラグインルート/ソースパスが全世界書き込み可能な場合、
+  * 非バンドルプラグインのパス所有権が疑わしい場合（POSIXオーナーが現在のuidまたはrootでない）。
+* インストール/ロードパスの出所がない非バンドルプラグインは警告を発し、信頼を固定するために`plugins.allow`またはインストール追跡のために`plugins.installs`を使用できます。
 
-Each plugin must include a `openclaw.plugin.json` file in its root. If a path
-points at a file, the plugin root is the file's directory and must contain the
-manifest.
+各プラグインは、ルートに`openclaw.plugin.json`ファイルを含める必要があります。パスがファイルを指している場合、プラグインルートはファイルのディレクトリであり、マニフェストを含む必要があります。
 
-If multiple plugins resolve to the same id, the first match in the order above
-wins and lower-precedence copies are ignored.
+複数のプラグインが同じIDに解決される場合、上記の順序で最初に一致したものが勝ち、低優先度のコピーは無視されます。
 
 ### Package packs
 
-A plugin directory may include a `package.json` with `openclaw.extensions`:
+プラグインディレクトリには、`openclaw.extensions`を含む`package.json`を含めることができます：
 
 ```json
 {
@@ -143,26 +130,19 @@ A plugin directory may include a `package.json` with `openclaw.extensions`:
 }
 ```
 
-Each entry becomes a plugin. If the pack lists multiple extensions, the plugin id
-becomes `name/<fileBase>`.
+各エントリはプラグインになります。パックが複数の拡張をリストしている場合、プラグインIDは`name/<fileBase>`になります。
 
-If your plugin imports npm deps, install them in that directory so
-`node_modules` is available (`npm install` / `pnpm install`).
+プラグインがnpm依存関係をインポートする場合、そのディレクトリにインストールして`node_modules`が利用可能であることを確認してください（`npm install` / `pnpm install`）。
 
-Security guardrail: every `openclaw.extensions` entry must stay inside the plugin
-directory after symlink resolution. Entries that escape the package directory are
-rejected.
+セキュリティガードレール：すべての`openclaw.extensions`エントリは、シンボリックリンク解決後にプラグインディレクトリ内に留まる必要があります。パッケージディレクトリを脱出するエントリは拒否されます。
 
-Security note: `openclaw plugins install` installs plugin dependencies with
-`npm install --ignore-scripts` (no lifecycle scripts). Keep plugin dependency
-trees "pure JS/TS" and avoid packages that require `postinstall` builds.
+セキュリティノート：`openclaw plugins install`は、`npm install --ignore-scripts`を使用してプラグイン依存関係をインストールします（ライフサイクルスクリプトなし）。プラグインの依存関係ツリーを「純粋なJS/TS」に保ち、`postinstall`ビルドを必要とするパッケージを避けてください。
 
 ### Channel catalog metadata
 
-Channel plugins can advertise onboarding metadata via `openclaw.channel` and
-install hints via `openclaw.install`. This keeps the core catalog data-free.
+チャネルプラグインは、`openclaw.channel`を介してオンボーディングメタデータを宣伝し、`openclaw.install`を介してインストールヒントを提供できます。これにより、コアカタログデータが空になります。
 
-Example:
+例：
 
 ```json
 {
@@ -188,26 +168,22 @@ Example:
 }
 ```
 
-OpenClaw can also merge **external channel catalogs** (for example, an MPM
-registry export). Drop a JSON file at one of:
+OpenClawは、**外部チャネルカタログ**をマージすることもできます（たとえば、MPMレジストリのエクスポート）。次のいずれかにJSONファイルをドロップします：
 
 * `~/.openclaw/mpm/plugins.json`
 * `~/.openclaw/mpm/catalog.json`
 * `~/.openclaw/plugins/catalog.json`
 
-Or point `OPENCLAW_PLUGIN_CATALOG_PATHS` (or `OPENCLAW_MPM_CATALOG_PATHS`) at
-one or more JSON files (comma/semicolon/`PATH`-delimited). Each file should
-contain `{ "entries": [ { "name": "@scope/pkg", "openclaw": { "channel": {...}, "install": {...} } } ] }`.
+または、`OPENCLAW_PLUGIN_CATALOG_PATHS`（または`OPENCLAW_MPM_CATALOG_PATHS`）を1つ以上のJSONファイル（カンマ/セミコロン/`PATH`区切り）にポイントします。各ファイルは`{ "entries": [ { "name": "@scope/pkg", "openclaw": { "channel": {...}, "install": {...} } } ] }`を含む必要があります。
 
 ## Plugin IDs
 
-Default plugin ids:
+デフォルトのプラグインID：
 
-* Package packs: `package.json` `name`
-* Standalone file: file base name (`~/.../voice-call.ts` → `voice-call`)
+* パッケージパック：`package.json` `name`
+* スタンドアロンファイル：ファイルベース名（`~/.../voice-call.ts` → `voice-call`）
 
-If a plugin exports `id`, OpenClaw uses it but warns when it doesn’t match the
-configured id.
+プラグインが`id`をエクスポートする場合、OpenClawはそれを使用しますが、設定されたIDと一致しない場合は警告します。
 
 ## Config
 
@@ -225,57 +201,52 @@ configured id.
 }
 ```
 
-Fields:
+フィールド：
 
-* `enabled`: master toggle (default: true)
-* `allow`: allowlist (optional)
-* `deny`: denylist (optional; deny wins)
-* `load.paths`: extra plugin files/dirs
-* `entries.<id>`: per‑plugin toggles + config
+* `enabled`: マスタートグル（デフォルト：true）
+* `allow`: アロウリスト（オプション）
+* `deny`: デナイリスト（オプション；デナイが勝つ）
+* `load.paths`: 追加のプラグインファイル/ディレクトリ
+* `entries.<id>`: プラグインごとのトグル + 設定
 
-Config changes **require a gateway restart**.
+設定の変更には**Gatewayの再起動が必要**です。
 
-Validation rules (strict):
+検証ルール（厳格）：
 
-* Unknown plugin ids in `entries`, `allow`, `deny`, or `slots` are **errors**.
-* Unknown `channels.<id>` keys are **errors** unless a plugin manifest declares
-  the channel id.
-* Plugin config is validated using the JSON Schema embedded in
-  `openclaw.plugin.json` (`configSchema`).
-* If a plugin is disabled, its config is preserved and a **warning** is emitted.
+* `entries`、`allow`、`deny`、または`slots`に未知のプラグインIDがある場合は**エラー**です。
+* 未知の`channels.<id>`キーは**エラー**です。プラグインマニフェストがチャネルIDを宣言していない限り。
+* プラグイン設定は、`openclaw.plugin.json`に埋め込まれたJSON Schema（`configSchema`）を使用して検証されます。
+* プラグインが無効になっている場合、その設定は保持され、**警告**が発生します。
 
 ## Plugin slots (exclusive categories)
 
-Some plugin categories are **exclusive** (only one active at a time). Use
-`plugins.slots` to select which plugin owns the slot:
+一部のプラグインカテゴリは**排他的**です（同時に1つだけアクティブ）。`plugins.slots`を使用して、どのプラグインがスロットを所有するかを選択します：
 
 ```json5
 {
   plugins: {
     slots: {
-      memory: "memory-core", // or "none" to disable memory plugins
+      memory: "memory-core", // または "none" でメモリプラグインを無効に
     },
   },
 }
 ```
 
-If multiple plugins declare `kind: "memory"`, only the selected one loads. Others
-are disabled with diagnostics.
+複数のプラグインが`kind: "memory"`を宣言している場合、選択されたものだけがロードされます。他は診断とともに無効になります。
 
 ## Control UI (schema + labels)
 
-The Control UI uses `config.schema` (JSON Schema + `uiHints`) to render better forms.
+Control UIは、`config.schema`（JSON Schema + `uiHints`）を使用して、より良いフォームをレンダリングします。
 
-OpenClaw augments `uiHints` at runtime based on discovered plugins:
+OpenClawは、発見されたプラグインに基づいてランタイムで`uiHints`を拡張します：
 
-* Adds per-plugin labels for `plugins.entries.<id>` / `.enabled` / `.config`
-* Merges optional plugin-provided config field hints under:
+* `plugins.entries.<id>` / `.enabled` / `.config`のためのプラグインごとのラベルを追加
+* プラグイン提供のオプション設定フィールドヒントをマージ：
   `plugins.entries.<id>.config.<field>`
 
-If you want your plugin config fields to show good labels/placeholders (and mark secrets as sensitive),
-provide `uiHints` alongside your JSON Schema in the plugin manifest.
+プラグインの設定フィールドに良いラベル/プレースホルダーを表示させたい場合（秘密を敏感としてマークする）、プラグインマニフェスト内のJSON Schemaとともに`uiHints`を提供してください。
 
-Example:
+例：
 
 ```json
 {
@@ -300,13 +271,13 @@ Example:
 ```bash
 openclaw plugins list
 openclaw plugins info <id>
-openclaw plugins install <path>                 # copy a local file/dir into ~/.openclaw/extensions/<id>
-openclaw plugins install ./extensions/voice-call # relative path ok
-openclaw plugins install ./plugin.tgz           # install from a local tarball
-openclaw plugins install ./plugin.zip           # install from a local zip
-openclaw plugins install -l ./extensions/voice-call # link (no copy) for dev
-openclaw plugins install @openclaw/voice-call # install from npm
-openclaw plugins install @openclaw/voice-call --pin # store exact resolved name@version
+openclaw plugins install <path>                 # ローカルファイル/ディレクトリを~/.openclaw/extensions/<id>にコピー
+openclaw plugins install ./extensions/voice-call # 相対パスはOK
+openclaw plugins install ./plugin.tgz           # ローカルtarballからインストール
+openclaw plugins install ./plugin.zip           # ローカルzipからインストール
+openclaw plugins install -l ./extensions/voice-call # 開発用にリンク（コピーなし）
+openclaw plugins install @openclaw/voice-call # npmからインストール
+openclaw plugins install @openclaw/voice-call --pin # 正確な解決名@バージョンを保存
 openclaw plugins update <id>
 openclaw plugins update --all
 openclaw plugins enable <id>
@@ -314,22 +285,20 @@ openclaw plugins disable <id>
 openclaw plugins doctor
 ```
 
-`plugins update` only works for npm installs tracked under `plugins.installs`.
-If stored integrity metadata changes between updates, OpenClaw warns and asks for confirmation (use global `--yes` to bypass prompts).
+`plugins update`は、`plugins.installs`で追跡されているnpmインストールにのみ機能します。更新間で保存された整合性メタデータが変更された場合、OpenClawは警告を発し、確認を求めます（グローバル`--yes`を使用してプロンプトをバイパスできます）。
 
-Plugins may also register their own top‑level commands (example: `openclaw voicecall`).
+プラグインは独自のトップレベルコマンドを登録することもできます（例：`openclaw voicecall`）。
 
 ## Plugin API (overview)
 
-Plugins export either:
+プラグインは次のいずれかをエクスポートします：
 
-* A function: `(api) => { ... }`
-* An object: `{ id, name, configSchema, register(api) { ... } }`
+* 関数：`(api) => { ... }`
+* オブジェクト：`{ id, name, configSchema, register(api) { ... } }`
 
 ## Plugin hooks
 
-Plugins can register hooks at runtime. This lets a plugin bundle event-driven
-automation without a separate hook pack install.
+プラグインはランタイムでフックを登録できます。これにより、プラグインは別のフックパックのインストールなしでイベント駆動の自動化をバンドルできます。
 
 ### 例
 
@@ -338,7 +307,7 @@ export default function register(api) {
   api.registerHook(
     "command:new",
     async () => {
-      // Hook logic here.
+      // フックロジックここに。
     },
     {
       name: "my-plugin.command-new",
@@ -348,24 +317,22 @@ export default function register(api) {
 }
 ```
 
-Notes:
+注意：
 
-* Register hooks explicitly via `api.registerHook(...)`.
-* Hook eligibility rules still apply (OS/bins/env/config requirements).
-* Plugin-managed hooks show up in `openclaw hooks list` with `plugin:<id>`.
-* You cannot enable/disable plugin-managed hooks via `openclaw hooks`; enable/disable the plugin instead.
+* フックを明示的に`api.registerHook(...)`を介して登録します。
+* フックの適格性ルールは依然として適用されます（OS/バイナリ/環境/設定要件）。
+* プラグイン管理のフックは、`openclaw hooks list`に`plugin:<id>`として表示されます。
+* プラグイン管理のフックを`openclaw hooks`を介して有効/無効にすることはできません；代わりにプラグインを有効/無効にしてください。
 
 ## Provider plugins (model auth)
 
-Plugins can register **model provider auth** flows so users can run OAuth or
-API-key setup inside OpenClaw (no external scripts needed).
+プラグインは、ユーザーがOpenClaw内でOAuthまたはAPIキーのセットアップを実行できるように、**モデルプロバイダー認証**フローを登録できます（外部スクリプトは不要）。
 
-Register a provider via `api.registerProvider(...)`. Each provider exposes one
-or more auth methods (OAuth, API key, device code, etc.). These methods power:
+プロバイダーを`api.registerProvider(...)`を介して登録します。各プロバイダーは1つ以上の認証メソッド（OAuth、APIキー、デバイスコードなど）を公開します。これらのメソッドは以下を駆動します：
 
 * `openclaw models auth login --provider <id> [--method <id>]`
 
-Example:
+例：
 
 ```ts
 api.registerProvider({
@@ -377,7 +344,7 @@ api.registerProvider({
       label: "OAuth",
       kind: "oauth",
       run: async (ctx) => {
-        // Run OAuth flow and return auth profiles.
+        // OAuthフローを実行し、認証プロファイルを返します。
         return {
           profiles: [
             {
@@ -399,18 +366,15 @@ api.registerProvider({
 });
 ```
 
-Notes:
+注意：
 
-* `run` receives a `ProviderAuthContext` with `prompter`, `runtime`,
-  `openUrl`, and `oauth.createVpsAwareHandlers` helpers.
-* Return `configPatch` when you need to add default models or provider config.
-* Return `defaultModel` so `--set-default` can update agent defaults.
+* `run`は、`prompter`、`runtime`、`openUrl`、および`oauth.createVpsAwareHandlers`ヘルパーを持つ`ProviderAuthContext`を受け取ります。
+* デフォルトモデルやプロバイダー設定を追加する必要がある場合は、`configPatch`を返します。
+* `defaultModel`を返すことで、`--set-default`がエージェントのデフォルトを更新できます。
 
 ### Register a messaging channel
 
-Plugins can register **channel plugins** that behave like built‑in channels
-(WhatsApp, Telegram, etc.). Channel config lives under `channels.<id>` and is
-validated by your channel plugin code.
+プラグインは、組み込みチャネル（WhatsApp、Telegramなど）と同様に動作する**チャネルプラグイン**を登録できます。チャネル設定は`channels.<id>`の下にあり、チャネルプラグインコードによって検証されます。
 
 ```ts
 const myChannel = {
@@ -442,71 +406,70 @@ export default function (api) {
 }
 ```
 
-Notes:
+注意：
 
-* Put config under `channels.<id>` (not `plugins.entries`).
-* `meta.label` is used for labels in CLI/UI lists.
-* `meta.aliases` adds alternate ids for normalization and CLI inputs.
-* `meta.preferOver` lists channel ids to skip auto-enable when both are configured.
-* `meta.detailLabel` and `meta.systemImage` let UIs show richer channel labels/icons.
+* 設定は`channels.<id>`の下に置きます（`plugins.entries`ではなく）。
+* `meta.label`はCLI/UIリストのラベルに使用されます。
+* `meta.aliases`は、正規化やCLI入力のための代替IDを追加します。
+* `meta.preferOver`は、両方が構成されている場合に自動的に有効にしないチャネルIDをリストします。
+* `meta.detailLabel`と`meta.systemImage`は、UIがリッチなチャネルラベル/アイコンを表示できるようにします。
 
 ### Channel onboarding hooks
 
-Channel plugins can define optional onboarding hooks on `plugin.onboarding`:
+チャネルプラグインは、`plugin.onboarding`にオプションのオンボーディングフックを定義できます：
 
-* `configure(ctx)` is the baseline setup flow.
-* `configureInteractive(ctx)` can fully own interactive setup for both configured and unconfigured states.
-* `configureWhenConfigured(ctx)` can override behavior only for already configured channels.
+* `configure(ctx)`は基本的なセットアップフローです。
+* `configureInteractive(ctx)`は、構成済みおよび未構成の状態の両方のインタラクティブなセットアップを完全に所有できます。
+* `configureWhenConfigured(ctx)`は、すでに構成されたチャネルに対してのみ動作をオーバーライドできます。
 
-Hook precedence in the wizard:
+ウィザード内のフックの優先順位：
 
-1. `configureInteractive` (if present)
-2. `configureWhenConfigured` (only when channel status is already configured)
-3. fallback to `configure`
+1. `configureInteractive`（存在する場合）
+2. `configureWhenConfigured`（チャネルの状態がすでに構成されている場合のみ）
+3. `configure`にフォールバック
 
-Context details:
+コンテキストの詳細：
 
-* `configureInteractive` and `configureWhenConfigured` receive:
-  * `configured` (`true` or `false`)
-  * `label` (user-facing channel name used by prompts)
-  * plus the shared config/runtime/prompter/options fields
-* Returning `"skip"` leaves selection and account tracking unchanged.
-* Returning `{ cfg, accountId? }` applies config updates and records account selection.
+* `configureInteractive`と`configureWhenConfigured`は、次のフィールドを受け取ります：
+  * `configured`（`true`または`false`）
+  * `label`（プロンプトで使用されるユーザー向けのチャネル名）
+  * 共有設定/ランタイム/プロンプター/オプションフィールド
+* `"skip"`を返すと、選択とアカウント追跡は変更されません。
+* `{ cfg, accountId? }`を返すと、設定の更新が適用され、アカウントの選択が記録されます。
 
 ### Write a new messaging channel (step‑by‑step)
 
-Use this when you want a **new chat surface** (a "messaging channel"), not a model provider.
-Model provider docs live under `/providers/*`.
+新しい**チャットサーフェス**（「メッセージングチャネル」）を作成したい場合に使用します。モデルプロバイダーのドキュメントは`/providers/*`の下にあります。
 
-1. Pick an id + config shape
+1. ID + 設定形状を選択します
 
-* All channel config lives under `channels.<id>`.
-* Prefer `channels.<id>.accounts.<accountId>` for multi‑account setups.
+* すべてのチャネル設定は`channels.<id>`の下にあります。
+* マルチアカウントセットアップの場合は、`channels.<id>.accounts.<accountId>`を優先します。
 
-2. Define the channel metadata
+2. チャネルメタデータを定義します
 
-* `meta.label`, `meta.selectionLabel`, `meta.docsPath`, `meta.blurb` control CLI/UI lists.
-* `meta.docsPath` should point at a docs page like `/channels/<id>`.
-* `meta.preferOver` lets a plugin replace another channel (auto-enable prefers it).
-* `meta.detailLabel` and `meta.systemImage` are used by UIs for detail text/icons.
+* `meta.label`、`meta.selectionLabel`、`meta.docsPath`、`meta.blurb`はCLI/UIリストを制御します。
+* `meta.docsPath`は、`/channels/<id>`のようなドキュメントページを指すべきです。
+* `meta.preferOver`は、プラグインが別のチャネルを置き換えることを許可します（自動有効化はそれを優先します）。
+* `meta.detailLabel`と`meta.systemImage`は、UIが詳細テキスト/アイコンに使用します。
 
-3. Implement the required adapters
+3. 必要なアダプタを実装します
 
 * `config.listAccountIds` + `config.resolveAccount`
-* `capabilities` (chat types, media, threads, etc.)
-* `outbound.deliveryMode` + `outbound.sendText` (for basic send)
+* `capabilities`（チャットタイプ、メディア、スレッドなど）
+* `outbound.deliveryMode` + `outbound.sendText`（基本的な送信用）
 
-4. Add optional adapters as needed
+4. 必要に応じてオプションのアダプタを追加します
 
-* `setup` (wizard), `security` (DM policy), `status` (health/diagnostics)
-* `gateway` (start/stop/login), `mentions`, `threading`, `streaming`
-* `actions` (message actions), `commands` (native command behavior)
+* `setup`（ウィザード）、`security`（DMポリシー）、`status`（ヘルス/診断）
+* `gateway`（開始/停止/ログイン）、`mentions`、`threading`、`streaming`
+* `actions`（メッセージアクション）、`commands`（ネイティブコマンドの動作）
 
-5. Register the channel in your plugin
+5. プラグイン内でチャネルを登録します
 
 * `api.registerChannel({ plugin })`
 
-Minimal config example:
+最小設定の例：
 
 ```json5
 {
@@ -520,7 +483,7 @@ Minimal config example:
 }
 ```
 
-Minimal channel plugin (outbound‑only):
+最小チャネルプラグイン（アウトバウンドのみ）：
 
 ```ts
 const plugin = {
@@ -544,7 +507,7 @@ const plugin = {
   outbound: {
     deliveryMode: "direct",
     sendText: async ({ text }) => {
-      // deliver `text` to your channel here
+      // ここで`text`をチャネルに送信します
       return { ok: true };
     },
   },
@@ -555,12 +518,11 @@ export default function (api) {
 }
 ```
 
-Load the plugin (extensions dir or `plugins.load.paths`), restart the gateway,
-then configure `channels.<id>` in your config.
+プラグインをロードし（拡張ディレクトリまたは`plugins.load.paths`）、Gatewayを再起動し、設定で`channels.<id>`を構成します。
 
 ### Agent tools
 
-See the dedicated guide: [Plugin agent tools](/plugins/agent-tools).
+専用ガイドを参照してください：[Plugin agent tools](/plugins/agent-tools)。
 
 ### Register a gateway RPC method
 
@@ -589,9 +551,7 @@ export default function (api) {
 
 ### Register auto-reply commands
 
-Plugins can register custom slash commands that execute **without invoking the
-AI agent**. This is useful for toggle commands, status checks, or quick actions
-that don't need LLM processing.
+プラグインは、AIエージェントを呼び出さずに実行されるカスタムスラッシュコマンドを登録できます。これは、トグルコマンド、ステータスチェック、またはLLM処理を必要としないクイックアクションに便利です。
 
 ```ts
 export default function (api) {
@@ -605,24 +565,24 @@ export default function (api) {
 }
 ```
 
-Command handler context:
+コマンドハンドラのコンテキスト：
 
-* `senderId`: The sender's ID (if available)
-* `channel`: The channel where the command was sent
-* `isAuthorizedSender`: Whether the sender is an authorized user
-* `args`: Arguments passed after the command (if `acceptsArgs: true`)
-* `commandBody`: The full command text
-* `config`: The current OpenClaw config
+* `senderId`: 送信者のID（利用可能な場合）
+* `channel`: コマンドが送信されたチャネル
+* `isAuthorizedSender`: 送信者が認可されたユーザーかどうか
+* `args`: コマンドの後に渡された引数（`acceptsArgs: true`の場合）
+* `commandBody`: 完全なコマンドテキスト
+* `config`: 現在のOpenClaw設定
 
-Command options:
+コマンドオプション：
 
-* `name`: Command name (without the leading `/`)
-* `description`: Help text shown in command lists
-* `acceptsArgs`: Whether the command accepts arguments (default: false). If false and arguments are provided, the command won't match and the message falls through to other handlers
-* `requireAuth`: Whether to require authorized sender (default: true)
-* `handler`: Function that returns `{ text: string }` (can be async)
+* `name`: コマンド名（先頭の`/`なし）
+* `description`: コマンドリストに表示されるヘルプテキスト
+* `acceptsArgs`: コマンドが引数を受け入れるかどうか（デフォルト：false）。引数が提供されている場合、コマンドは一致せず、メッセージは他のハンドラに流れます
+* `requireAuth`: 認可された送信者を必要とするかどうか（デフォルト：true）
+* `handler`: `{ text: string }`を返す関数（非同期可）
 
-Example with authorization and arguments:
+認可と引数を含む例：
 
 ```ts
 api.registerCommand({
@@ -638,14 +598,14 @@ api.registerCommand({
 });
 ```
 
-Notes:
+注意：
 
-* Plugin commands are processed **before** built-in commands and the AI agent
-* Commands are registered globally and work across all channels
-* Command names are case-insensitive (`/MyStatus` matches `/mystatus`)
-* Command names must start with a letter and contain only letters, numbers, hyphens, and underscores
-* Reserved command names (like `help`, `status`, `reset`, etc.) cannot be overridden by plugins
-* Duplicate command registration across plugins will fail with a diagnostic error
+* プラグインコマンドは、**ビルトインコマンド**およびAIエージェントの前に処理されます。
+* コマンドはグローバルに登録され、すべてのチャネルで機能します。
+* コマンド名は大文字と小文字を区別しません（`/MyStatus`は`/mystatus`に一致します）。
+* コマンド名は文字で始まり、文字、数字、ハイフン、アンダースコアのみを含む必要があります。
+* 予約されたコマンド名（`help`、`status`、`reset`など）はプラグインによってオーバーライドできません。
+* プラグイン間での重複コマンド登録は、診断エラーで失敗します。
 
 ### Register background services
 
@@ -661,55 +621,53 @@ export default function (api) {
 
 ## Naming conventions
 
-* Gateway methods: `pluginId.action` (example: `voicecall.status`)
-* Tools: `snake_case` (example: `voice_call`)
-* CLI commands: kebab or camel, but avoid clashing with core commands
+* Gatewayメソッド：`pluginId.action`（例：`voicecall.status`）
+* ツール：`snake_case`（例：`voice_call`）
+* CLIコマンド：ケバブまたはキャメルだが、コアコマンドと衝突しないようにする
 
 ## スキル
 
-Plugins can ship a skill in the repo (`skills/<name>/SKILL.md`).
-Enable it with `plugins.entries.<id>.enabled` (or other config gates) and ensure
-it’s present in your workspace/managed skills locations.
+プラグインは、リポジトリ内にスキルを提供できます（`skills/<name>/SKILL.md`）。`plugins.entries.<id>.enabled`（または他の設定ゲート）で有効にし、ワークスペース/管理スキルの場所に存在することを確認してください。
 
 ## Distribution (npm)
 
-Recommended packaging:
+推奨パッケージング：
 
-* Main package: `openclaw` (this repo)
-* Plugins: separate npm packages under `@openclaw/*` (example: `@openclaw/voice-call`)
+* メインパッケージ：`openclaw`（このリポジトリ）
+* プラグイン：`@openclaw/*`の下の別々のnpmパッケージ（例：`@openclaw/voice-call`）
 
-Publishing contract:
+公開契約：
 
-* Plugin `package.json` must include `openclaw.extensions` with one or more entry files.
-* Entry files can be `.js` or `.ts` (jiti loads TS at runtime).
-* `openclaw plugins install <npm-spec>` uses `npm pack`, extracts into `~/.openclaw/extensions/<id>/`, and enables it in config.
-* Config key stability: scoped packages are normalized to the **unscoped** id for `plugins.entries.*`.
+* プラグインの`package.json`には、1つ以上のエントリファイルを含む`openclaw.extensions`が含まれている必要があります。
+* エントリファイルは`.js`または`.ts`であることができます（jitiはランタイムでTSをロードします）。
+* `openclaw plugins install <npm-spec>`は`npm pack`を使用し、`~/.openclaw/extensions/<id>/`に抽出し、設定で有効にします。
+* 設定キーの安定性：スコープ付きパッケージは、`plugins.entries.*`のために**スコープなし**のIDに正規化されます。
 
 ## Example plugin: Voice Call
 
-This repo includes a voice‑call plugin (Twilio or log fallback):
+このリポジトリには、音声通話プラグイン（Twilioまたはログフォールバック）が含まれています：
 
-* Source: `extensions/voice-call`
-* Skill: `skills/voice-call`
-* CLI: `openclaw voicecall start|status`
-* Tool: `voice_call`
-* RPC: `voicecall.start`, `voicecall.status`
-* Config (twilio): `provider: "twilio"` + `twilio.accountSid/authToken/from` (optional `statusCallbackUrl`, `twimlUrl`)
-* Config (dev): `provider: "log"` (no network)
+* ソース：`extensions/voice-call`
+* スキル：`skills/voice-call`
+* CLI：`openclaw voicecall start|status`
+* ツール：`voice_call`
+* RPC：`voicecall.start`、`voicecall.status`
+* 設定（twilio）：`provider: "twilio"` + `twilio.accountSid/authToken/from`（オプションの`statusCallbackUrl`、`twimlUrl`）
+* 設定（dev）：`provider: "log"`（ネットワークなし）
 
-See [Voice Call](/plugins/voice-call) and `extensions/voice-call/README.md` for setup and usage.
+設定と使用については、[Voice Call](/plugins/voice-call)および`extensions/voice-call/README.md`を参照してください。
 
 ## Safety notes
 
-Plugins run in-process with the Gateway. Treat them as trusted code:
+プラグインはGatewayとプロセス内で実行されます。信頼できるコードとして扱ってください：
 
-* Only install plugins you trust.
-* Prefer `plugins.allow` allowlists.
-* Restart the Gateway after changes.
+* 信頼できるプラグインのみをインストールしてください。
+* `plugins.allow`のアロウリストを優先してください。
+* 変更後はGatewayを再起動してください。
 
 ## Testing plugins
 
-Plugins can (and should) ship tests:
+プラグインは（そしてすべきです）テストを提供できます：
 
-* In-repo plugins can keep Vitest tests under `src/**` (example: `src/plugins/voice-call.plugin.test.ts`).
-* Separately published plugins should run their own CI (lint/build/test) and validate `openclaw.extensions` points at the built entrypoint (`dist/index.js`).
+* リポジトリ内のプラグインは、`src/**`の下にVitestテストを保持できます（例：`src/plugins/voice-call.plugin.test.ts`）。
+* 別途公開されたプラグインは、独自のCI（リンター/ビルド/テスト）を実行し、`openclaw.extensions`がビルドされたエントリポイント（`dist/index.js`）を指していることを検証する必要があります。

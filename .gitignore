@@ -4,3 +4,4 @@ out/
 raw/
 .DS_Store
 *.tsbuildinfo
+.vercel

@@ -4,12 +4,13 @@ title: "iMessage"
 
 # iMessage
 # iMessage (legacy: imsg)
-For new iMessage deployments, use [BlueBubbles](/channels/bluebubbles).
-The `imsg` integration is legacy and may be removed in a future release.
-Status: legacy external CLI integration. Gateway spawns `imsg rpc` and communicates over JSON-RPC on stdio (no separate daemon/port).
-Preferred iMessage path for new setups.
-iMessage DMs default to pairing mode.
-Full iMessage field reference.
+新しいiMessageの展開には、[BlueBubbles](/channels/bluebubbles)を使用してください。
+`imsg`統合はレガシーであり、将来のリリースで削除される可能性があります。
+ステータス: レガシー外部CLI統合。Gatewayは`imsg rpc`を生成し、stdio上でJSON-RPCを介して通信します（別のデーモン/ポートはありません）。
+新しいセットアップのための推奨iMessageパス。
+iMessageのDMはデフォルトでペアリングモードになります。
+iMessageフィールドの完全なリファレンス。
+
 ## クイックセットアップ
 ```bash
 brew install steipete/tap/imsg
@@ -32,85 +33,88 @@ openclaw gateway
 ```bash
 openclaw pairing list imessage
 openclaw pairing approve imessage ```` ```
-Pairing requests expire after 1 hour. ````
-OpenClaw only requires a stdio-compatible `cliPath`, so you can point `cliPath` at a wrapper script that SSHes to a remote Mac and runs `imsg`.
+ペアリングリクエストは1時間後に期限切れになります。 ````
+OpenClawは、stdio互換の`cliPath`のみを必要とするため、`cliPath`をSSHでリモートMacに接続し、`imsg`を実行するラッパースクリプトにポイントできます。
 ```bash
 #!/usr/bin/env bash
 exec ssh -T gateway-host imsg "$@"
 ```
-Recommended config when attachments are enabled:
+添付ファイルが有効な場合の推奨設定:
 ```json5
 {
 channels: {
 imessage: {
 enabled: true,
 cliPath: "~/.openclaw/scripts/imsg-ssh",
-remoteHost: "user@gateway-host", // used for SCP attachment fetches
+remoteHost: "user@gateway-host", // SCP添付ファイル取得に使用
 includeAttachments: true,
-// Optional: override allowed attachment roots.
-// Defaults include /Users/\*/Library/Messages/Attachments
+// オプション: 許可された添付ファイルのルートを上書きします。
+// デフォルトには /Users/\*/Library/Messages/Attachments が含まれます
 attachmentRoots: ["/Users/\*/Library/Messages/Attachments"],
 remoteAttachmentRoots: ["/Users/\*/Library/Messages/Attachments"],
 },
 },
 }
 ```
-If `remoteHost` is not set, OpenClaw attempts to auto-detect it by parsing the SSH wrapper script.
-`remoteHost` must be `host` or `user@host` (no spaces or SSH options).
-OpenClaw uses strict host-key checking for SCP, so the relay host key must already exist in `~/.ssh/known\_hosts`.
-Attachment paths are validated against allowed roots (`attachmentRoots` / `remoteAttachmentRoots`).
-## Requirements and permissions (macOS)
-\* Messages must be signed in on the Mac running `imsg`.
-\* Full Disk Access is required for the process context running OpenClaw/`imsg` (Messages DB access).
-\* Automation permission is required to send messages through Messages.app.
-Permissions are granted per process context. If gateway runs headless (LaunchAgent/SSH), run a one-time interactive command in that same context to trigger prompts:
+`remoteHost`が設定されていない場合、OpenClawはSSHラッパースクリプトを解析して自動検出を試みます。
+`remoteHost`は`host`または`user@host`でなければなりません（スペースやSSHオプションは不可）。
+OpenClawはSCPのために厳格なホストキー確認を使用するため、リレーホストキーはすでに`~/.ssh/known_hosts`に存在している必要があります。
+添付ファイルのパスは許可されたルート（`attachmentRoots` / `remoteAttachmentRoots`）に対して検証されます。
+
+## 要件と権限 (macOS)
+\* `imsg`を実行しているMacでMessagesにサインインしている必要があります。
+\* OpenClaw/`imsg`を実行しているプロセスコンテキストにはフルディスクアクセスが必要です（Messages DBアクセス）。
+\* Messages.appを介してメッセージを送信するには自動化の権限が必要です。
+権限はプロセスコンテキストごとに付与されます。ゲートウェイがヘッドレスで実行されている場合（LaunchAgent/SSH）、同じコンテキストで一度だけインタラクティブなコマンドを実行してプロンプトをトリガーします:
 ```bash
 imsg chats --limit 1
-# or
+# または
 imsg send  "test"
 ```
-## Access control and routing
-`channels.imessage.dmPolicy` controls direct messages:
-\* `pairing` (default)
+
+## アクセス制御とルーティング
+`channels.imessage.dmPolicy`はダイレクトメッセージを制御します:
+\* `pairing`（デフォルト）
 \* `allowlist`
-\* `open` (requires `allowFrom` to include `"\*"`)
+\* `open`（`allowFrom`に`"\*"`を含める必要があります）
 \* `disabled`
-Allowlist field: `channels.imessage.allowFrom`.
-Allowlist entries can be handles or chat targets (`chat\_id:\*`, `chat\_guid:\*`, `chat\_identifier:\*`).
-`channels.imessage.groupPolicy` controls group handling:
-\* `allowlist` (default when configured)
+Allowlistフィールド: `channels.imessage.allowFrom`。
+Allowlistエントリはハンドルまたはチャットターゲット（`chat_id:\*`、`chat_guid:\*`、`chat_identifier:\*`）で指定できます。
+`channels.imessage.groupPolicy`はグループ処理を制御します:
+\* `allowlist`（設定時のデフォルト）
 \* `open`
 \* `disabled`
-Group sender allowlist: `channels.imessage.groupAllowFrom`.
-Runtime fallback: if `groupAllowFrom` is unset, iMessage group sender checks fall back to `allowFrom` when available.
-Runtime note: if `channels.imessage` is completely missing, runtime falls back to `groupPolicy="allowlist"` and logs a warning (even if `channels.defaults.groupPolicy` is set).
-Mention gating for groups:
-\* iMessage has no native mention metadata
-\* mention detection uses regex patterns (`agents.list[].groupChat.mentionPatterns`, fallback `messages.groupChat.mentionPatterns`)
-\* with no configured patterns, mention gating cannot be enforced
-Control commands from authorized senders can bypass mention gating in groups.
-\* DMs use direct routing; groups use group routing.
-\* With default `session.dmScope=main`, iMessage DMs collapse into the agent main session.
-\* Group sessions are isolated (`agent::imessage:group:`).
-\* Replies route back to iMessage using originating channel/target metadata.
-Group-ish thread behavior:
-Some multi-participant iMessage threads can arrive with `is\_group=false`.
-If that `chat\_id` is explicitly configured under `channels.imessage.groups`, OpenClaw treats it as group traffic (group gating + group session isolation).
-## Deployment patterns
-Use a dedicated Apple ID and macOS user so bot traffic is isolated from your personal Messages profile.
-Typical flow:
-1. Create/sign in a dedicated macOS user.
-2. Sign into Messages with the bot Apple ID in that user.
-3. Install `imsg` in that user.
-4. Create SSH wrapper so OpenClaw can run `imsg` in that user context.
-5. Point `channels.imessage.accounts..cliPath` and `.dbPath` to that user profile.
-First run may require GUI approvals (Automation + Full Disk Access) in that bot user session.
-Common topology:
-\* gateway runs on Linux/VM
-\* iMessage + `imsg` runs on a Mac in your tailnet
-\* `cliPath` wrapper uses SSH to run `imsg`
-\* `remoteHost` enables SCP attachment fetches
-Example:
+グループ送信者のallowlist: `channels.imessage.groupAllowFrom`。
+ランタイムフォールバック: `groupAllowFrom`が設定されていない場合、iMessageのグループ送信者チェックは利用可能な場合`allowFrom`にフォールバックします。
+ランタイムノート: `channels.imessage`が完全に欠落している場合、ランタイムは`groupPolicy="allowlist"`にフォールバックし、警告をログに記録します（`channels.defaults.groupPolicy`が設定されていても）。
+グループのメンションゲーティング:
+\* iMessageにはネイティブのメンションメタデータがありません
+\* メンション検出は正規表現パターンを使用します（`agents.list[].groupChat.mentionPatterns`、フォールバック`messages.groupChat.mentionPatterns`）
+\* 設定されたパターンがない場合、メンションゲーティングを強制することはできません
+認可された送信者からの制御コマンドはグループ内のメンションゲーティングをバイパスできます。
+\* DMは直接ルーティングを使用し、グループはグループルーティングを使用します。
+\* デフォルトの`session.dmScope=main`では、iMessageのDMはエージェントのメインセッションに統合されます。
+\* グループセッションは隔離されています（`agent::imessage:group:`）。
+\* 返信は発信チャネル/ターゲットメタデータを使用してiMessageにルーティングされます。
+グループ的なスレッドの動作:
+一部の複数参加者のiMessageスレッドは`is_group=false`で到着することがあります。
+その`chat_id`が`channels.imessage.groups`の下で明示的に設定されている場合、OpenClawはそれをグループトラフィックとして扱います（グループゲーティング + グループセッションの隔離）。
+
+## デプロイメントパターン
+ボットトラフィックが個人のMessagesプロファイルから隔離されるように、専用のApple IDとmacOSユーザーを使用してください。
+典型的なフロー:
+1. 専用のmacOSユーザーを作成/サインインします。
+2. そのユーザーでボットApple IDを使用してMessagesにサインインします。
+3. そのユーザーに`imsg`をインストールします。
+4. OpenClawがそのユーザーコンテキストで`imsg`を実行できるようにSSHラッパーを作成します。
+5. `channels.imessage.accounts..cliPath`と`.dbPath`をそのユーザープロファイルにポイントします。
+初回実行では、ボットユーザーセッションでGUI承認（自動化 + フルディスクアクセス）が必要になる場合があります。
+一般的なトポロジー:
+\* ゲートウェイはLinux/VM上で実行されます
+\* iMessage + `imsg`はあなたのtailnet内のMacで実行されます
+\* `cliPath`ラッパーはSSHを使用して`imsg`を実行します
+\* `remoteHost`はSCP添付ファイル取得を可能にします
+例:
 ```json5
 {
 channels: {
@@ -128,37 +132,39 @@ dbPath: "/Users/bot/Library/Messages/chat.db",
 #!/usr/bin/env bash
 exec ssh -T bot@mac-mini.tailnet-1234.ts.net imsg "$@"
 ```
-Use SSH keys so both SSH and SCP are non-interactive.
-Ensure the host key is trusted first (for example `ssh bot@mac-mini.tailnet-1234.ts.net`) so `known\_hosts` is populated.
-iMessage supports per-account config under `channels.imessage.accounts`.
-Each account can override fields such as `cliPath`, `dbPath`, `allowFrom`, `groupPolicy`, `mediaMaxMb`, history settings, and attachment root allowlists.
-## Media, chunking, and delivery targets
-\* inbound attachment ingestion is optional: `channels.imessage.includeAttachments`
-\* remote attachment paths can be fetched via SCP when `remoteHost` is set
-\* attachment paths must match allowed roots:
-\* `channels.imessage.attachmentRoots` (local)
-\* `channels.imessage.remoteAttachmentRoots` (remote SCP mode)
-\* default root pattern: `/Users/\*/Library/Messages/Attachments`
-\* SCP uses strict host-key checking (`StrictHostKeyChecking=yes`)
-\* outbound media size uses `channels.imessage.mediaMaxMb` (default 16 MB)
-\* text chunk limit: `channels.imessage.textChunkLimit` (default 4000)
-\* chunk mode: `channels.imessage.chunkMode`
-\* `length` (default)
-\* `newline` (paragraph-first splitting)
-Preferred explicit targets:
-\* `chat\_id:123` (recommended for stable routing)
-\* `chat\_guid:...`
-\* `chat\_identifier:...`
-Handle targets are also supported:
+SSHキーを使用して、SSHとSCPの両方を非対話的にします。
+最初にホストキーが信頼されていることを確認します（例えば、`ssh bot@mac-mini.tailnet-1234.ts.net`）ので、`known_hosts`がポピュレートされます。
+iMessageは`channels.imessage.accounts`の下でアカウントごとの設定をサポートしています。
+各アカウントは`cliPath`、`dbPath`、`allowFrom`、`groupPolicy`、`mediaMaxMb`、履歴設定、添付ファイルのルートallowlistなどのフィールドを上書きできます。
+
+## メディア、チャンク化、配信ターゲット
+\* 受信添付ファイルの取り込みはオプションです: `channels.imessage.includeAttachments`
+\* `remoteHost`が設定されている場合、リモート添付ファイルのパスはSCPを介して取得できます
+\* 添付ファイルのパスは許可されたルートと一致する必要があります:
+\* `channels.imessage.attachmentRoots`（ローカル）
+\* `channels.imessage.remoteAttachmentRoots`（リモートSCPモード）
+\* デフォルトのルートパターン: `/Users/\*/Library/Messages/Attachments`
+\* SCPは厳格なホストキー確認を使用します（`StrictHostKeyChecking=yes`）
+\* アウトバウンドメディアサイズは`channels.imessage.mediaMaxMb`を使用します（デフォルト16 MB）
+\* テキストチャンク制限: `channels.imessage.textChunkLimit`（デフォルト4000）
+\* チャンクモード: `channels.imessage.chunkMode`
+\* `length`（デフォルト）
+\* `newline`（段落最初の分割）
+推奨される明示的ターゲット:
+\* `chat_id:123`（安定したルーティングのために推奨）
+\* `chat_guid:...`
+\* `chat_identifier:...`
+ハンドルターゲットもサポートされています:
 \* `imessage:+1555...`
 \* `sms:+1555...`
 \* `user@example.com`
 ```bash
 imsg chats --limit 20
 ```
-## Config writes
-iMessage allows channel-initiated config writes by default (for `/config set|unset` when `commands.config: true`).
-Disable:
+
+## 設定の書き込み
+iMessageはデフォルトでチャネル起動の設定書き込みを許可します（`commands.config: true`のときの`/config set|unset`）。
+無効にするには:
 ```json5
 {
 channels: {
@@ -168,36 +174,38 @@ configWrites: false,
 },
 }
 ```
-## Troubleshooting
-Validate the binary and RPC support:
+
+## トラブルシューティング
+バイナリとRPCサポートを検証します:
 ```bash
 imsg rpc --help
 openclaw channels status --probe
 ```
-If probe reports RPC unsupported, update `imsg`.
-Check:
+プローブがRPC非対応を報告した場合、`imsg`を更新してください。
+確認すること:
 \* `channels.imessage.dmPolicy`
 \* `channels.imessage.allowFrom`
-\* pairing approvals (`openclaw pairing list imessage`)
-Check:
+\* ペアリング承認（`openclaw pairing list imessage`）
+確認すること:
 \* `channels.imessage.groupPolicy`
 \* `channels.imessage.groupAllowFrom`
-\* `channels.imessage.groups` allowlist behavior
-\* mention pattern configuration (`agents.list[].groupChat.mentionPatterns`)
-Check:
+\* `channels.imessage.groups`のallowlist動作
+\* メンションパターン設定（`agents.list[].groupChat.mentionPatterns`）
+確認すること:
 \* `channels.imessage.remoteHost`
 \* `channels.imessage.remoteAttachmentRoots`
-\* SSH/SCP key auth from the gateway host
-\* host key exists in `~/.ssh/known\_hosts` on the gateway host
-\* remote path readability on the Mac running Messages
-Re-run in an interactive GUI terminal in the same user/session context and approve prompts:
+\* ゲートウェイホストからのSSH/SCPキー認証
+\* ゲートウェイホストの`~/.ssh/known_hosts`にホストキーが存在する
+\* Messagesを実行しているMacでのリモートパスの読み取り可能性
+同じユーザー/セッションコンテキストでインタラクティブなGUIターミナルで再実行し、プロンプトを承認します:
 ```bash
 imsg chats --limit 1
 imsg send  "test"
 ```
-Confirm Full Disk Access + Automation are granted for the process context that runs OpenClaw/`imsg`.
-## Configuration reference pointers
-\* [Configuration reference - iMessage](/gateway/configuration-reference#imessage)
-\* [Gateway configuration](/gateway/configuration)
-\* [Pairing](/channels/pairing)
+OpenClaw/`imsg`を実行するプロセスコンテキストにフルディスクアクセス + 自動化が付与されていることを確認します。
+
+## 設定リファレンスの参照ポイント
+\* [設定リファレンス - iMessage](/gateway/configuration-reference#imessage)
+\* [ゲートウェイ設定](/gateway/configuration)
+\* [ペアリング](/channels/pairing)
 \* [BlueBubbles](/channels/bluebubbles)

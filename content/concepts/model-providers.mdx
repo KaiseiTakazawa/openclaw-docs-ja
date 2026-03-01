@@ -6,40 +6,38 @@ title: "モデルプロバイダー"
 
 # Model providers
 
-This page covers **LLM/model providers** (not chat channels like WhatsApp/Telegram).
-For model selection rules, see [/concepts/models](/concepts/models).
+このページでは、**LLM/model providers**（WhatsAppやTelegramのようなチャットチャンネルではありません）について説明します。モデル選択ルールについては、[/concepts/models](/concepts/models)を参照してください。
 
 ## Quick rules
 
-* Model refs use `provider/model` (example: `opencode/claude-opus-4-6`).
-* If you set `agents.defaults.models`, it becomes the allowlist.
-* CLI helpers: `openclaw onboard`, `openclaw models list`, `openclaw models set <provider/model>`.
+* モデル参照は `provider/model` を使用します（例: `opencode/claude-opus-4-6`）。
+* `agents.defaults.models` を設定すると、それが許可リストになります。
+* CLIヘルパー: `openclaw onboard`, `openclaw models list`, `openclaw models set <provider/model>`。
 
 ## API key rotation
 
-* Supports generic provider rotation for selected providers.
-* Configure multiple keys via:
-  * `OPENCLAW_LIVE_<PROVIDER>_KEY` (single live override, highest priority)
-  * `<PROVIDER>_API_KEYS` (comma or semicolon list)
-  * `<PROVIDER>_API_KEY` (primary key)
-  * `<PROVIDER>_API_KEY_*` (numbered list, e.g. `<PROVIDER>_API_KEY_1`)
-* For Google providers, `GOOGLE_API_KEY` is also included as fallback.
-* Key selection order preserves priority and deduplicates values.
-* Requests are retried with the next key only on rate-limit responses (for example `429`, `rate_limit`, `quota`, `resource exhausted`).
-* Non-rate-limit failures fail immediately; no key rotation is attempted.
-* When all candidate keys fail, the final error is returned from the last attempt.
+* 選択したプロバイダーのための汎用プロバイダー回転をサポートします。
+* 複数のキーを以下のように設定します：
+  * `OPENCLAW_LIVE_<PROVIDER>_KEY`（単一のライブオーバーライド、最優先）
+  * `<PROVIDER>_API_KEYS`（カンマまたはセミコロンのリスト）
+  * `<PROVIDER>_API_KEY`（プライマリーキー）
+  * `<PROVIDER>_API_KEY_*`（番号付きリスト、例: `<PROVIDER>_API_KEY_1`）
+* Googleプロバイダーの場合、`GOOGLE_API_KEY`もフォールバックとして含まれます。
+* キー選択の順序は優先順位を保持し、値を重複排除します。
+* リクエストは、レート制限の応答（例えば `429`, `rate_limit`, `quota`, `resource exhausted`）のみに次のキーで再試行されます。
+* 非レート制限の失敗は即座に失敗し、キーの回転は試みられません。
+* すべての候補キーが失敗した場合、最後の試行から最終エラーが返されます。
 
 ## Built-in providers (pi-ai catalog)
 
-OpenClaw ships with the pi‑ai catalog. These providers require **no**
-`models.providers` config; just set auth + pick a model.
+OpenClawにはpi-aiカタログが付属しています。これらのプロバイダーは**設定不要**で、認証を設定し、モデルを選択するだけです。
 
 ### OpenAI
 
-* Provider: `openai`
-* Auth: `OPENAI_API_KEY`
-* Optional rotation: `OPENAI_API_KEYS`, `OPENAI_API_KEY_1`, `OPENAI_API_KEY_2`, plus `OPENCLAW_LIVE_OPENAI_KEY` (single override)
-* Example model: `openai/gpt-5.1-codex`
+* プロバイダー: `openai`
+* 認証: `OPENAI_API_KEY`
+* オプションの回転: `OPENAI_API_KEYS`, `OPENAI_API_KEY_1`, `OPENAI_API_KEY_2`, さらに `OPENCLAW_LIVE_OPENAI_KEY`（単一オーバーライド）
+* 例のモデル: `openai/gpt-5.1-codex`
 * CLI: `openclaw onboard --auth-choice openai-api-key`
 
 ```json5
@@ -50,11 +48,11 @@ OpenClaw ships with the pi‑ai catalog. These providers require **no**
 
 ### Anthropic
 
-* Provider: `anthropic`
-* Auth: `ANTHROPIC_API_KEY` or `claude setup-token`
-* Optional rotation: `ANTHROPIC_API_KEYS`, `ANTHROPIC_API_KEY_1`, `ANTHROPIC_API_KEY_2`, plus `OPENCLAW_LIVE_ANTHROPIC_KEY` (single override)
-* Example model: `anthropic/claude-opus-4-6`
-* CLI: `openclaw onboard --auth-choice token` (paste setup-token) or `openclaw models auth paste-token --provider anthropic`
+* プロバイダー: `anthropic`
+* 認証: `ANTHROPIC_API_KEY` または `claude setup-token`
+* オプションの回転: `ANTHROPIC_API_KEYS`, `ANTHROPIC_API_KEY_1`, `ANTHROPIC_API_KEY_2`, さらに `OPENCLAW_LIVE_ANTHROPIC_KEY`（単一オーバーライド）
+* 例のモデル: `anthropic/claude-opus-4-6`
+* CLI: `openclaw onboard --auth-choice token`（setup-tokenを貼り付け）または `openclaw models auth paste-token --provider anthropic`
 
 ```json5
 {
@@ -64,12 +62,12 @@ OpenClaw ships with the pi‑ai catalog. These providers require **no**
 
 ### OpenAI Code (Codex)
 
-* Provider: `openai-codex`
-* Auth: OAuth (ChatGPT)
-* Example model: `openai-codex/gpt-5.3-codex`
-* CLI: `openclaw onboard --auth-choice openai-codex` or `openclaw models auth login --provider openai-codex`
-* Default transport is `auto` (WebSocket-first, SSE fallback)
-* Override per model via `agents.defaults.models["openai-codex/<model>"].params.transport` (`"sse"`, `"websocket"`, or `"auto"`)
+* プロバイダー: `openai-codex`
+* 認証: OAuth (ChatGPT)
+* 例のモデル: `openai-codex/gpt-5.3-codex`
+* CLI: `openclaw onboard --auth-choice openai-codex` または `openclaw models auth login --provider openai-codex`
+* デフォルトのトランスポートは `auto`（WebSocket優先、SSEフォールバック）
+* モデルごとにオーバーライド可能: `agents.defaults.models["openai-codex/<model>"].params.transport`（`"sse"`, `"websocket"`, または `"auto"`）
 
 ```json5
 {
@@ -79,9 +77,9 @@ OpenClaw ships with the pi‑ai catalog. These providers require **no**
 
 ### OpenCode Zen
 
-* Provider: `opencode`
-* Auth: `OPENCODE_API_KEY` (or `OPENCODE_ZEN_API_KEY`)
-* Example model: `opencode/claude-opus-4-6`
+* プロバイダー: `opencode`
+* 認証: `OPENCODE_API_KEY`（または `OPENCODE_ZEN_API_KEY`）
+* 例のモデル: `opencode/claude-opus-4-6`
 * CLI: `openclaw onboard --auth-choice opencode-zen`
 
 ```json5
@@ -92,83 +90,81 @@ OpenClaw ships with the pi‑ai catalog. These providers require **no**
 
 ### Google Gemini (API key)
 
-* Provider: `google`
-* Auth: `GEMINI_API_KEY`
-* Optional rotation: `GEMINI_API_KEYS`, `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GOOGLE_API_KEY` fallback, and `OPENCLAW_LIVE_GEMINI_KEY` (single override)
-* Example model: `google/gemini-3-pro-preview`
+* プロバイダー: `google`
+* 認証: `GEMINI_API_KEY`
+* オプションの回転: `GEMINI_API_KEYS`, `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GOOGLE_API_KEY`フォールバック、そして `OPENCLAW_LIVE_GEMINI_KEY`（単一オーバーライド）
+* 例のモデル: `google/gemini-3-pro-preview`
 * CLI: `openclaw onboard --auth-choice gemini-api-key`
 
 ### Google Vertex, Antigravity, and Gemini CLI
 
-* Providers: `google-vertex`, `google-antigravity`, `google-gemini-cli`
-* Auth: Vertex uses gcloud ADC; Antigravity/Gemini CLI use their respective auth flows
-* Caution: Antigravity and Gemini CLI OAuth in OpenClaw are unofficial integrations. Some users have reported Google account restrictions after using third-party clients. Review Google terms and use a non-critical account if you choose to proceed.
-* Antigravity OAuth is shipped as a bundled plugin (`google-antigravity-auth`, disabled by default).
-  * Enable: `openclaw plugins enable google-antigravity-auth`
-  * Login: `openclaw models auth login --provider google-antigravity --set-default`
-* Gemini CLI OAuth is shipped as a bundled plugin (`google-gemini-cli-auth`, disabled by default).
-  * Enable: `openclaw plugins enable google-gemini-cli-auth`
-  * Login: `openclaw models auth login --provider google-gemini-cli --set-default`
-  * Note: you do **not** paste a client id or secret into `openclaw.json`. The CLI login flow stores
-    tokens in auth profiles on the gateway host.
+* プロバイダー: `google-vertex`, `google-antigravity`, `google-gemini-cli`
+* 認証: Vertexはgcloud ADCを使用; Antigravity/Gemini CLIはそれぞれの認証フローを使用
+* 注意: AntigravityとGemini CLIのOAuthはOpenClawの非公式統合です。いくつかのユーザーは、サードパーティクライアントを使用した後にGoogleアカウントの制限を報告しています。Googleの利用規約を確認し、進む場合は非重要なアカウントを使用してください。
+* Antigravity OAuthはバンドルプラグイン（`google-antigravity-auth`、デフォルトで無効）として提供されます。
+  * 有効化: `openclaw plugins enable google-antigravity-auth`
+  * ログイン: `openclaw models auth login --provider google-antigravity --set-default`
+* Gemini CLI OAuthはバンドルプラグイン（`google-gemini-cli-auth`、デフォルトで無効）として提供されます。
+  * 有効化: `openclaw plugins enable google-gemini-cli-auth`
+  * ログイン: `openclaw models auth login --provider google-gemini-cli --set-default`
+  * 注: `openclaw.json`にクライアントIDやシークレットを貼り付ける必要はありません。CLIログインフローは、ゲートウェイホスト上の認証プロファイルにトークンを保存します。
 
 ### Z.AI (GLM)
 
-* Provider: `zai`
-* Auth: `ZAI_API_KEY`
-* Example model: `zai/glm-4.7`
+* プロバイダー: `zai`
+* 認証: `ZAI_API_KEY`
+* 例のモデル: `zai/glm-4.7`
 * CLI: `openclaw onboard --auth-choice zai-api-key`
-  * Aliases: `z.ai/*` and `z-ai/*` normalize to `zai/*`
+  * エイリアス: `z.ai/*` と `z-ai/*` は `zai/*` に正規化されます。
 
 ### Vercel AI Gateway
 
-* Provider: `vercel-ai-gateway`
-* Auth: `AI_GATEWAY_API_KEY`
-* Example model: `vercel-ai-gateway/anthropic/claude-opus-4.6`
+* プロバイダー: `vercel-ai-gateway`
+* 認証: `AI_GATEWAY_API_KEY`
+* 例のモデル: `vercel-ai-gateway/anthropic/claude-opus-4.6`
 * CLI: `openclaw onboard --auth-choice ai-gateway-api-key`
 
 ### Kilo Gateway
 
-* Provider: `kilocode`
-* Auth: `KILOCODE_API_KEY`
-* Example model: `kilocode/anthropic/claude-opus-4.6`
+* プロバイダー: `kilocode`
+* 認証: `KILOCODE_API_KEY`
+* 例のモデル: `kilocode/anthropic/claude-opus-4.6`
 * CLI: `openclaw onboard --kilocode-api-key <key>`
-* Base URL: `https://api.kilo.ai/api/gateway/`
-* Expanded built-in catalog includes GLM-5 Free, MiniMax M2.5 Free, GPT-5.2, Gemini 3 Pro Preview, Gemini 3 Flash Preview, Grok Code Fast 1, and Kimi K2.5.
+* ベースURL: `https://api.kilo.ai/api/gateway/`
+* 拡張された組み込みカタログには、GLM-5 Free、MiniMax M2.5 Free、GPT-5.2、Gemini 3 Pro Preview、Gemini 3 Flash Preview、Grok Code Fast 1、Kimi K2.5が含まれます。
 
-See [/providers/kilocode](/providers/kilocode) for setup details.
+設定の詳細については、[/providers/kilocode](/providers/kilocode)を参照してください。
 
 ### Other built-in providers
 
 * OpenRouter: `openrouter` (`OPENROUTER_API_KEY`)
-* Example model: `openrouter/anthropic/claude-sonnet-4-5`
+* 例のモデル: `openrouter/anthropic/claude-sonnet-4-5`
 * Kilo Gateway: `kilocode` (`KILOCODE_API_KEY`)
-* Example model: `kilocode/anthropic/claude-opus-4.6`
+* 例のモデル: `kilocode/anthropic/claude-opus-4.6`
 * xAI: `xai` (`XAI_API_KEY`)
 * Mistral: `mistral` (`MISTRAL_API_KEY`)
-* Example model: `mistral/mistral-large-latest`
+* 例のモデル: `mistral/mistral-large-latest`
 * CLI: `openclaw onboard --auth-choice mistral-api-key`
 * Groq: `groq` (`GROQ_API_KEY`)
 * Cerebras: `cerebras` (`CEREBRAS_API_KEY`)
-  * GLM models on Cerebras use ids `zai-glm-4.7` and `zai-glm-4.6`.
-  * OpenAI-compatible base URL: `https://api.cerebras.ai/v1`.
+  * Cerebras上のGLMモデルは、ID `zai-glm-4.7` と `zai-glm-4.6` を使用します。
+  * OpenAI互換のベースURL: `https://api.cerebras.ai/v1`。
 * GitHub Copilot: `github-copilot` (`COPILOT_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN`)
-* Hugging Face Inference: `huggingface` (`HUGGINGFACE_HUB_TOKEN` or `HF_TOKEN`) — OpenAI-compatible router; example model: `huggingface/deepseek-ai/DeepSeek-R1`; CLI: `openclaw onboard --auth-choice huggingface-api-key`. See [Hugging Face (Inference)](/providers/huggingface).
+* Hugging Face Inference: `huggingface` (`HUGGINGFACE_HUB_TOKEN` または `HF_TOKEN`) — OpenAI互換のルーター; 例のモデル: `huggingface/deepseek-ai/DeepSeek-R1`; CLI: `openclaw onboard --auth-choice huggingface-api-key`。詳細は[Hugging Face (Inference)](/providers/huggingface)を参照してください。
 
 ## Providers via `models.providers` (custom/base URL)
 
-Use `models.providers` (or `models.json`) to add **custom** providers or
-OpenAI/Anthropic‑compatible proxies.
+`models.providers`（または `models.json`）を使用して、**カスタム**プロバイダーやOpenAI/Anthropic互換のプロキシを追加します。
 
 ### Moonshot AI (Kimi)
 
-Moonshot uses OpenAI-compatible endpoints, so configure it as a custom provider:
+MoonshotはOpenAI互換のエンドポイントを使用するため、カスタムプロバイダーとして設定します：
 
-* Provider: `moonshot`
-* Auth: `MOONSHOT_API_KEY`
-* Example model: `moonshot/kimi-k2.5`
+* プロバイダー: `moonshot`
+* 認証: `MOONSHOT_API_KEY`
+* 例のモデル: `moonshot/kimi-k2.5`
 
-Kimi K2 model IDs:
+Kimi K2モデルID:
 
 {/_moonshot-kimi-k2-model-refs:start_/ && null}
 
@@ -200,11 +196,11 @@ Kimi K2 model IDs:
 
 ### Kimi Coding
 
-Kimi Coding uses Moonshot AI's Anthropic-compatible endpoint:
+Kimi CodingはMoonshot AIのAnthropic互換エンドポイントを使用します：
 
-* Provider: `kimi-coding`
-* Auth: `KIMI_API_KEY`
-* Example model: `kimi-coding/k2p5`
+* プロバイダー: `kimi-coding`
+* 認証: `KIMI_API_KEY`
+* 例のモデル: `kimi-coding/k2p5`
 
 ```json5
 {
@@ -217,28 +213,27 @@ Kimi Coding uses Moonshot AI's Anthropic-compatible endpoint:
 
 ### Qwen OAuth (free tier)
 
-Qwen provides OAuth access to Qwen Coder + Vision via a device-code flow.
-Enable the bundled plugin, then log in:
+Qwenはデバイスコードフローを介してQwen Coder + VisionへのOAuthアクセスを提供します。バンドルプラグインを有効にし、ログインします：
 
 ```bash
 openclaw plugins enable qwen-portal-auth
 openclaw models auth login --provider qwen-portal --set-default
 ```
 
-Model refs:
+モデル参照：
 
 * `qwen-portal/coder-model`
 * `qwen-portal/vision-model`
 
-See [/providers/qwen](/providers/qwen) for setup details and notes.
+設定の詳細とノートについては、[/providers/qwen](/providers/qwen)を参照してください。
 
 ### Volcano Engine (Doubao)
 
-Volcano Engine (火山引擎) provides access to Doubao and other models in China.
+Volcano Engine (火山引擎)は、中国におけるDoubaoやその他のモデルへのアクセスを提供します。
 
-* Provider: `volcengine` (coding: `volcengine-plan`)
-* Auth: `VOLCANO_ENGINE_API_KEY`
-* Example model: `volcengine/doubao-seed-1-8-251228`
+* プロバイダー: `volcengine`（コーディング: `volcengine-plan`）
+* 認証: `VOLCANO_ENGINE_API_KEY`
+* 例のモデル: `volcengine/doubao-seed-1-8-251228`
 * CLI: `openclaw onboard --auth-choice volcengine-api-key`
 
 ```json5
@@ -249,15 +244,15 @@ Volcano Engine (火山引擎) provides access to Doubao and other models in Chin
 }
 ```
 
-Available models:
+利用可能なモデル：
 
-* `volcengine/doubao-seed-1-8-251228` (Doubao Seed 1.8)
+* `volcengine/doubao-seed-1-8-251228`（Doubao Seed 1.8）
 * `volcengine/doubao-seed-code-preview-251028`
-* `volcengine/kimi-k2-5-260127` (Kimi K2.5)
-* `volcengine/glm-4-7-251222` (GLM 4.7)
-* `volcengine/deepseek-v3-2-251201` (DeepSeek V3.2 128K)
+* `volcengine/kimi-k2-5-260127`（Kimi K2.5）
+* `volcengine/glm-4-7-251222`（GLM 4.7）
+* `volcengine/deepseek-v3-2-251201`（DeepSeek V3.2 128K）
 
-Coding models (`volcengine-plan`):
+コーディングモデル（`volcengine-plan`）：
 
 * `volcengine-plan/ark-code-latest`
 * `volcengine-plan/doubao-seed-code`
@@ -267,11 +262,11 @@ Coding models (`volcengine-plan`):
 
 ### BytePlus (International)
 
-BytePlus ARK provides access to the same models as Volcano Engine for international users.
+BytePlus ARKは、国際ユーザー向けにVolcano Engineと同じモデルへのアクセスを提供します。
 
-* Provider: `byteplus` (coding: `byteplus-plan`)
-* Auth: `BYTEPLUS_API_KEY`
-* Example model: `byteplus/seed-1-8-251228`
+* プロバイダー: `byteplus`（コーディング: `byteplus-plan`）
+* 認証: `BYTEPLUS_API_KEY`
+* 例のモデル: `byteplus/seed-1-8-251228`
 * CLI: `openclaw onboard --auth-choice byteplus-api-key`
 
 ```json5
@@ -282,13 +277,13 @@ BytePlus ARK provides access to the same models as Volcano Engine for internatio
 }
 ```
 
-Available models:
+利用可能なモデル：
 
-* `byteplus/seed-1-8-251228` (Seed 1.8)
-* `byteplus/kimi-k2-5-260127` (Kimi K2.5)
-* `byteplus/glm-4-7-251222` (GLM 4.7)
+* `byteplus/seed-1-8-251228`（Seed 1.8）
+* `byteplus/kimi-k2-5-260127`（Kimi K2.5）
+* `byteplus/glm-4-7-251222`（GLM 4.7）
 
-Coding models (`byteplus-plan`):
+コーディングモデル（`byteplus-plan`）：
 
 * `byteplus-plan/ark-code-latest`
 * `byteplus-plan/doubao-seed-code`
@@ -298,11 +293,11 @@ Coding models (`byteplus-plan`):
 
 ### Synthetic
 
-Synthetic provides Anthropic-compatible models behind the `synthetic` provider:
+Syntheticは、`synthetic`プロバイダーの背後にあるAnthropic互換モデルを提供します：
 
-* Provider: `synthetic`
-* Auth: `SYNTHETIC_API_KEY`
-* Example model: `synthetic/hf:MiniMaxAI/MiniMax-M2.1`
+* プロバイダー: `synthetic`
+* 認証: `SYNTHETIC_API_KEY`
+* 例のモデル: `synthetic/hf:MiniMaxAI/MiniMax-M2.1`
 * CLI: `openclaw onboard --auth-choice synthetic-api-key`
 
 ```json5
@@ -326,24 +321,24 @@ Synthetic provides Anthropic-compatible models behind the `synthetic` provider:
 
 ### MiniMax
 
-MiniMax is configured via `models.providers` because it uses custom endpoints:
+MiniMaxはカスタムエンドポイントを使用するため、`models.providers`経由で設定されます：
 
-* MiniMax (Anthropic‑compatible): `--auth-choice minimax-api`
-* Auth: `MINIMAX_API_KEY`
+* MiniMax（Anthropic互換）: `--auth-choice minimax-api`
+* 認証: `MINIMAX_API_KEY`
 
-See [/providers/minimax](/providers/minimax) for setup details, model options, and config snippets.
+設定の詳細、モデルオプション、および構成スニペットについては、[/providers/minimax](/providers/minimax)を参照してください。
 
 ### Ollama
 
-Ollama is a local LLM runtime that provides an OpenAI-compatible API:
+Ollamaは、OpenAI互換のAPIを提供するローカルLLMランタイムです：
 
-* Provider: `ollama`
-* Auth: None required (local server)
-* Example model: `ollama/llama3.3`
-* Installation: [https://ollama.ai](https://ollama.ai)
+* プロバイダー: `ollama`
+* 認証: 必要なし（ローカルサーバー）
+* 例のモデル: `ollama/llama3.3`
+* インストール: [https://ollama.ai](https://ollama.ai)
 
 ```bash
-# Install Ollama, then pull a model:
+# Ollamaをインストールし、モデルをプルします：
 ollama pull llama3.3
 ```
 
@@ -355,23 +350,23 @@ ollama pull llama3.3
 }
 ```
 
-Ollama is automatically detected when running locally at `http://127.0.0.1:11434/v1`. See [/providers/ollama](/providers/ollama) for model recommendations and custom configuration.
+Ollamaは、`http://127.0.0.1:11434/v1`でローカルで実行されていると自動的に検出されます。モデルの推奨やカスタム構成については、[/providers/ollama](/providers/ollama)を参照してください。
 
 ### vLLM
 
-vLLM is a local (or self-hosted) OpenAI-compatible server:
+vLLMは、ローカル（または自己ホスト）されたOpenAI互換のサーバーです：
 
-* Provider: `vllm`
-* Auth: Optional (depends on your server)
-* Default base URL: `http://127.0.0.1:8000/v1`
+* プロバイダー: `vllm`
+* 認証: オプション（サーバーによります）
+* デフォルトのベースURL: `http://127.0.0.1:8000/v1`
 
-To opt in to auto-discovery locally (any value works if your server doesn’t enforce auth):
+ローカルでの自動検出をオプトインするには（サーバーが認証を強制しない場合は任意の値で構いません）：
 
 ```bash
 export VLLM_API_KEY="vllm-local"
 ```
 
-Then set a model (replace with one of the IDs returned by `/v1/models`):
+次に、モデルを設定します（`/v1/models`から返されたIDの1つに置き換えます）：
 
 ```json5
 {
@@ -381,11 +376,11 @@ Then set a model (replace with one of the IDs returned by `/v1/models`):
 }
 ```
 
-See [/providers/vllm](/providers/vllm) for details.
+詳細については、[/providers/vllm](/providers/vllm)を参照してください。
 
 ### Local proxies (LM Studio, vLLM, LiteLLM, etc.)
 
-Example (OpenAI‑compatible):
+例（OpenAI互換）：
 
 ```json5
 {
@@ -418,16 +413,16 @@ Example (OpenAI‑compatible):
 }
 ```
 
-Notes:
+注意：
 
-* For custom providers, `reasoning`, `input`, `cost`, `contextWindow`, and `maxTokens` are optional.
-  When omitted, OpenClaw defaults to:
+* カスタムプロバイダーの場合、`reasoning`、`input`、`cost`、`contextWindow`、および`maxTokens`はオプションです。
+  省略した場合、OpenClawはデフォルト値を使用します：
   * `reasoning: false`
   * `input: ["text"]`
   * `cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }`
   * `contextWindow: 200000`
   * `maxTokens: 8192`
-* Recommended: set explicit values that match your proxy/model limits.
+* 推奨：プロキシ/モデルの制限に一致する明示的な値を設定してください。
 
 ## CLI examples
 
@@ -437,4 +432,4 @@ openclaw models set opencode/claude-opus-4-6
 openclaw models list
 ```
 
-See also: [/gateway/configuration](/gateway/configuration) for full configuration examples.
+詳細については、完全な構成例については[/gateway/configuration](/gateway/configuration)を参照してください。

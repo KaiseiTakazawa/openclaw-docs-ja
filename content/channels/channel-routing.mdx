@@ -4,41 +4,39 @@ title: "チャネルルーティング"
 
 # チャネルルーティング
 # Channels & routing
-OpenClaw routes replies \*\*back to the channel where a message came from\*\*. The
-model does not choose a channel; routing is deterministic and controlled by the
-host configuration.
+OpenClawは、メッセージが送信されたチャネルに**返信をルーティング**します。モデルはチャネルを選択せず、ルーティングは決定論的でホストの設定によって制御されます。
 ## Key terms
-\* \*\*Channel\*\*: `whatsapp`, `telegram`, `discord`, `slack`, `signal`, `imessage`, `webchat`.
-\* \*\*AccountId\*\*: per‑channel account instance (when supported).
-\* \*\*AgentId\*\*: an isolated workspace + session store (“brain”).
-\* \*\*SessionKey\*\*: the bucket key used to store context and control concurrency.
+* **Channel**: `whatsapp`, `telegram`, `discord`, `slack`, `signal`, `imessage`, `webchat`.
+* **AccountId**: チャネルごとのアカウントインスタンス（サポートされている場合）。
+* **AgentId**: 隔離されたワークスペース + セッションストア（“脳”）。
+* **SessionKey**: コンテキストを保存し、同時実行を制御するために使用されるバケットキー。
 ## Session key shapes (examples)
-Direct messages collapse to the agent’s \*\*main\*\* session:
-\* `agent::` (default: `agent:main:main`)
-Groups and channels remain isolated per channel:
-\* Groups: `agent:::group:`
-\* Channels/rooms: `agent:::channel:`
-Threads:
-\* Slack/Discord threads append `:thread:` to the base key.
-\* Telegram forum topics embed `:topic:` in the group key.
-Examples:
-\* `agent:main:telegram:group:-1001234567890:topic:42`
-\* `agent:main:discord:channel:123456:thread:987654`
+ダイレクトメッセージはエージェントの**メイン**セッションに統合されます：
+* `agent::`（デフォルト: `agent:main:main`）
+グループとチャネルはチャネルごとに隔離されます：
+* グループ: `agent:::group:`
+* チャネル/ルーム: `agent:::channel:`
+スレッド：
+* Slack/Discordのスレッドは基本キーに`:thread:`を追加します。
+* Telegramフォーラムのトピックはグループキーに`:topic:`を埋め込みます。
+例：
+* `agent:main:telegram:group:-1001234567890:topic:42`
+* `agent:main:discord:channel:123456:thread:987654`
 ## Routing rules (how an agent is chosen)
-Routing picks \*\*one agent\*\* for each inbound message:
-1. \*\*Exact peer match\*\* (`bindings` with `peer.kind` + `peer.id`).
-2. \*\*Parent peer match\*\* (thread inheritance).
-3. \*\*Guild + roles match\*\* (Discord) via `guildId` + `roles`.
-4. \*\*Guild match\*\* (Discord) via `guildId`.
-5. \*\*Team match\*\* (Slack) via `teamId`.
-6. \*\*Account match\*\* (`accountId` on the channel).
-7. \*\*Channel match\*\* (any account on that channel, `accountId: "\*"`).
-8. \*\*Default agent\*\* (`agents.list[].default`, else first list entry, fallback to `main`).
-When a binding includes multiple match fields (`peer`, `guildId`, `teamId`, `roles`), \*\*all provided fields must match\*\* for that binding to apply.
-The matched agent determines which workspace and session store are used.
+ルーティングは各受信メッセージに対して**1つのエージェント**を選択します：
+1. **正確なピア一致**（`bindings`と`peer.kind` + `peer.id`）。
+2. **親ピア一致**（スレッドの継承）。
+3. **ギルド + ロール一致**（Discord）を`guildId` + `roles`を介して。
+4. **ギルド一致**（Discord）を`guildId`を介して。
+5. **チーム一致**（Slack）を`teamId`を介して。
+6. **アカウント一致**（チャネル上の`accountId`）。
+7. **チャネル一致**（そのチャネル上の任意のアカウント、`accountId: "\*"`）。
+8. **デフォルトエージェント**（`agents.list[].default`、そうでなければ最初のリストエントリ、`main`にフォールバック）。
+バインディングに複数の一致フィールド（`peer`、`guildId`、`teamId`、`roles`）が含まれる場合、**提供されたすべてのフィールドが一致する必要があります**。
+一致したエージェントが使用されるワークスペースとセッションストアを決定します。
 ## Broadcast groups (run multiple agents)
-Broadcast groups let you run \*\*multiple agents\*\* for the same peer \*\*when OpenClaw would normally reply\*\* (for example: in WhatsApp groups, after mention/activation gating).
-Config:
+ブロードキャストグループを使用すると、OpenClawが通常返信する場合に**同じピアのために複数のエージェントを実行**できます（例：WhatsAppグループ内でのメンション/アクティベーションゲーティング後）。
+設定：
 ```json5
 {
 broadcast: {
@@ -48,11 +46,11 @@ strategy: "parallel",
 },
 }
 ```
-See: [Broadcast Groups](/channels/broadcast-groups).
+参照: [Broadcast Groups](/channels/broadcast-groups)。
 ## Config overview
-\* `agents.list`: named agent definitions (workspace, model, etc.).
-\* `bindings`: map inbound channels/accounts/peers to agents.
-Example:
+* `agents.list`: 名前付きエージェント定義（ワークスペース、モデルなど）。
+* `bindings`: 受信チャネル/アカウント/ピアをエージェントにマッピングします。
+例：
 ```json5
 {
 agents: {
@@ -65,16 +63,14 @@ bindings: [
 }
 ```
 ## Session storage
-Session stores live under the state directory (default `~/.openclaw`):
-\* `~/.openclaw/agents//sessions/sessions.json`
-\* JSONL transcripts live alongside the store
-You can override the store path via `session.store` and `{agentId}` templating.
+セッションストアは状態ディレクトリ（デフォルトは`~/.openclaw`）の下に存在します：
+* `~/.openclaw/agents//sessions/sessions.json`
+* JSONLトランスクリプトはストアと同じ場所に存在します。
+ストアパスは`session.store`および`{agentId}`テンプレートを介して上書きできます。
 ## WebChat behavior
-WebChat attaches to the \*\*selected agent\*\* and defaults to the agent’s main
-session. Because of this, WebChat lets you see cross‑channel context for that
-agent in one place.
+WebChatは**選択されたエージェント**に接続し、エージェントのメインセッションがデフォルトとなります。このため、WebChatではそのエージェントのクロスチャネルコンテキストを1か所で確認できます。
 ## Reply context
-Inbound replies include:
-\* `ReplyToId`, `ReplyToBody`, and `ReplyToSender` when available.
-\* Quoted context is appended to `Body` as a `[Replying to ...]` block.
-This is consistent across channels.
+受信した返信には以下が含まれます：
+* 利用可能な場合、`ReplyToId`、`ReplyToBody`、および`ReplyToSender`。
+* 引用されたコンテキストは`Body`に`[Replying to ...]`ブロックとして追加されます。
+これはチャネル全体で一貫しています。

@@ -6,158 +6,152 @@ title: "セットアップ"
 
 # セットアップ
 
+初めてセットアップする場合は、[Getting Started](/start/getting-started)から始めてください。ウィザードの詳細については、[Onboarding Wizard](/start/wizard)を参照してください。
 
-  If you are setting up for the first time, start with [Getting Started](/start/getting-started).
-  For wizard details, see [Onboarding Wizard](/start/wizard).
-
-
-Last updated: 2026-01-01
+最終更新日: 2026-01-01
 
 ## TL;DR
 
-* **Tailoring lives outside the repo:** `~/.openclaw/workspace` (workspace) + `~/.openclaw/openclaw.json` (config).
-* **Stable workflow:** install the macOS app; let it run the bundled Gateway.
-* **Bleeding edge workflow:** run the Gateway yourself via `pnpm gateway:watch`, then let the macOS app attach in Local mode.
+* **リポジトリ外でのカスタマイズ:** `~/.openclaw/workspace` (workspace) + `~/.openclaw/openclaw.json` (config)。
+* **安定したワークフロー:** macOSアプリをインストールし、バンドルされたGatewayを実行させる。
+* **最先端のワークフロー:** `pnpm gateway:watch`を使って自分でGatewayを実行し、その後macOSアプリをローカルモードで接続させる。
 
-## Prereqs (from source)
+## 前提条件（ソースから）
 
 * Node `>=22`
 * `pnpm`
-* Docker (optional; only for containerized setup/e2e — see [Docker](/install/docker))
+* Docker（オプション; コンテナ化されたセットアップ/e2eのためのみ — [Docker](/install/docker)を参照）
 
-## Tailoring strategy (so updates don’t hurt)
+## カスタマイズ戦略（更新による影響を避けるため）
 
-If you want “100% tailored to me” *and* easy updates, keep your customization in:
+「100% 自分に合わせた」*かつ*簡単に更新できるようにするには、カスタマイズを以下に保持してください：
 
-* **Config:** `~/.openclaw/openclaw.json` (JSON/JSON5-ish)
-* **Workspace:** `~/.openclaw/workspace` (skills, prompts, memories; make it a private git repo)
+* **設定:** `~/.openclaw/openclaw.json` (JSON/JSON5風)
+* **ワークスペース:** `~/.openclaw/workspace` (スキル、プロンプト、メモリ; プライベートなgitリポジトリにする)
 
-Bootstrap once:
-
-```bash
-openclaw setup
-```
-
-From inside this repo, use the local CLI entry:
+一度ブートストラップします：
 
 ```bash
 openclaw setup
 ```
 
-If you don’t have a global install yet, run it via `pnpm openclaw setup`.
+このリポジトリ内からは、ローカルCLIエントリを使用します：
 
-## Run the Gateway from this repo
+```bash
+openclaw setup
+```
 
-After `pnpm build`, you can run the packaged CLI directly:
+まだグローバルインストールがない場合は、`pnpm openclaw setup`で実行します。
+
+## このリポジトリからGatewayを実行する
+
+`pnpm build`の後、パッケージ化されたCLIを直接実行できます：
 
 ```bash
 node openclaw.mjs gateway --port 18789 --verbose
 ```
 
-## Stable workflow (macOS app first)
+## 安定したワークフロー（macOSアプリを最初に）
 
-1. Install + launch **OpenClaw\.app** (menu bar).
-2. Complete the onboarding/permissions checklist (TCC prompts).
-3. Ensure Gateway is **Local** and running (the app manages it).
-4. Link surfaces (example: WhatsApp):
+1. **OpenClaw\.app**をインストールして起動します（メニューバー）。
+2. オンボーディング/権限チェックリストを完了します（TCCプロンプト）。
+3. Gatewayが**ローカル**で実行中であることを確認します（アプリが管理します）。
+4. サーフェスをリンクします（例: WhatsApp）：
 
 ```bash
 openclaw channels login
 ```
 
-5. Sanity check:
+5. 健康チェック：
 
 ```bash
 openclaw health
 ```
 
-If onboarding is not available in your build:
+オンボーディングがビルドに利用できない場合：
 
-* Run `openclaw setup`, then `openclaw channels login`, then start the Gateway manually (`openclaw gateway`).
+* `openclaw setup`を実行し、次に`openclaw channels login`を実行し、最後にGatewayを手動で起動します（`openclaw gateway`）。
 
-## Bleeding edge workflow (Gateway in a terminal)
+## 最先端のワークフロー（ターミナルでGateway）
 
-Goal: work on the TypeScript Gateway, get hot reload, keep the macOS app UI attached.
+目標: TypeScript Gatewayで作業し、ホットリロードを取得し、macOSアプリのUIを接続したままにする。
 
-### 0) (Optional) Run the macOS app from source too
+### 0) （オプション）ソースからmacOSアプリを実行する
 
-If you also want the macOS app on the bleeding edge:
+最先端でmacOSアプリも使用したい場合：
 
 ```bash
 ./scripts/restart-mac.sh
 ```
 
-### 1) Start the dev Gateway
+### 1) 開発用Gatewayを起動する
 
 ```bash
 pnpm install
 pnpm gateway:watch
 ```
 
-`gateway:watch` runs the gateway in watch mode and reloads on TypeScript changes.
+`gateway:watch`はGatewayをウォッチモードで実行し、TypeScriptの変更時にリロードします。
 
-### 2) Point the macOS app at your running Gateway
+### 2) macOSアプリを実行中のGatewayにポイントする
 
-In **OpenClaw\.app**:
+**OpenClaw\.app**で：
 
-* Connection Mode: **Local**
-  The app will attach to the running gateway on the configured port.
+* 接続モード: **ローカル**
+  アプリは設定されたポートの実行中のGatewayに接続します。
 
-### 3) Verify
+### 3) 確認
 
-* In-app Gateway status should read **“Using existing gateway …”**
-* Or via CLI:
+* アプリ内のGatewayのステータスは**「既存のGatewayを使用中…」**と表示されるべきです。
+* またはCLI経由で：
 
 ```bash
 openclaw health
 ```
 
-### Common footguns
+### よくある注意点
 
-* **Wrong port:** Gateway WS defaults to `ws://127.0.0.1:18789`; keep app + CLI on the same port.
-* **Where state lives:**
-  * Credentials: `~/.openclaw/credentials/`
-  * Sessions: `~/.openclaw/agents/<agentId>/sessions/`
-  * Logs: `/tmp/openclaw/`
+* **ポートの誤設定:** Gateway WSはデフォルトで`ws://127.0.0.1:18789`に設定されています; アプリとCLIは同じポートを使用してください。
+* **状態が保存される場所:**
+  * 認証情報: `~/.openclaw/credentials/`
+  * セッション: `~/.openclaw/agents/<agentId>/sessions/`
+  * ログ: `/tmp/openclaw/`
 
-## Credential storage map
+## 認証情報ストレージマップ
 
-Use this when debugging auth or deciding what to back up:
+認証のデバッグやバックアップするものを決定する際に使用します：
 
 * **WhatsApp**: `~/.openclaw/credentials/whatsapp/<accountId>/creds.json`
-* **Telegram bot token**: config/env or `channels.telegram.tokenFile`
-* **Discord bot token**: config/env (token file not yet supported)
-* **Slack tokens**: config/env (`channels.slack.*`)
-* **Pairing allowlists**:
-  * `~/.openclaw/credentials/<channel>-allowFrom.json` (default account)
-  * `~/.openclaw/credentials/<channel>-<accountId>-allowFrom.json` (non-default accounts)
-* **Model auth profiles**: `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
-* **File-backed secrets payload (optional)**: `~/.openclaw/secrets.json`
-* **Legacy OAuth import**: `~/.openclaw/credentials/oauth.json`
-  More detail: [Security](/gateway/security#credential-storage-map).
+* **Telegramボットトークン**: config/envまたは`channels.telegram.tokenFile`
+* **Discordボットトークン**: config/env（トークンファイルはまだサポートされていません）
+* **Slackトークン**: config/env (`channels.slack.*`)
+* **ペアリング許可リスト**:
+  * `~/.openclaw/credentials/<channel>-allowFrom.json`（デフォルトアカウント）
+  * `~/.openclaw/credentials/<channel>-<accountId>-allowFrom.json`（非デフォルトアカウント）
+* **モデル認証プロファイル**: `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+* **ファイルバックのシークレットペイロード（オプション）**: `~/.openclaw/secrets.json`
+* **レガシーOAuthインポート**: `~/.openclaw/credentials/oauth.json`
+  詳細: [Security](/gateway/security#credential-storage-map)。
 
-## Updating (without wrecking your setup)
+## 更新（セットアップを壊さずに）
 
-* Keep `~/.openclaw/workspace` and `~/.openclaw/` as “your stuff”; don’t put personal prompts/config into the `openclaw` repo.
-* Updating source: `git pull` + `pnpm install` (when lockfile changed) + keep using `pnpm gateway:watch`.
+* `~/.openclaw/workspace`と`~/.openclaw/`を「あなたのもの」として保持し、個人的なプロンプト/設定を`openclaw`リポジトリに入れないでください。
+* ソースの更新: `git pull` + `pnpm install`（ロックファイルが変更された場合） + 引き続き`pnpm gateway:watch`を使用します。
 
-## Linux (systemd user service)
+## Linux（systemdユーザーサービス）
 
-Linux installs use a systemd **user** service. By default, systemd stops user
-services on logout/idle, which kills the Gateway. Onboarding attempts to enable
-lingering for you (may prompt for sudo). If it’s still off, run:
+Linuxのインストールはsystemd **ユーザー**サービスを使用します。デフォルトでは、systemdはログアウト/アイドル時にユーザーサービスを停止し、Gatewayが終了します。オンボーディングは、あなたのために持続を有効にしようとします（sudoを求める場合があります）。まだオフの場合は、次を実行します：
 
 ```bash
 sudo loginctl enable-linger $USER
 ```
 
-For always-on or multi-user servers, consider a **system** service instead of a
-user service (no lingering needed). See [Gateway runbook](/gateway) for the systemd notes.
+常時稼働またはマルチユーザーサーバーの場合は、ユーザーサービスの代わりに**システム**サービスを検討してください（持続は不要です）。systemdのノートについては[Gateway runbook](/gateway)を参照してください。
 
 ## 関連ドキュメント
 
-* [Gateway runbook](/gateway) (flags, supervision, ports)
-* [Gateway configuration](/gateway/configuration) (config schema + examples)
-* [Discord](/channels/discord) and [Telegram](/channels/telegram) (reply tags + replyToMode settings)
+* [Gateway runbook](/gateway) (フラグ、監視、ポート)
+* [Gateway configuration](/gateway/configuration) (設定スキーマ + 例)
+* [Discord](/channels/discord)および[Telegram](/channels/telegram) (返信タグ + replyToMode設定)
 * [OpenClaw assistant setup](/start/openclaw)
-* [macOS app](/platforms/macos) (gateway lifecycle)
+* [macOS app](/platforms/macos) (gatewayライフサイクル)

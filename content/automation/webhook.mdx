@@ -3,43 +3,42 @@ title: "Webhook"
 ---
 
 # Webhook
-# Webhook
-Gateway can expose a small HTTP webhook endpoint for external triggers.
-## Enable
+Gatewayは外部トリガー用の小さなHTTP webhookエンドポイントを公開できます。
+## 有効化
 ```json5
 {
 hooks: {
 enabled: true,
 token: "shared-secret",
 path: "/hooks",
-// Optional: restrict explicit `agentId` routing to this allowlist.
-// Omit or include "\*" to allow any agent.
-// Set [] to deny all explicit `agentId` routing.
+// オプション: 明示的な `agentId` ルーティングをこの許可リストに制限します。
+// すべてのエージェントを許可するには、"\*"を省略または含めます。
+// 明示的な `agentId` ルーティングを拒否するには、[]を設定します。
 allowedAgentIds: ["hooks", "main"],
 },
 }
 ```
-Notes:
-\* `hooks.token` is required when `hooks.enabled=true`.
-\* `hooks.path` defaults to `/hooks`.
-## Auth
-Every request must include the hook token. Prefer headers:
-\* `Authorization: Bearer ` (recommended)
+注意:
+\* `hooks.token` は `hooks.enabled=true` の場合に必須です。
+\* `hooks.path` のデフォルトは `/hooks` です。
+## 認証
+すべてのリクエストにはフックトークンを含める必要があります。ヘッダーを優先してください:
+\* `Authorization: Bearer ` (推奨)
 \* `x-openclaw-token: `
-\* Query-string tokens are rejected (`?token=...` returns `400`).
-## Endpoints
+\* クエリ文字列トークンは拒否されます (`?token=...` は `400` を返します)。
+## エンドポイント
 ### `POST /hooks/wake`
-Payload:
+ペイロード:
 ```json
 { "text": "System line", "mode": "now" }
 ```
-\* `text` \*\*required\*\* (string): The description of the event (e.g., "New email received").
-\* `mode` optional (`now` | `next-heartbeat`): Whether to trigger an immediate heartbeat (default `now`) or wait for the next periodic check.
-Effect:
-\* Enqueues a system event for the \*\*main\*\* session
-\* If `mode=now`, triggers an immediate heartbeat
+\* `text` \*\*必須\*\* (文字列): イベントの説明 (例: "新しいメールを受信しました")。
+\* `mode` オプション (`now` | `next-heartbeat`): 即時ハートビートをトリガーするか (デフォルトは `now`)、次の定期チェックを待つか。
+効果:
+\* \*\*main\*\* セッションのためのシステムイベントをキューに追加します。
+\* `mode=now` の場合、即時ハートビートをトリガーします。
 ### `POST /hooks/agent`
-Payload:
+ペイロード:
 ```json
 {
 "message": "Run this",
@@ -55,26 +54,26 @@ Payload:
 "timeoutSeconds": 120
 }
 ```
-\* `message` \*\*required\*\* (string): The prompt or message for the agent to process.
-\* `name` optional (string): Human-readable name for the hook (e.g., "GitHub"), used as a prefix in session summaries.
-\* `agentId` optional (string): Route this hook to a specific agent. Unknown IDs fall back to the default agent. When set, the hook runs using the resolved agent's workspace and configuration.
-\* `sessionKey` optional (string): The key used to identify the agent's session. By default this field is rejected unless `hooks.allowRequestSessionKey=true`.
-\* `wakeMode` optional (`now` | `next-heartbeat`): Whether to trigger an immediate heartbeat (default `now`) or wait for the next periodic check.
-\* `deliver` optional (boolean): If `true`, the agent's response will be sent to the messaging channel. Defaults to `true`. Responses that are only heartbeat acknowledgments are automatically skipped.
-\* `channel` optional (string): The messaging channel for delivery. One of: `last`, `whatsapp`, `telegram`, `discord`, `slack`, `mattermost` (plugin), `signal`, `imessage`, `msteams`. Defaults to `last`.
-\* `to` optional (string): The recipient identifier for the channel (e.g., phone number for WhatsApp/Signal, chat ID for Telegram, channel ID for Discord/Slack/Mattermost (plugin), conversation ID for MS Teams). Defaults to the last recipient in the main session.
-\* `model` optional (string): Model override (e.g., `anthropic/claude-3-5-sonnet` or an alias). Must be in the allowed model list if restricted.
-\* `thinking` optional (string): Thinking level override (e.g., `low`, `medium`, `high`).
-\* `timeoutSeconds` optional (number): Maximum duration for the agent run in seconds.
-Effect:
-\* Runs an \*\*isolated\*\* agent turn (own session key)
-\* Always posts a summary into the \*\*main\*\* session
-\* If `wakeMode=now`, triggers an immediate heartbeat
-## Session key policy (breaking change)
-`/hooks/agent` payload `sessionKey` overrides are disabled by default.
-\* Recommended: set a fixed `hooks.defaultSessionKey` and keep request overrides off.
-\* Optional: allow request overrides only when needed, and restrict prefixes.
-Recommended config:
+\* `message` \*\*必須\*\* (文字列): エージェントが処理するためのプロンプトまたはメッセージ。
+\* `name` オプション (文字列): フックの人間が読みやすい名前 (例: "GitHub")、セッションの要約でプレフィックスとして使用されます。
+\* `agentId` オプション (文字列): このフックを特定のエージェントにルーティングします。未知のIDはデフォルトのエージェントにフォールバックします。設定された場合、フックは解決されたエージェントのワークスペースと設定を使用して実行されます。
+\* `sessionKey` オプション (文字列): エージェントのセッションを識別するために使用されるキー。このフィールドはデフォルトで拒否されますが、`hooks.allowRequestSessionKey=true` の場合は許可されます。
+\* `wakeMode` オプション (`now` | `next-heartbeat`): 即時ハートビートをトリガーするか (デフォルトは `now`)、次の定期チェックを待つか。
+\* `deliver` オプション (ブール値): `true` の場合、エージェントの応答がメッセージングチャネルに送信されます。デフォルトは `true` です。ハートビートの確認応答のみの応答は自動的にスキップされます。
+\* `channel` オプション (文字列): 配信のためのメッセージングチャネル。`last`, `whatsapp`, `telegram`, `discord`, `slack`, `mattermost` (プラグイン), `signal`, `imessage`, `msteams` のいずれか。デフォルトは `last` です。
+\* `to` オプション (文字列): チャネルの受信者識別子 (例: WhatsApp/Signalの電話番号、TelegramのチャットID、Discord/Slack/Mattermost (プラグイン)のチャンネルID、MS Teamsの会話ID)。デフォルトはメインセッションの最後の受信者です。
+\* `model` オプション (文字列): モデルのオーバーライド (例: `anthropic/claude-3-5-sonnet` またはエイリアス)。制限されている場合は許可されたモデルリストに含まれている必要があります。
+\* `thinking` オプション (文字列): 思考レベルのオーバーライド (例: `low`, `medium`, `high`)。
+\* `timeoutSeconds` オプション (数値): エージェントの実行の最大時間（秒単位）。
+効果:
+\* \*\*isolated\*\* エージェントターンを実行します (独自のセッションキー)
+\* いつでも \*\*main\*\* セッションに要約を投稿します
+\* `wakeMode=now` の場合、即時ハートビートをトリガーします。
+## セッションキー方針 (破壊的変更)
+`/hooks/agent` ペイロードの `sessionKey` オーバーライドはデフォルトで無効です。
+\* 推奨: 固定の `hooks.defaultSessionKey` を設定し、リクエストオーバーライドをオフに保ちます。
+\* オプション: 必要な場合のみリクエストオーバーライドを許可し、プレフィックスを制限します。
+推奨設定:
 ```json5
 {
 hooks: {
@@ -86,69 +85,67 @@ allowedSessionKeyPrefixes: ["hook:"],
 },
 }
 ```
-Compatibility config (legacy behavior):
+互換性設定 (レガシー動作):
 ```json5
 {
 hooks: {
 enabled: true,
 token: "${OPENCLAW\_HOOKS\_TOKEN}",
 allowRequestSessionKey: true,
-allowedSessionKeyPrefixes: ["hook:"], // strongly recommended
+allowedSessionKeyPrefixes: ["hook:"], // 強く推奨
 },
 }
 ```
-### `POST /hooks/` (mapped)
-Custom hook names are resolved via `hooks.mappings` (see configuration). A mapping can
-turn arbitrary payloads into `wake` or `agent` actions, with optional templates or
-code transforms.
-Mapping options (summary):
-\* `hooks.presets: ["gmail"]` enables the built-in Gmail mapping.
-\* `hooks.mappings` lets you define `match`, `action`, and templates in config.
-\* `hooks.transformsDir` + `transform.module` loads a JS/TS module for custom logic.
-\* `hooks.transformsDir` (if set) must stay within the transforms root under your OpenClaw config directory (typically `~/.openclaw/hooks/transforms`).
-\* `transform.module` must resolve within the effective transforms directory (traversal/escape paths are rejected).
-\* Use `match.source` to keep a generic ingest endpoint (payload-driven routing).
-\* TS transforms require a TS loader (e.g. `bun` or `tsx`) or precompiled `.js` at runtime.
-\* Set `deliver: true` + `channel`/`to` on mappings to route replies to a chat surface
-(`channel` defaults to `last` and falls back to WhatsApp).
-\* `agentId` routes the hook to a specific agent; unknown IDs fall back to the default agent.
-\* `hooks.allowedAgentIds` restricts explicit `agentId` routing. Omit it (or include `\*`) to allow any agent. Set `[]` to deny explicit `agentId` routing.
-\* `hooks.defaultSessionKey` sets the default session for hook agent runs when no explicit key is provided.
-\* `hooks.allowRequestSessionKey` controls whether `/hooks/agent` payloads may set `sessionKey` (default: `false`).
-\* `hooks.allowedSessionKeyPrefixes` optionally restricts explicit `sessionKey` values from request payloads and mappings.
-\* `allowUnsafeExternalContent: true` disables the external content safety wrapper for that hook
-(dangerous; only for trusted internal sources).
-\* `openclaw webhooks gmail setup` writes `hooks.gmail` config for `openclaw webhooks gmail run`.
-See [Gmail Pub/Sub](/automation/gmail-pubsub) for the full Gmail watch flow.
-## Responses
-\* `200` for `/hooks/wake`
-\* `202` for `/hooks/agent` (async run started)
-\* `401` on auth failure
-\* `429` after repeated auth failures from the same client (check `Retry-After`)
-\* `400` on invalid payload
-\* `413` on oversized payloads
+### `POST /hooks/` (マッピング済み)
+カスタムフック名は `hooks.mappings` を介して解決されます (設定を参照)。マッピングは任意のペイロードを `wake` または `agent` アクションに変換でき、オプションのテンプレートやコード変換が可能です。
+マッピングオプション (概要):
+\* `hooks.presets: ["gmail"]` は組み込みのGmailマッピングを有効にします。
+\* `hooks.mappings` では、設定内で `match`, `action`, およびテンプレートを定義できます。
+\* `hooks.transformsDir` + `transform.module` はカスタムロジックのためのJS/TSモジュールを読み込みます。
+\* `hooks.transformsDir` (設定されている場合) は、OpenClaw設定ディレクトリ内の変換ルートに留まる必要があります (通常は `~/.openclaw/hooks/transforms`)。
+\* `transform.module` は有効な変換ディレクトリ内で解決される必要があります (トラバーサル/エスケープパスは拒否されます)。
+\* 一般的なインジェストエンドポイントを保持するには `match.source` を使用します (ペイロード駆動のルーティング)。
+\* TS変換にはTSローダー (例: `bun` または `tsx`) または実行時にプリコンパイルされた `.js` が必要です。
+\* マッピングに対して `deliver: true` + `channel`/`to` を設定して、応答をチャットサーフェスにルーティングします
+(`channel` のデフォルトは `last` で、WhatsAppにフォールバックします)。
+\* `agentId` はフックを特定のエージェントにルーティングします; 未知のIDはデフォルトのエージェントにフォールバックします。
+\* `hooks.allowedAgentIds` は明示的な `agentId` ルーティングを制限します。省略するか (または `\*` を含める) と、すべてのエージェントを許可します。`[]` を設定すると明示的な `agentId` ルーティングを拒否します。
+\* `hooks.defaultSessionKey` は、明示的なキーが提供されない場合のフックエージェント実行のデフォルトセッションを設定します。
+\* `hooks.allowRequestSessionKey` は `/hooks/agent` ペイロードが `sessionKey` を設定できるかどうかを制御します (デフォルト: `false`)。
+\* `hooks.allowedSessionKeyPrefixes` は、リクエストペイロードとマッピングからの明示的な `sessionKey` 値をオプションで制限します。
+\* `allowUnsafeExternalContent: true` は、そのフックの外部コンテンツ安全ラッパーを無効にします
+(危険; 信頼できる内部ソースのみ)。
+\* `openclaw webhooks gmail setup` は `openclaw webhooks gmail run` のための `hooks.gmail` 設定を書き込みます。
+完全なGmailウォッチフローについては、[Gmail Pub/Sub](/automation/gmail-pubsub)を参照してください。
+## 応答
+\* `200` は `/hooks/wake` に対して
+\* `202` は `/hooks/agent` に対して (非同期実行が開始されました)
+\* `401` は認証失敗時
+\* `429` は同じクライアントからの繰り返しの認証失敗後 ( `Retry-After` を確認)
+\* `400` は無効なペイロード時
+\* `413` はサイズオーバーのペイロード時
 ## 例
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/wake \
 -H 'Authorization: Bearer SECRET' \
 -H 'Content-Type: application/json' \
--d '{"text":"New email received","mode":"now"}'
+-d '{"text":"新しいメールを受信しました","mode":"now"}'
 ```
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/agent \
 -H 'x-openclaw-token: SECRET' \
 -H 'Content-Type: application/json' \
--d '{"message":"Summarize inbox","name":"Email","wakeMode":"next-heartbeat"}'
+-d '{"message":"受信トレイを要約する","name":"Email","wakeMode":"next-heartbeat"}'
 ```
-### Use a different model
-Add `model` to the agent payload (or mapping) to override the model for that run:
+### 別のモデルを使用する
+エージェントペイロード (またはマッピング) に `model` を追加して、その実行のモデルをオーバーライドします:
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/agent \
 -H 'x-openclaw-token: SECRET' \
 -H 'Content-Type: application/json' \
--d '{"message":"Summarize inbox","name":"Email","model":"openai/gpt-5.2-mini"}'
+-d '{"message":"受信トレイを要約する","name":"Email","model":"openai/gpt-5.2-mini"}'
 ```
-If you enforce `agents.defaults.models`, make sure the override model is included there.
+`agents.defaults.models` を強制する場合は、オーバーライドモデルがそこに含まれていることを確認してください。
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/gmail \
 -H 'Authorization: Bearer SECRET' \
@@ -156,13 +153,12 @@ curl -X POST http://127.0.0.1:18789/hooks/gmail \
 -d '{"source":"gmail","messages":[{"from":"Ada","subject":"Hello","snippet":"Hi"}]}'
 ```
 ## セキュリティ
-\* Keep hook endpoints behind loopback, tailnet, or trusted reverse proxy.
-\* Use a dedicated hook token; do not reuse gateway auth tokens.
-\* Repeated auth failures are rate-limited per client address to slow brute-force attempts.
-\* If you use multi-agent routing, set `hooks.allowedAgentIds` to limit explicit `agentId` selection.
-\* Keep `hooks.allowRequestSessionKey=false` unless you require caller-selected sessions.
-\* If you enable request `sessionKey`, restrict `hooks.allowedSessionKeyPrefixes` (for example, `["hook:"]`).
-\* Avoid including sensitive raw payloads in webhook logs.
-\* Hook payloads are treated as untrusted and wrapped with safety boundaries by default.
-If you must disable this for a specific hook, set `allowUnsafeExternalContent: true`
-in that hook's mapping (dangerous).
+\* フックエンドポイントはループバック、tailnet、または信頼できるリバースプロキシの背後に保ってください。
+\* 専用のフックトークンを使用し、ゲートウェイの認証トークンを再利用しないでください。
+\* 繰り返しの認証失敗は、ブルートフォース攻撃を遅らせるためにクライアントアドレスごとにレート制限されます。
+\* マルチエージェントルーティングを使用する場合は、明示的な `agentId` 選択を制限するために `hooks.allowedAgentIds` を設定してください。
+\* 呼び出し元が選択したセッションが必要でない限り、`hooks.allowRequestSessionKey=false` のままにしてください。
+\* リクエスト `sessionKey` を有効にする場合は、`hooks.allowedSessionKeyPrefixes` を制限してください (例えば、`["hook:"]`)。
+\* ウェブフックログに機密の生ペイロードを含めることは避けてください。
+\* フックペイロードはデフォルトで信頼されていないものとして扱われ、安全境界でラップされます。
+特定のフックに対してこれを無効にする必要がある場合は、そのフックのマッピングで `allowUnsafeExternalContent: true` を設定してください (危険)。

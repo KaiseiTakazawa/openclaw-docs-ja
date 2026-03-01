@@ -6,75 +6,62 @@ title: "スキル"
 
 # Skills (OpenClaw)
 
-OpenClaw uses **[AgentSkills](https://agentskills.io)-compatible** skill folders to teach the agent how to use tools. Each skill is a directory containing a `SKILL.md` with YAML frontmatter and instructions. OpenClaw loads **bundled skills** plus optional local overrides, and filters them at load time based on environment, config, and binary presence.
+OpenClawは、エージェントにツールの使い方を教えるために、**[AgentSkills](https://agentskills.io)-互換の**スキルフォルダを使用します。各スキルは、YAMLフロントマターと指示を含む`SKILL.md`を持つディレクトリです。OpenClawは、**バンドルされたスキル**とオプションのローカルオーバーライドを読み込み、環境、設定、バイナリの存在に基づいてロード時にフィルタリングします。
 
-## Locations and precedence
+## ロケーションと優先順位
 
-Skills are loaded from **three** places:
+スキルは**3つの**場所から読み込まれます：
 
-1. **Bundled skills**: shipped with the install (npm package or OpenClaw\.app)
-2. **Managed/local skills**: `~/.openclaw/skills`
-3. **Workspace skills**: `<workspace>/skills`
+1. **バンドルされたスキル**: インストール時に同梱される（npmパッケージまたはOpenClaw\.app）
+2. **管理された/ローカルスキル**: `~/.openclaw/skills`
+3. **ワークスペーススキル**: `<workspace>/skills`
 
-If a skill name conflicts, precedence is:
+スキル名が衝突した場合、優先順位は次の通りです：
 
-`<workspace>/skills` (highest) → `~/.openclaw/skills` → bundled skills (lowest)
+`<workspace>/skills`（最も高い） → `~/.openclaw/skills` → バンドルされたスキル（最も低い）
 
-Additionally, you can configure extra skill folders (lowest precedence) via
-`skills.load.extraDirs` in `~/.openclaw/openclaw.json`.
+さらに、`~/.openclaw/openclaw.json`の`skills.load.extraDirs`を介して、追加のスキルフォルダを設定できます（最も低い優先順位）。
 
-## Per-agent vs shared skills
+## エージェントごとのスキルと共有スキル
 
-In **multi-agent** setups, each agent has its own workspace. That means:
+**マルチエージェント**のセットアップでは、各エージェントには独自のワークスペースがあります。つまり：
 
-* **Per-agent skills** live in `<workspace>/skills` for that agent only.
-* **Shared skills** live in `~/.openclaw/skills` (managed/local) and are visible
-  to **all agents** on the same machine.
-* **Shared folders** can also be added via `skills.load.extraDirs` (lowest
-  precedence) if you want a common skills pack used by multiple agents.
+* **エージェントごとのスキル**は、そのエージェント専用の`<workspace>/skills`に存在します。
+* **共有スキル**は`~/.openclaw/skills`（管理された/ローカル）に存在し、同じマシン上の**すべてのエージェント**に表示されます。
+* **共有フォルダ**は、複数のエージェントで使用される共通のスキルパックを希望する場合、`skills.load.extraDirs`を介して追加できます（最も低い優先順位）。
 
-If the same skill name exists in more than one place, the usual precedence
-applies: workspace wins, then managed/local, then bundled.
+同じスキル名が複数の場所に存在する場合、通常の優先順位が適用されます：ワークスペースが勝ち、次に管理された/ローカル、最後にバンドルされたものです。
 
-## Plugins + skills
+## プラグイン + スキル
 
-Plugins can ship their own skills by listing `skills` directories in
-`openclaw.plugin.json` (paths relative to the plugin root). Plugin skills load
-when the plugin is enabled and participate in the normal skill precedence rules.
-You can gate them via `metadata.openclaw.requires.config` on the plugin’s config
-entry. See [Plugins](/tools/plugin) for discovery/config and [Tools](/tools) for the
-tool surface those skills teach.
+プラグインは、`openclaw.plugin.json`に`skills`ディレクトリをリストすることで独自のスキルを提供できます（パスはプラグインのルートに対して相対的）。プラグインスキルは、プラグインが有効になったときに読み込まれ、通常のスキル優先順位ルールに従います。プラグインの設定エントリの`metadata.openclaw.requires.config`を介して制御できます。[Plugins](/tools/plugin)を参照して、発見/設定方法を確認し、[Tools](/tools)でそのスキルが教えるツールの表面を確認してください。
 
-## ClawHub (install + sync)
+## ClawHub (インストール + 同期)
 
-ClawHub is the public skills registry for OpenClaw. Browse at
-[https://clawhub.com](https://clawhub.com). Use it to discover, install, update, and back up skills.
-Full guide: [ClawHub](/tools/clawhub).
+ClawHubは、OpenClawの公開スキルレジストリです。[https://clawhub.com](https://clawhub.com)でブラウズできます。これを使用して、スキルを発見、インストール、更新、バックアップします。
+完全なガイド: [ClawHub](/tools/clawhub)。
 
-Common flows:
+一般的なフロー：
 
-* Install a skill into your workspace:
+* ワークスペースにスキルをインストールする：
   * `clawhub install <skill-slug>`
-* Update all installed skills:
+* インストールされたすべてのスキルを更新する：
   * `clawhub update --all`
-* Sync (scan + publish updates):
+* 同期（スキャン + 更新を公開）：
   * `clawhub sync --all`
 
-By default, `clawhub` installs into `./skills` under your current working
-directory (or falls back to the configured OpenClaw workspace). OpenClaw picks
-that up as `<workspace>/skills` on the next session.
+デフォルトでは、`clawhub`は現在の作業ディレクトリの`./skills`にインストールします（または構成されたOpenClawワークスペースにフォールバックします）。OpenClawは次のセッションでそれを`<workspace>/skills`として取得します。
 
-## Security notes
+## セキュリティノート
 
-* Treat third-party skills as **untrusted code**. Read them before enabling.
-* Prefer sandboxed runs for untrusted inputs and risky tools. See [Sandboxing](/gateway/sandboxing).
-* `skills.entries.*.env` and `skills.entries.*.apiKey` inject secrets into the **host** process
-  for that agent turn (not the sandbox). Keep secrets out of prompts and logs.
-* For a broader threat model and checklists, see [Security](/gateway/security).
+* サードパーティのスキルは**信頼できないコード**として扱います。有効にする前に読むことをお勧めします。
+* 信頼できない入力やリスクのあるツールには、サンドボックスでの実行を優先してください。[Sandboxing](/gateway/sandboxing)を参照してください。
+* `skills.entries.*.env`および`skills.entries.*.apiKey`は、そのエージェントのターンの**ホスト**プロセスにシークレットを注入します（サンドボックスではありません）。プロンプトやログにシークレットを含めないでください。
+* より広範な脅威モデルとチェックリストについては、[Security](/gateway/security)を参照してください。
 
-## Format (AgentSkills + Pi-compatible)
+## フォーマット (AgentSkills + Pi互換)
 
-`SKILL.md` must include at least:
+`SKILL.md`には少なくとも以下を含める必要があります：
 
 ```markdown
 ---
@@ -83,26 +70,26 @@ description: Generate or edit images via Gemini 3 Pro Image
 ---
 ```
 
-Notes:
+ノート：
 
-* We follow the AgentSkills spec for layout/intent.
-* The parser used by the embedded agent supports **single-line** frontmatter keys only.
-* `metadata` should be a **single-line JSON object**.
-* Use `{baseDir}` in instructions to reference the skill folder path.
-* Optional frontmatter keys:
-  * `homepage` — URL surfaced as “Website” in the macOS Skills UI (also supported via `metadata.openclaw.homepage`).
-  * `user-invocable` — `true|false` (default: `true`). When `true`, the skill is exposed as a user slash command.
-  * `disable-model-invocation` — `true|false` (default: `false`). When `true`, the skill is excluded from the model prompt (still available via user invocation).
-  * `command-dispatch` — `tool` (optional). When set to `tool`, the slash command bypasses the model and dispatches directly to a tool.
-  * `command-tool` — tool name to invoke when `command-dispatch: tool` is set.
-  * `command-arg-mode` — `raw` (default). For tool dispatch, forwards the raw args string to the tool (no core parsing).
+* レイアウト/意図についてはAgentSkills仕様に従います。
+* 埋め込まれたエージェントが使用するパーサーは、**単一行**のフロントマターキーのみをサポートします。
+* `metadata`は**単一行のJSONオブジェクト**である必要があります。
+* 指示内でスキルフォルダのパスを参照するために`{baseDir}`を使用します。
+* オプションのフロントマターキー：
+  * `homepage` — macOSのスキルUIで「ウェブサイト」として表示されるURL（`metadata.openclaw.homepage`を介してもサポート）。
+  * `user-invocable` — `true|false`（デフォルト: `true`）。`true`の場合、スキルはユーザーのスラッシュコマンドとして公開されます。
+  * `disable-model-invocation` — `true|false`（デフォルト: `false`）。`true`の場合、スキルはモデルプロンプトから除外されます（ユーザーの呼び出しを介しては利用可能）。
+  * `command-dispatch` — `tool`（オプション）。`tool`に設定されている場合、スラッシュコマンドはモデルをバイパスし、ツールに直接ディスパッチされます。
+  * `command-tool` — `command-dispatch: tool`が設定されているときに呼び出すツール名。
+  * `command-arg-mode` — `raw`（デフォルト）。ツールディスパッチのために、生の引数文字列をツールに転送します（コアパースなし）。
 
-    The tool is invoked with params:
-    `{ command: "<raw args>", commandName: "<slash command>", skillName: "<skill name>" }`.
+    ツールは以下のパラメータで呼び出されます：
+    `{ command: "<raw args>", commandName: "<slash command>", skillName: "<skill name>" }`。
 
-## Gating (load-time filters)
+## ゲーティング（ロード時フィルタ）
 
-OpenClaw **filters skills at load time** using `metadata` (single-line JSON):
+OpenClawは、`metadata`（単一行のJSON）を使用して**ロード時にスキルをフィルタリング**します：
 
 ```markdown
 ---
@@ -119,30 +106,29 @@ metadata:
 ---
 ```
 
-Fields under `metadata.openclaw`:
+`metadata.openclaw`以下のフィールド：
 
-* `always: true` — always include the skill (skip other gates).
-* `emoji` — optional emoji used by the macOS Skills UI.
-* `homepage` — optional URL shown as “Website” in the macOS Skills UI.
-* `os` — optional list of platforms (`darwin`, `linux`, `win32`). If set, the skill is only eligible on those OSes.
-* `requires.bins` — list; each must exist on `PATH`.
-* `requires.anyBins` — list; at least one must exist on `PATH`.
-* `requires.env` — list; env var must exist **or** be provided in config.
-* `requires.config` — list of `openclaw.json` paths that must be truthy.
-* `primaryEnv` — env var name associated with `skills.entries.<name>.apiKey`.
-* `install` — optional array of installer specs used by the macOS Skills UI (brew/node/go/uv/download).
+* `always: true` — スキルを常に含める（他のゲートをスキップ）。
+* `emoji` — macOSのスキルUIで使用されるオプションの絵文字。
+* `homepage` — macOSのスキルUIで「ウェブサイト」として表示されるオプションのURL。
+* `os` — プラットフォームのオプションリスト（`darwin`, `linux`, `win32`）。設定されている場合、そのOSでのみスキルが対象になります。
+* `requires.bins` — リスト; 各バイナリは`PATH`に存在する必要があります。
+* `requires.anyBins` — リスト; 少なくとも1つは`PATH`に存在する必要があります。
+* `requires.env` — リスト; 環境変数は存在する必要があります**または**設定で提供される必要があります。
+* `requires.config` — 真である必要がある`openclaw.json`パスのリスト。
+* `primaryEnv` — `skills.entries.<name>.apiKey`に関連付けられた環境変数名。
+* `install` — macOSのスキルUIで使用されるインストーラー仕様のオプション配列（brew/node/go/uv/download）。
 
-Note on sandboxing:
+サンドボックスに関するノート：
 
-* `requires.bins` is checked on the **host** at skill load time.
-* If an agent is sandboxed, the binary must also exist **inside the container**.
-  Install it via `agents.defaults.sandbox.docker.setupCommand` (or a custom image).
-  `setupCommand` runs once after the container is created.
-  Package installs also require network egress, a writable root FS, and a root user in the sandbox.
-  Example: the `summarize` skill (`skills/summarize/SKILL.md`) needs the `summarize` CLI
-  in the sandbox container to run there.
+* `requires.bins`は、スキルロード時に**ホスト**でチェックされます。
+* エージェントがサンドボックスされている場合、バイナリは**コンテナ内にも存在する必要があります**。
+  `agents.defaults.sandbox.docker.setupCommand`（またはカスタムイメージ）を介してインストールします。
+  `setupCommand`は、コンテナが作成された後に1回実行されます。
+  パッケージのインストールには、ネットワークの出口、書き込み可能なルートFS、およびサンドボックス内のルートユーザーも必要です。
+  例：`summarize`スキル（`skills/summarize/SKILL.md`）は、そこで実行するためにサンドボックスコンテナ内に`summarize` CLIが必要です。
 
-Installer example:
+インストーラーの例：
 
 ```markdown
 ---
@@ -169,23 +155,21 @@ metadata:
 ---
 ```
 
-Notes:
+ノート：
 
-* If multiple installers are listed, the gateway picks a **single** preferred option (brew when available, otherwise node).
-* If all installers are `download`, OpenClaw lists each entry so you can see the available artifacts.
-* Installer specs can include `os: ["darwin"|"linux"|"win32"]` to filter options by platform.
-* Node installs honor `skills.install.nodeManager` in `openclaw.json` (default: npm; options: npm/pnpm/yarn/bun).
-  This only affects **skill installs**; the Gateway runtime should still be Node
-  (Bun is not recommended for WhatsApp/Telegram).
-* Go installs: if `go` is missing and `brew` is available, the gateway installs Go via Homebrew first and sets `GOBIN` to Homebrew’s `bin` when possible.
-* Download installs: `url` (required), `archive` (`tar.gz` | `tar.bz2` | `zip`), `extract` (default: auto when archive detected), `stripComponents`, `targetDir` (default: `~/.openclaw/tools/<skillKey>`).
+* 複数のインストーラーがリストされている場合、ゲートウェイは**単一の**優先オプションを選択します（利用可能な場合はbrew、そうでなければnode）。
+* すべてのインストーラーが`download`の場合、OpenClawは各エントリをリストして、利用可能なアーティファクトを確認できます。
+* インストーラー仕様には、プラットフォームによってオプションをフィルタリングするために`os: ["darwin"|"linux"|"win32"]`を含めることができます。
+* Nodeインストールは、`openclaw.json`の`skills.install.nodeManager`を尊重します（デフォルト: npm; オプション: npm/pnpm/yarn/bun）。
+  これは**スキルのインストール**のみに影響し、ゲートウェイのランタイムは依然としてNodeである必要があります（BunはWhatsApp/Telegramには推奨されません）。
+* Goインストール：`go`が欠落していて`brew`が利用可能な場合、ゲートウェイは最初にHomebrewを介してGoをインストールし、可能な場合は`GOBIN`をHomebrewの`bin`に設定します。
+* ダウンロードインストール：`url`（必須）、`archive`（`tar.gz` | `tar.bz2` | `zip`）、`extract`（デフォルト：アーカイブが検出されたときに自動）、`stripComponents`、`targetDir`（デフォルト：`~/.openclaw/tools/<skillKey>`）。
 
-If no `metadata.openclaw` is present, the skill is always eligible (unless
-disabled in config or blocked by `skills.allowBundled` for bundled skills).
+`metadata.openclaw`が存在しない場合、スキルは常に対象になります（設定で無効にされているか、バンドルされたスキルに対して`skills.allowBundled`によってブロックされていない限り）。
 
-## Config overrides (`~/.openclaw/openclaw.json`)
+## 設定オーバーライド (`~/.openclaw/openclaw.json`)
 
-Bundled/managed skills can be toggled and supplied with env values:
+バンドルされた/管理されたスキルは、トグルされ、環境値が供給されることがあります：
 
 ```json5
 {
@@ -193,7 +177,7 @@ Bundled/managed skills can be toggled and supplied with env values:
     entries: {
       "nano-banana-pro": {
         enabled: true,
-        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" }, // or plaintext string
+        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" }, // またはプレーンテキスト文字列
         env: {
           GEMINI_API_KEY: "GEMINI_KEY_HERE",
         },
@@ -209,48 +193,45 @@ Bundled/managed skills can be toggled and supplied with env values:
 }
 ```
 
-Note: if the skill name contains hyphens, quote the key (JSON5 allows quoted keys).
+ノート：スキル名にハイフンが含まれている場合、キーを引用してください（JSON5は引用されたキーを許可します）。
 
-Config keys match the **skill name** by default. If a skill defines
-`metadata.openclaw.skillKey`, use that key under `skills.entries`.
+設定キーはデフォルトで**スキル名**と一致します。スキルが`metadata.openclaw.skillKey`を定義している場合、そのキーを`skills.entries`の下で使用します。
 
-Rules:
+ルール：
 
-* `enabled: false` disables the skill even if it’s bundled/installed.
-* `env`: injected **only if** the variable isn’t already set in the process.
-* `apiKey`: convenience for skills that declare `metadata.openclaw.primaryEnv`.
-  Supports plaintext string or SecretRef object (`{ source, provider, id }`).
-* `config`: optional bag for custom per-skill fields; custom keys must live here.
-* `allowBundled`: optional allowlist for **bundled** skills only. If set, only
-  bundled skills in the list are eligible (managed/workspace skills unaffected).
+* `enabled: false`は、スキルがバンドルされている/インストールされていても無効にします。
+* `env`：変数がすでにプロセスに設定されていない場合にのみ注入されます。
+* `apiKey`：`metadata.openclaw.primaryEnv`を宣言するスキルのための便利な方法です。
+  プレーンテキスト文字列またはSecretRefオブジェクト（`{ source, provider, id }`）をサポートします。
+* `config`：カスタムのスキルごとのフィールドのためのオプションのバッグ; カスタムキーはここに存在する必要があります。
+* `allowBundled`：**バンドルされた**スキルのためのオプションの許可リスト。設定されている場合、リスト内のバンドルされたスキルのみが対象になります（管理された/ワークスペーススキルには影響なし）。
 
-## Environment injection (per agent run)
+## 環境注入（エージェントごとの実行）
 
-When an agent run starts, OpenClaw:
+エージェントの実行が開始されると、OpenClawは：
 
-1. Reads skill metadata.
-2. Applies any `skills.entries.<key>.env` or `skills.entries.<key>.apiKey` to
-   `process.env`.
-3. Builds the system prompt with **eligible** skills.
-4. Restores the original environment after the run ends.
+1. スキルメタデータを読み取ります。
+2. `skills.entries.<key>.env`または`skills.entries.<key>.apiKey`を`process.env`に適用します。
+3. **対象の**スキルでシステムプロンプトを構築します。
+4. 実行が終了した後、元の環境を復元します。
 
-This is **scoped to the agent run**, not a global shell environment.
+これは**エージェントの実行にスコープされており**、グローバルなシェル環境ではありません。
 
-## Session snapshot (performance)
+## セッションスナップショット（パフォーマンス）
 
-OpenClaw snapshots the eligible skills **when a session starts** and reuses that list for subsequent turns in the same session. Changes to skills or config take effect on the next new session.
+OpenClawは、**セッションが開始されるときに対象のスキルをスナップショット**し、そのリストを同じセッション内の後続のターンで再利用します。スキルや設定の変更は、次の新しいセッションで有効になります。
 
-Skills can also refresh mid-session when the skills watcher is enabled or when a new eligible remote node appears (see below). Think of this as a **hot reload**: the refreshed list is picked up on the next agent turn.
+スキルウォッチャーが有効になっている場合や、新しい対象のリモートノードが現れた場合（以下を参照）、スキルはセッション中にリフレッシュされることもあります。これは**ホットリロード**のように考えてください：リフレッシュされたリストは次のエージェントのターンで取得されます。
 
-## Remote macOS nodes (Linux gateway)
+## リモートmacOSノード（Linuxゲートウェイ）
 
-If the Gateway is running on Linux but a **macOS node** is connected **with `system.run` allowed** (Exec approvals security not set to `deny`), OpenClaw can treat macOS-only skills as eligible when the required binaries are present on that node. The agent should execute those skills via the `nodes` tool (typically `nodes.run`).
+ゲートウェイがLinuxで実行されているが、**macOSノード**が**`system.run`が許可されている**状態で接続されている場合（Exec承認セキュリティが`deny`に設定されていない場合）、OpenClawは必要なバイナリがそのノードに存在する場合、macOS専用のスキルを対象として扱うことができます。エージェントは、`nodes`ツール（通常は`nodes.run`）を介してそれらのスキルを実行する必要があります。
 
-This relies on the node reporting its command support and on a bin probe via `system.run`. If the macOS node goes offline later, the skills remain visible; invocations may fail until the node reconnects.
+これは、ノードがそのコマンドサポートを報告し、`system.run`を介してバイナリプローブが行われることに依存します。後でmacOSノードがオフラインになると、スキルは引き続き表示されますが、呼び出しはノードが再接続するまで失敗する可能性があります。
 
-## Skills watcher (auto-refresh)
+## スキルウォッチャー（自動リフレッシュ）
 
-By default, OpenClaw watches skill folders and bumps the skills snapshot when `SKILL.md` files change. Configure this under `skills.load`:
+デフォルトでは、OpenClawはスキルフォルダを監視し、`SKILL.md`ファイルが変更されたときにスキルスナップショットを更新します。これは`skills.load`の下で構成できます：
 
 ```json5
 {
@@ -263,37 +244,34 @@ By default, OpenClaw watches skill folders and bumps the skills snapshot when `S
 }
 ```
 
-## Token impact (skills list)
+## トークンの影響（スキルリスト）
 
-When skills are eligible, OpenClaw injects a compact XML list of available skills into the system prompt (via `formatSkillsForPrompt` in `pi-coding-agent`). The cost is deterministic:
+スキルが対象の場合、OpenClawは利用可能なスキルのコンパクトなXMLリストをシステムプロンプトに注入します（`pi-coding-agent`の`formatSkillsForPrompt`を介して）。コストは決定論的です：
 
-* **Base overhead (only when ≥1 skill):** 195 characters.
-* **Per skill:** 97 characters + the length of the XML-escaped `<name>`, `<description>`, and `<location>` values.
+* **基本オーバーヘッド（スキルが≥1の場合のみ）：** 195文字。
+* **スキルごと：** 97文字 + XMLエスケープされた`<name>`、`<description>`、および`<location>`の値の長さ。
 
-Formula (characters):
+数式（文字数）：
 
 ```
 total = 195 + Σ (97 + len(name_escaped) + len(description_escaped) + len(location_escaped))
 ```
 
-Notes:
+ノート：
 
-* XML escaping expands `& < > " '` into entities (`&amp;`, `&lt;`, etc.), increasing length.
-* Token counts vary by model tokenizer. A rough OpenAI-style estimate is \~4 chars/token, so **97 chars ≈ 24 tokens** per skill plus your actual field lengths.
+* XMLエスケープは、`& < > " '`をエンティティ（`&amp;`、`&lt;`など）に展開し、長さを増加させます。
+* トークン数はモデルのトークナイザーによって異なります。おおよそのOpenAIスタイルの推定は\~4文字/トークンであるため、**97文字 ≈ 24トークン**はスキルごとの実際のフィールドの長さに加えられます。
 
-## Managed skills lifecycle
+## 管理されたスキルのライフサイクル
 
-OpenClaw ships a baseline set of skills as **bundled skills** as part of the
-install (npm package or OpenClaw\.app). `~/.openclaw/skills` exists for local
-overrides (for example, pinning/patching a skill without changing the bundled
-copy). Workspace skills are user-owned and override both on name conflicts.
+OpenClawは、インストールの一部として**バンドルされたスキル**のベースラインセットを提供します（npmパッケージまたはOpenClaw\.app）。`~/.openclaw/skills`はローカルオーバーライドのために存在します（たとえば、バンドルされたコピーを変更せずにスキルをピン留め/パッチするため）。ワークスペーススキルはユーザー所有であり、名前の衝突時に両方をオーバーライドします。
 
-## Config reference
+## 設定リファレンス
 
-See [Skills config](/tools/skills-config) for the full configuration schema.
+完全な設定スキーマについては、[Skills config](/tools/skills-config)を参照してください。
 
-## Looking for more skills?
+## もっとスキルを探していますか？
 
-Browse [https://clawhub.com](https://clawhub.com).
+[https://clawhub.com](https://clawhub.com)をブラウズしてください。
 
 ***

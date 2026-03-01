@@ -4,8 +4,8 @@ title: "自動化トラブルシューティング"
 
 # 自動化トラブルシューティング
 # Automation troubleshooting
-Use this page for scheduler and delivery issues (`cron` + `heartbeat`).
-## Command ladder
+このページはスケジューラーと配信の問題（`cron` + `heartbeat`）に使用します。
+## コマンドラダー
 ```bash
 openclaw status
 openclaw gateway status
@@ -13,58 +13,58 @@ openclaw logs --follow
 openclaw doctor
 openclaw channels status --probe
 ```
-Then run automation checks:
+次に自動化チェックを実行します：
 ```bash
 openclaw cron status
 openclaw cron list
 openclaw system heartbeat last
 ```
-## Cron not firing
+## Cronが発火しない
 ```bash
 openclaw cron status
 openclaw cron list
 openclaw cron runs --id  --limit 20
 openclaw logs --follow
 ```
-Good output looks like:
-\* `cron status` reports enabled and a future `nextWakeAtMs`.
-\* Job is enabled and has a valid schedule/timezone.
-\* `cron runs` shows `ok` or explicit skip reason.
-Common signatures:
-\* `cron: scheduler disabled; jobs will not run automatically` → cron disabled in config/env.
-\* `cron: timer tick failed` → scheduler tick crashed; inspect surrounding stack/log context.
-\* `reason: not-due` in run output → manual run called without `--force` and job not due yet.
-## Cron fired but no delivery
+良い出力は次のようになります：
+\* `cron status` が有効であり、将来の `nextWakeAtMs` を報告します。
+\* ジョブは有効で、正しいスケジュール/タイムゾーンがあります。
+\* `cron runs` が `ok` または明示的なスキップ理由を示します。
+一般的なサイン：
+\* `cron: scheduler disabled; jobs will not run automatically` → 設定/環境でcronが無効になっています。
+\* `cron: timer tick failed` → スケジューラーのティックがクラッシュしました；周囲のスタック/ログコンテキストを確認してください。
+\* 実行出力に `reason: not-due` → `--force`なしで手動実行が呼び出され、ジョブがまだ期日ではありません。
+## Cronが発火したが配信がない
 ```bash
 openclaw cron runs --id  --limit 20
 openclaw cron list
 openclaw channels status --probe
 openclaw logs --follow
 ```
-Good output looks like:
-\* Run status is `ok`.
-\* Delivery mode/target are set for isolated jobs.
-\* Channel probe reports target channel connected.
-Common signatures:
-\* Run succeeded but delivery mode is `none` → no external message is expected.
-\* Delivery target missing/invalid (`channel`/`to`) → run may succeed internally but skip outbound.
-\* Channel auth errors (`unauthorized`, `missing\_scope`, `Forbidden`) → delivery blocked by channel credentials/permissions.
-## Heartbeat suppressed or skipped
+良い出力は次のようになります：
+\* 実行ステータスは `ok` です。
+\* 配信モード/ターゲットは孤立したジョブに設定されています。
+\* チャンネルプローブがターゲットチャンネルに接続されていることを報告します。
+一般的なサイン：
+\* 実行は成功したが配信モードが `none` → 外部メッセージは期待されていません。
+\* 配信ターゲットが欠落/無効（`channel`/`to`）→ 実行は内部で成功するかもしれませんが、外向きはスキップされます。
+\* チャンネル認証エラー（`unauthorized`, `missing_scope`, `Forbidden`）→ チャンネルの資格情報/権限によって配信がブロックされました。
+## ハートビートが抑制またはスキップされた
 ```bash
 openclaw system heartbeat last
 openclaw logs --follow
 openclaw config get agents.defaults.heartbeat
 openclaw channels status --probe
 ```
-Good output looks like:
-\* Heartbeat enabled with non-zero interval.
-\* Last heartbeat result is `ran` (or skip reason is understood).
-Common signatures:
-\* `heartbeat skipped` with `reason=quiet-hours` → outside `activeHours`.
-\* `requests-in-flight` → main lane busy; heartbeat deferred.
-\* `empty-heartbeat-file` → interval heartbeat skipped because `HEARTBEAT.md` has no actionable content and no tagged cron event is queued.
-\* `alerts-disabled` → visibility settings suppress outbound heartbeat messages.
-## Timezone and activeHours gotchas
+良い出力は次のようになります：
+\* ハートビートが有効で、ゼロ以外の間隔があります。
+\* 最後のハートビート結果は `ran`（またはスキップ理由が理解されています）。
+一般的なサイン：
+\* `heartbeat skipped` と `reason=quiet-hours` → `activeHours` の外。
+\* `requests-in-flight` → メインレーンがビジー；ハートビートが保留されました。
+\* `empty-heartbeat-file` → インターバルハートビートがスキップされたのは `HEARTBEAT.md` に実行可能なコンテンツがなく、タグ付きのcronイベントがキューにないためです。
+\* `alerts-disabled` → 可視性設定が外向きのハートビートメッセージを抑制します。
+## タイムゾーンと activeHours の注意点
 ```bash
 openclaw config get agents.defaults.heartbeat.activeHours
 openclaw config get agents.defaults.heartbeat.activeHours.timezone
@@ -72,15 +72,15 @@ openclaw config get agents.defaults.userTimezone || echo "agents.defaults.userTi
 openclaw cron list
 openclaw logs --follow
 ```
-Quick rules:
-\* `Config path not found: agents.defaults.userTimezone` means the key is unset; heartbeat falls back to host timezone (or `activeHours.timezone` if set).
-\* Cron without `--tz` uses gateway host timezone.
-\* Heartbeat `activeHours` uses configured timezone resolution (`user`, `local`, or explicit IANA tz).
-\* ISO timestamps without timezone are treated as UTC for cron `at` schedules.
-Common signatures:
-\* Jobs run at the wrong wall-clock time after host timezone changes.
-\* Heartbeat always skipped during your daytime because `activeHours.timezone` is wrong.
-Related:
+簡単なルール：
+\* `Config path not found: agents.defaults.userTimezone` はキーが設定されていないことを意味します；ハートビートはホストのタイムゾーンにフォールバックします（または設定されている場合は `activeHours.timezone`）。
+\* `--tz`なしのcronはゲートウェイホストのタイムゾーンを使用します。
+\* ハートビートの `activeHours` は構成されたタイムゾーン解決（`user`, `local`, または明示的なIANA tz）を使用します。
+\* タイムゾーンなしのISOタイムスタンプは、cronの `at` スケジュールのためにUTCとして扱われます。
+一般的なサイン：
+\* ホストのタイムゾーンが変更された後、ジョブが間違った壁時計時間で実行されます。
+\* あなたの昼間にハートビートが常にスキップされるのは、`activeHours.timezone` が間違っているからです。
+関連：
 \* [/automation/cron-jobs](/automation/cron-jobs)
 \* [/gateway/heartbeat](/gateway/heartbeat)
 \* [/automation/cron-vs-heartbeat](/automation/cron-vs-heartbeat)

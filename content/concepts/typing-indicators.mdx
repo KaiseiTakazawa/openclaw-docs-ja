@@ -6,32 +6,27 @@ title: "タイピングインジケーター"
 
 # Typing indicators
 
-Typing indicators are sent to the chat channel while a run is active. Use
-`agents.defaults.typingMode` to control **when** typing starts and `typingIntervalSeconds`
-to control **how often** it refreshes.
+タイピングインジケーターは、実行中にチャットチャンネルに送信されます。**いつ**タイピングが開始されるかを制御するには`agents.defaults.typingMode`を使用し、**どのくらいの頻度で**更新されるかを制御するには`typingIntervalSeconds`を使用します。
 
-## Defaults
+## デフォルト
 
-When `agents.defaults.typingMode` is **unset**, OpenClaw keeps the legacy behavior:
+`agents.defaults.typingMode`が**未設定**の場合、OpenClawは従来の動作を維持します：
 
-* **Direct chats**: typing starts immediately once the model loop begins.
-* **Group chats with a mention**: typing starts immediately.
-* **Group chats without a mention**: typing starts only when message text begins streaming.
-* **Heartbeat runs**: typing is disabled.
+* **ダイレクトチャット**: モデルループが始まるとすぐにタイピングが開始されます。
+* **メンション付きのグループチャット**: タイピングがすぐに開始されます。
+* **メンションなしのグループチャット**: メッセージテキストがストリーミングされ始めたときにのみタイピングが開始されます。
+* **ハートビートラン**: タイピングは無効です。
 
-## Modes
+## モード
 
-Set `agents.defaults.typingMode` to one of:
+`agents.defaults.typingMode`を以下のいずれかに設定します：
 
-* `never` — no typing indicator, ever.
-* `instant` — start typing **as soon as the model loop begins**, even if the run
-  later returns only the silent reply token.
-* `thinking` — start typing on the **first reasoning delta** (requires
-  `reasoningLevel: "stream"` for the run).
-* `message` — start typing on the **first non-silent text delta** (ignores
-  the `NO_REPLY` silent token).
+* `never` — タイピングインジケーターは表示されません。
+* `instant` — モデルループが始まる**とすぐに**タイピングを開始します。実行が後でサイレントリプライトークンのみを返す場合でも。
+* `thinking` — **最初の推論デルタ**でタイピングを開始します（実行には`reasoningLevel: "stream"`が必要です）。
+* `message` — **最初の非サイレントテキストデルタ**でタイピングを開始します（`NO_REPLY`サイレントトークンは無視されます）。
 
-Order of “how early it fires”:
+“どれくらい早く発火するか”の順序：
 `never` → `message` → `thinking` → `instant`
 
 ## 設定
@@ -45,7 +40,7 @@ Order of “how early it fires”:
 }
 ```
 
-You can override mode or cadence per session:
+セッションごとにモードや間隔を上書きすることができます：
 
 ```json5
 {
@@ -58,10 +53,7 @@ You can override mode or cadence per session:
 
 ## 注意事項
 
-* `message` mode won’t show typing for silent-only replies (e.g. the `NO_REPLY`
-  token used to suppress output).
-* `thinking` only fires if the run streams reasoning (`reasoningLevel: "stream"`).
-  If the model doesn’t emit reasoning deltas, typing won’t start.
-* Heartbeats never show typing, regardless of mode.
-* `typingIntervalSeconds` controls the **refresh cadence**, not the start time.
-  The default is 6 seconds.
+* `message`モードは、サイレントのみの返信（例：出力を抑制するために使用される`NO_REPLY`トークン）に対してタイピングを表示しません。
+* `thinking`は、実行が推論をストリーミングする場合にのみ発火します（`reasoningLevel: "stream"`）。モデルが推論デルタを出力しない場合、タイピングは開始されません。
+* ハートビートは、モードに関係なくタイピングを表示しません。
+* `typingIntervalSeconds`は**更新間隔**を制御し、開始時間を制御するものではありません。デフォルトは6秒です。

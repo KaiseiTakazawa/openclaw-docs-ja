@@ -6,22 +6,21 @@ title: "ハートビート"
 
 # Heartbeat (Gateway)
 
-> **Heartbeat vs Cron?** See [Cron vs Heartbeat](/automation/cron-vs-heartbeat) for guidance on when to use each.
+> **Heartbeat vs Cron?** どちらを使用するかのガイダンスについては、[Cron vs Heartbeat](/automation/cron-vs-heartbeat)を参照してください。
 
-Heartbeat runs **periodic agent turns** in the main session so the model can
-surface anything that needs attention without spamming you.
+Heartbeatは、モデルが注意を要するものをスパムせずに表示できるように、メインセッションで**定期的なエージェントターン**を実行します。
 
-Troubleshooting: [/automation/troubleshooting](/automation/troubleshooting)
+トラブルシューティング: [/automation/troubleshooting](/automation/troubleshooting)
 
-## Quick start (beginner)
+## クイックスタート（初心者）
 
-1. Leave heartbeats enabled (default is `30m`, or `1h` for Anthropic OAuth/setup-token) or set your own cadence.
-2. Create a tiny `HEARTBEAT.md` checklist in the agent workspace (optional but recommended).
-3. Decide where heartbeat messages should go (`target: "none"` is the default; set `target: "last"` to route to the last contact).
-4. Optional: enable heartbeat reasoning delivery for transparency.
-5. Optional: restrict heartbeats to active hours (local time).
+1. ハートビートを有効にしたままにします（デフォルトは`30m`、またはAnthropic OAuth/setup-tokenの場合は`1h`）または独自の間隔を設定します。
+2. エージェントワークスペースに小さな`HEARTBEAT.md`チェックリストを作成します（オプションですが推奨）。
+3. ハートビートメッセージの送信先を決定します（デフォルトは`target: "none"`; 最後の連絡先にルーティングするには`target: "last"`を設定）。
+4. オプション: 透明性のためにハートビート推論配信を有効にします。
+5. オプション: ハートビートをアクティブ時間に制限します（ローカル時間）。
 
-Example config:
+例の設定:
 
 ```json5
 {
@@ -29,89 +28,76 @@ Example config:
     defaults: {
       heartbeat: {
         every: "30m",
-        target: "last", // explicit delivery to last contact (default is "none")
-        directPolicy: "allow", // default: allow direct/DM targets; set "block" to suppress
+        target: "last", // 最後の連絡先への明示的な配信（デフォルトは"none"）
+        directPolicy: "allow", // デフォルト: 直接/DMターゲットを許可; "block"を設定すると抑制される
         // activeHours: { start: "08:00", end: "24:00" },
-        // includeReasoning: true, // optional: send separate `Reasoning:` message too
+        // includeReasoning: true, // オプション: 別の`Reasoning:`メッセージも送信
       },
     },
   },
 }
 ```
 
-## Defaults
+## デフォルト
 
-* Interval: `30m` (or `1h` when Anthropic OAuth/setup-token is the detected auth mode). Set `agents.defaults.heartbeat.every` or per-agent `agents.list[].heartbeat.every`; use `0m` to disable.
-* Prompt body (configurable via `agents.defaults.heartbeat.prompt`):
-  `Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.`
-* The heartbeat prompt is sent **verbatim** as the user message. The system
-  prompt includes a “Heartbeat” section and the run is flagged internally.
-* Active hours (`heartbeat.activeHours`) are checked in the configured timezone.
-  Outside the window, heartbeats are skipped until the next tick inside the window.
+* インターバル: `30m`（またはAnthropic OAuth/setup-tokenが検出された認証モードの場合は`1h`）。`agents.defaults.heartbeat.every`またはエージェントごとに`agents.list[].heartbeat.every`を設定します; 無効にするには`0m`を使用。
+* プロンプト本文（`agents.defaults.heartbeat.prompt`で設定可能）:
+  `HEARTBEAT.mdが存在する場合はそれを読みます（ワークスペースコンテキスト）。厳密に従ってください。以前のチャットから古いタスクを推測したり繰り返したりしないでください。注意が必要なことがなければ、HEARTBEAT_OKと返信してください。`
+* ハートビートプロンプトはユーザーメッセージとして**そのまま**送信されます。システムプロンプトには「Heartbeat」セクションが含まれ、実行は内部的にフラグ付けされます。
+* アクティブ時間（`heartbeat.activeHours`）は設定されたタイムゾーンでチェックされます。ウィンドウの外では、次のティックまでハートビートはスキップされます。
 
-## What the heartbeat prompt is for
+## ハートビートプロンプトの目的
 
-The default prompt is intentionally broad:
+デフォルトのプロンプトは意図的に広範です:
 
-* **Background tasks**: “Consider outstanding tasks” nudges the agent to review
-  follow-ups (inbox, calendar, reminders, queued work) and surface anything urgent.
-* **Human check-in**: “Checkup sometimes on your human during day time” nudges an
-  occasional lightweight “anything you need?” message, but avoids night-time spam
-  by using your configured local timezone (see [/concepts/timezone](/concepts/timezone)).
+* **バックグラウンドタスク**: 「未解決のタスクを考慮する」はエージェントにフォローアップ（受信トレイ、カレンダー、リマインダー、キューに入った作業）をレビューさせ、緊急なものを表示させることを促します。
+* **人間のチェックイン**: 「日中にあなたの人間を時々チェックする」は、時折軽い「何か必要ですか？」メッセージを促しますが、設定されたローカルタイムゾーンを使用して夜間のスパムを避けます（詳細は[/concepts/timezone](/concepts/timezone)を参照）。
 
-If you want a heartbeat to do something very specific (e.g. “check Gmail PubSub
-stats” or “verify gateway health”), set `agents.defaults.heartbeat.prompt` (or
-`agents.list[].heartbeat.prompt`) to a custom body (sent verbatim).
+ハートビートに特定のことをさせたい場合（例: 「Gmail PubSubの統計を確認する」や「ゲートウェイの健康を確認する」）、`agents.defaults.heartbeat.prompt`（または`agents.list[].heartbeat.prompt`）をカスタム本文に設定します（そのまま送信されます）。
 
-## Response contract
+## 応答契約
 
-* If nothing needs attention, reply with **`HEARTBEAT_OK`**.
-* During heartbeat runs, OpenClaw treats `HEARTBEAT_OK` as an ack when it appears
-  at the **start or end** of the reply. The token is stripped and the reply is
-  dropped if the remaining content is **≤ `ackMaxChars`** (default: 300).
-* If `HEARTBEAT_OK` appears in the **middle** of a reply, it is not treated
-  specially.
-* For alerts, **do not** include `HEARTBEAT_OK`; return only the alert text.
+* 注意が必要なことがなければ、**`HEARTBEAT_OK`**と返信してください。
+* ハートビート実行中、OpenClawは`HEARTBEAT_OK`が返信の**開始または終了**に現れた場合、ackとして扱います。トークンは削除され、残りの内容が**≤ `ackMaxChars`**（デフォルト: 300）の場合、返信はドロップされます。
+* `HEARTBEAT_OK`が返信の**中間**に現れた場合、特別には扱われません。
+* アラートの場合、**`HEARTBEAT_OK`**を含めないでください; アラートテキストのみを返してください。
 
-Outside heartbeats, stray `HEARTBEAT_OK` at the start/end of a message is stripped
-and logged; a message that is only `HEARTBEAT_OK` is dropped.
+ハートビートの外では、メッセージの開始/終了にある余分な`HEARTBEAT_OK`は削除され、ログに記録されます; メッセージが`HEARTBEAT_OK`のみの場合はドロップされます。
 
-## Config
+## 設定
 
 ```json5
 {
   agents: {
     defaults: {
       heartbeat: {
-        every: "30m", // default: 30m (0m disables)
+        every: "30m", // デフォルト: 30m（0mは無効）
         model: "anthropic/claude-opus-4-6",
-        includeReasoning: false, // default: false (deliver separate Reasoning: message when available)
-        target: "last", // default: none | options: last | none | <channel id> (core or plugin, e.g. "bluebubbles")
-        to: "+15551234567", // optional channel-specific override
-        accountId: "ops-bot", // optional multi-account channel id
-        prompt: "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.",
-        ackMaxChars: 300, // max chars allowed after HEARTBEAT_OK
+        includeReasoning: false, // デフォルト: false（利用可能な場合は別のReasoning:メッセージを配信）
+        target: "last", // デフォルト: none | オプション: last | none | <channel id>（コアまたはプラグイン、例: "bluebubbles"）
+        to: "+15551234567", // オプションのチャネル固有のオーバーライド
+        accountId: "ops-bot", // オプションのマルチアカウントチャネルID
+        prompt: "HEARTBEAT.mdが存在する場合はそれを読みます（ワークスペースコンテキスト）。厳密に従ってください。以前のチャットから古いタスクを推測したり繰り返したりしないでください。注意が必要なことがなければ、HEARTBEAT_OKと返信してください。",
+        ackMaxChars: 300, // HEARTBEAT_OKの後に許可される最大文字数
       },
     },
   },
 }
 ```
 
-### Scope and precedence
+### スコープと優先順位
 
-* `agents.defaults.heartbeat` sets global heartbeat behavior.
-* `agents.list[].heartbeat` merges on top; if any agent has a `heartbeat` block, **only those agents** run heartbeats.
-* `channels.defaults.heartbeat` sets visibility defaults for all channels.
-* `channels.<channel>.heartbeat` overrides channel defaults.
-* `channels.<channel>.accounts.<id>.heartbeat` (multi-account channels) overrides per-channel settings.
+* `agents.defaults.heartbeat`はグローバルなハートビートの動作を設定します。
+* `agents.list[].heartbeat`はその上にマージされます; いずれかのエージェントが`heartbeat`ブロックを持っている場合、**そのエージェントのみ**がハートビートを実行します。
+* `channels.defaults.heartbeat`はすべてのチャネルの可視性デフォルトを設定します。
+* `channels.<channel>.heartbeat`はチャネルデフォルトをオーバーライドします。
+* `channels.<channel>.accounts.<id>.heartbeat`（マルチアカウントチャネル）はチャネルごとの設定をオーバーライドします。
 
-### Per-agent heartbeats
+### エージェントごとのハートビート
 
-If any `agents.list[]` entry includes a `heartbeat` block, **only those agents**
-run heartbeats. The per-agent block merges on top of `agents.defaults.heartbeat`
-(so you can set shared defaults once and override per agent).
+`agents.list[]`のいずれかのエントリが`heartbeat`ブロックを含む場合、**そのエージェントのみ**がハートビートを実行します。エージェントごとのブロックは`agents.defaults.heartbeat`の上にマージされます（したがって、共有デフォルトを一度設定し、エージェントごとにオーバーライドできます）。
 
-Example: two agents, only the second agent runs heartbeats.
+例: 2つのエージェントがあり、2番目のエージェントのみがハートビートを実行します。
 
 ```json5
 {
@@ -119,7 +105,7 @@ Example: two agents, only the second agent runs heartbeats.
     defaults: {
       heartbeat: {
         every: "30m",
-        target: "last", // explicit delivery to last contact (default is "none")
+        target: "last", // 最後の連絡先への明示的な配信（デフォルトは"none"）
       },
     },
     list: [
@@ -130,7 +116,7 @@ Example: two agents, only the second agent runs heartbeats.
           every: "1h",
           target: "whatsapp",
           to: "+15551234567",
-          prompt: "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.",
+          prompt: "HEARTBEAT.mdが存在する場合はそれを読みます（ワークスペースコンテキスト）。厳密に従ってください。以前のチャットから古いタスクを推測したり繰り返したりしないでください。注意が必要なことがなければ、HEARTBEAT_OKと返信してください。",
         },
       },
     ],
@@ -138,9 +124,9 @@ Example: two agents, only the second agent runs heartbeats.
 }
 ```
 
-### Active hours example
+### アクティブ時間の例
 
-Restrict heartbeats to business hours in a specific timezone:
+特定のタイムゾーンでビジネスアワーにハートビートを制限します:
 
 ```json5
 {
@@ -148,11 +134,11 @@ Restrict heartbeats to business hours in a specific timezone:
     defaults: {
       heartbeat: {
         every: "30m",
-        target: "last", // explicit delivery to last contact (default is "none")
+        target: "last", // 最後の連絡先への明示的な配信（デフォルトは"none"）
         activeHours: {
           start: "09:00",
           end: "22:00",
-          timezone: "America/New_York", // optional; uses your userTimezone if set, otherwise host tz
+          timezone: "America/New_York", // オプション; 設定されている場合はユーザータイムゾーンを使用し、そうでなければホストのタイムゾーンを使用
         },
       },
     },
@@ -160,21 +146,20 @@ Restrict heartbeats to business hours in a specific timezone:
 }
 ```
 
-Outside this window (before 9am or after 10pm Eastern), heartbeats are skipped. The next scheduled tick inside the window will run normally.
+このウィンドウの外（東部時間の午前9時前または午後10時以降）では、ハートビートはスキップされます。ウィンドウ内の次のスケジュールされたティックは通常通り実行されます。
 
-### 24/7 setup
+### 24/7設定
 
-If you want heartbeats to run all day, use one of these patterns:
+ハートビートを一日中実行したい場合は、次のいずれかのパターンを使用します:
 
-* Omit `activeHours` entirely (no time-window restriction; this is the default behavior).
-* Set a full-day window: `activeHours: { start: "00:00", end: "24:00" }`.
+* `activeHours`を完全に省略します（時間ウィンドウ制限なし; これがデフォルトの動作です）。
+* フルデイウィンドウを設定します: `activeHours: { start: "00:00", end: "24:00" }`。
 
-Do not set the same `start` and `end` time (for example `08:00` to `08:00`).
-That is treated as a zero-width window, so heartbeats are always skipped.
+同じ`start`と`end`の時間を設定しないでください（例えば`08:00`から`08:00`まで）。それはゼロ幅ウィンドウとして扱われるため、ハートビートは常にスキップされます。
 
-### Multi account example
+### マルチアカウントの例
 
-Use `accountId` to target a specific account on multi-account channels like Telegram:
+`accountId`を使用して、Telegramのようなマルチアカウントチャネルで特定のアカウントをターゲットにします:
 
 ```json5
 {
@@ -185,7 +170,7 @@ Use `accountId` to target a specific account on multi-account channels like Tele
         heartbeat: {
           every: "1h",
           target: "telegram",
-          to: "12345678:topic:42", // optional: route to a specific topic/thread
+          to: "12345678:topic:42", // オプション: 特定のトピック/スレッドにルーティング
           accountId: "ops-bot",
         },
       },
@@ -201,82 +186,76 @@ Use `accountId` to target a specific account on multi-account channels like Tele
 }
 ```
 
-### Field notes
+### フィールドノート
 
-* `every`: heartbeat interval (duration string; default unit = minutes).
-* `model`: optional model override for heartbeat runs (`provider/model`).
-* `includeReasoning`: when enabled, also deliver the separate `Reasoning:` message when available (same shape as `/reasoning on`).
-* `session`: optional session key for heartbeat runs.
-  * `main` (default): agent main session.
-  * Explicit session key (copy from `openclaw sessions --json` or the [sessions CLI](/cli/sessions)).
-  * Session key formats: see [Sessions](/concepts/session) and [Groups](/channels/groups).
+* `every`: ハートビートの間隔（期間文字列; デフォルト単位 = 分）。
+* `model`: ハートビート実行のオプションモデルオーバーライド（`provider/model`）。
+* `includeReasoning`: 有効にすると、利用可能な場合は別の`Reasoning:`メッセージも配信します（`/reasoning on`と同じ形状）。
+* `session`: ハートビート実行のオプションセッションキー。
+  * `main`（デフォルト）: エージェントのメインセッション。
+  * 明示的なセッションキー（`openclaw sessions --json`からコピーするか、[sessions CLI](/cli/sessions)を参照）。
+  * セッションキー形式: [Sessions](/concepts/session)および[Groups](/channels/groups)を参照。
 * `target`:
-  * `last`: deliver to the last used external channel.
-  * explicit channel: `whatsapp` / `telegram` / `discord` / `googlechat` / `slack` / `msteams` / `signal` / `imessage`.
-  * `none` (default): run the heartbeat but **do not deliver** externally.
-* `directPolicy`: controls direct/DM delivery behavior:
-  * `allow` (default): allow direct/DM heartbeat delivery.
-  * `block`: suppress direct/DM delivery (`reason=dm-blocked`).
-* `to`: optional recipient override (channel-specific id, e.g. E.164 for WhatsApp or a Telegram chat id). For Telegram topics/threads, use `<chatId>:topic:<messageThreadId>`.
-* `accountId`: optional account id for multi-account channels. When `target: "last"`, the account id applies to the resolved last channel if it supports accounts; otherwise it is ignored. If the account id does not match a configured account for the resolved channel, delivery is skipped.
-* `prompt`: overrides the default prompt body (not merged).
-* `ackMaxChars`: max chars allowed after `HEARTBEAT_OK` before delivery.
-* `suppressToolErrorWarnings`: when true, suppresses tool error warning payloads during heartbeat runs.
-* `activeHours`: restricts heartbeat runs to a time window. Object with `start` (HH:MM, inclusive; use `00:00` for start-of-day), `end` (HH:MM exclusive; `24:00` allowed for end-of-day), and optional `timezone`.
-  * Omitted or `"user"`: uses your `agents.defaults.userTimezone` if set, otherwise falls back to the host system timezone.
-  * `"local"`: always uses the host system timezone.
-  * Any IANA identifier (e.g. `America/New_York`): used directly; if invalid, falls back to the `"user"` behavior above.
-  * `start` and `end` must not be equal for an active window; equal values are treated as zero-width (always outside the window).
-  * Outside the active window, heartbeats are skipped until the next tick inside the window.
+  * `last`: 最後に使用した外部チャネルに配信。
+  * 明示的なチャネル: `whatsapp` / `telegram` / `discord` / `googlechat` / `slack` / `msteams` / `signal` / `imessage`。
+  * `none`（デフォルト）: ハートビートを実行しますが、**外部に配信しません**。
+* `directPolicy`: 直接/DM配信の動作を制御します:
+  * `allow`（デフォルト）: 直接/DMハートビート配信を許可。
+  * `block`: 直接/DM配信を抑制（`reason=dm-blocked`）。
+* `to`: オプションの受取人オーバーライド（チャネル固有のID、例: WhatsAppのE.164またはTelegramのチャットID）。Telegramのトピック/スレッドの場合は、`<chatId>:topic:<messageThreadId>`を使用します。
+* `accountId`: マルチアカウントチャネルのオプションアカウントID。`target: "last"`の場合、アカウントIDは解決された最後のチャネルに適用され、アカウントをサポートしていない場合は無視されます。解決されたチャネルの設定されたアカウントとアカウントIDが一致しない場合、配信はスキップされます。
+* `prompt`: デフォルトのプロンプト本文をオーバーライドします（マージされません）。
+* `ackMaxChars`: 配信前に`HEARTBEAT_OK`の後に許可される最大文字数。
+* `suppressToolErrorWarnings`: trueの場合、ハートビート実行中のツールエラー警告ペイロードを抑制します。
+* `activeHours`: ハートビート実行を時間ウィンドウに制限します。`start`（HH:MM、含む; 日の始まりには`00:00`を使用）、`end`（HH:MM排他的; 日の終わりには`24:00`が許可）、およびオプションの`timezone`を持つオブジェクト。
+  * 省略または`"user"`: 設定されている場合は`agents.defaults.userTimezone`を使用し、そうでなければホストシステムのタイムゾーンにフォールバックします。
+  * `"local"`: 常にホストシステムのタイムゾーンを使用します。
+  * 任意のIANA識別子（例: `America/New_York`）: 直接使用されます; 無効な場合は上記の`"user"`動作にフォールバックします。
+  * `start`と`end`はアクティブウィンドウのために等しくない必要があります; 等しい値はゼロ幅として扱われ（常にウィンドウの外）、ハートビートはスキップされます。
+  * アクティブウィンドウの外では、ハートビートは次のティックまでスキップされます。
 
-## Delivery behavior
+## 配信動作
 
-* Heartbeats run in the agent’s main session by default (`agent:<id>:<mainKey>`),
-  or `global` when `session.scope = "global"`. Set `session` to override to a
-  specific channel session (Discord/WhatsApp/etc.).
-* `session` only affects the run context; delivery is controlled by `target` and `to`.
-* To deliver to a specific channel/recipient, set `target` + `to`. With
-  `target: "last"`, delivery uses the last external channel for that session.
-* Heartbeat deliveries allow direct/DM targets by default. Set `directPolicy: "block"` to suppress direct-target sends while still running the heartbeat turn.
-* If the main queue is busy, the heartbeat is skipped and retried later.
-* If `target` resolves to no external destination, the run still happens but no
-  outbound message is sent.
-* Heartbeat-only replies do **not** keep the session alive; the last `updatedAt`
-  is restored so idle expiry behaves normally.
+* ハートビートはデフォルトでエージェントのメインセッションで実行されます（`agent:<id>:<mainKey>`）、または`session.scope = "global"`の場合は`global`。特定のチャネルセッション（Discord/WhatsAppなど）にオーバーライドするには`session`を設定します。
+* `session`は実行コンテキストにのみ影響し、配信は`target`と`to`によって制御されます。
+* 特定のチャネル/受取人に配信するには、`target` + `to`を設定します。`target: "last"`の場合、配信はそのセッションの最後の外部チャネルを使用します。
+* ハートビート配信はデフォルトで直接/DMターゲットを許可します。`directPolicy: "block"`を設定すると、ハートビートターンを実行しながらも直接ターゲットの送信を抑制します。
+* メインキューがビジーの場合、ハートビートはスキップされ、後で再試行されます。
+* `target`が外部の宛先に解決されない場合、実行は行われますが、外向きのメッセージは送信されません。
+* ハートビートのみの返信は**セッションを生かしません**; 最後の`updatedAt`が復元され、アイドルの有効期限が通常通りに機能します。
 
-## Visibility controls
+## 可視性制御
 
-By default, `HEARTBEAT_OK` acknowledgments are suppressed while alert content is
-delivered. You can adjust this per channel or per account:
+デフォルトでは、アラートコンテンツが配信される間、`HEARTBEAT_OK`の確認は抑制されます。これをチャネルごとまたはアカウントごとに調整できます:
 
 ```yaml
 channels:
   defaults:
     heartbeat:
-      showOk: false # Hide HEARTBEAT_OK (default)
-      showAlerts: true # Show alert messages (default)
-      useIndicator: true # Emit indicator events (default)
+      showOk: false # HEARTBEAT_OKを非表示（デフォルト）
+      showAlerts: true # アラートメッセージを表示（デフォルト）
+      useIndicator: true # インジケーターイベントを発生させる（デフォルト）
   telegram:
     heartbeat:
-      showOk: true # Show OK acknowledgments on Telegram
+      showOk: true # TelegramでOK確認を表示
   whatsapp:
     accounts:
       work:
         heartbeat:
-          showAlerts: false # Suppress alert delivery for this account
+          showAlerts: false # このアカウントのアラート配信を抑制
 ```
 
-Precedence: per-account → per-channel → channel defaults → built-in defaults.
+優先順位: アカウントごと → チャネルごと → チャネルデフォルト → ビルトインデフォルト。
 
-### What each flag does
+### 各フラグの機能
 
-* `showOk`: sends a `HEARTBEAT_OK` acknowledgment when the model returns an OK-only reply.
-* `showAlerts`: sends the alert content when the model returns a non-OK reply.
-* `useIndicator`: emits indicator events for UI status surfaces.
+* `showOk`: モデルがOKのみの返信を返すときに`HEARTBEAT_OK`確認を送信します。
+* `showAlerts`: モデルが非OKの返信を返すときにアラートコンテンツを送信します。
+* `useIndicator`: UIステータスサーフェスのためにインジケーターイベントを発生させます。
 
-If **all three** are false, OpenClaw skips the heartbeat run entirely (no model call).
+**すべての3つ**がfalseの場合、OpenClawはハートビート実行を完全にスキップします（モデル呼び出しなし）。
 
-### Per-channel vs per-account examples
+### チャネルごとの例とアカウントごとの例
 
 ```yaml
 channels:
@@ -287,93 +266,78 @@ channels:
       useIndicator: true
   slack:
     heartbeat:
-      showOk: true # all Slack accounts
+      showOk: true # すべてのSlackアカウント
     accounts:
       ops:
         heartbeat:
-          showAlerts: false # suppress alerts for the ops account only
+          showAlerts: false # opsアカウントのみのアラートを抑制
   telegram:
     heartbeat:
       showOk: true
 ```
 
-### Common patterns
+### 一般的なパターン
 
-| Goal                                     | Config                                                                                   |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Default behavior (silent OKs, alerts on) | *(no config needed)*                                                                     |
-| Fully silent (no messages, no indicator) | `channels.defaults.heartbeat: { showOk: false, showAlerts: false, useIndicator: false }` |
-| Indicator-only (no messages)             | `channels.defaults.heartbeat: { showOk: false, showAlerts: false, useIndicator: true }`  |
-| OKs in one channel only                  | `channels.telegram.heartbeat: { showOk: true }`                                          |
+| 目標                                     | 設定                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
+| デフォルトの動作（サイレントOK、アラートあり） | *(設定は不要)*                                                                         |
+| 完全にサイレント（メッセージなし、インジケーターなし） | `channels.defaults.heartbeat: { showOk: false, showAlerts: false, useIndicator: false }` |
+| インジケーターのみ（メッセージなし）             | `channels.defaults.heartbeat: { showOk: false, showAlerts: false, useIndicator: true }`  |
+| 1つのチャネルのみでOKを表示                  | `channels.telegram.heartbeat: { showOk: true }`                                        |
 
-## HEARTBEAT.md (optional)
+## HEARTBEAT.md（オプション）
 
-If a `HEARTBEAT.md` file exists in the workspace, the default prompt tells the
-agent to read it. Think of it as your “heartbeat checklist”: small, stable, and
-safe to include every 30 minutes.
+ワークスペースに`HEARTBEAT.md`ファイルが存在する場合、デフォルトのプロンプトはエージェントにそれを読むように指示します。これはあなたの「ハートビートチェックリスト」と考えてください: 小さく、安定しており、30分ごとに含めるのが安全です。
 
-If `HEARTBEAT.md` exists but is effectively empty (only blank lines and markdown
-headers like `# Heading`), OpenClaw skips the heartbeat run to save API calls.
-If the file is missing, the heartbeat still runs and the model decides what to do.
+`HEARTBEAT.md`が存在するが実質的に空（空白行や`# Heading`のようなマークダウンヘッダーのみ）である場合、OpenClawはAPIコールを節約するためにハートビート実行をスキップします。ファイルが欠落している場合、ハートビートはまだ実行され、モデルが何をするかを決定します。
 
-Keep it tiny (short checklist or reminders) to avoid prompt bloat.
+プロンプトの膨張を避けるために、小さく（短いチェックリストやリマインダー）保ってください。
 
-Example `HEARTBEAT.md`:
+例の`HEARTBEAT.md`:
 
 ```md
-# Heartbeat checklist
+# ハートビートチェックリスト
 
-- Quick scan: anything urgent in inboxes?
-- If it’s daytime, do a lightweight check-in if nothing else is pending.
-- If a task is blocked, write down _what is missing_ and ask Peter next time.
+- 簡単なスキャン: 受信トレイに緊急のものはありますか？
+- 日中であれば、他に保留中のものがなければ軽いチェックインを行います。
+- タスクがブロックされている場合は、_何が不足しているか_を書き留め、次回ピーターに尋ねます。
 ```
 
-### Can the agent update HEARTBEAT.md?
+### エージェントはHEARTBEAT.mdを更新できますか？
 
-Yes — if you ask it to.
+はい — あなたがそれを頼めば。
 
-`HEARTBEAT.md` is just a normal file in the agent workspace, so you can tell the
-agent (in a normal chat) something like:
+`HEARTBEAT.md`はエージェントワークスペース内の通常のファイルなので、エージェントに（通常のチャットで）次のように伝えることができます:
 
-* “Update `HEARTBEAT.md` to add a daily calendar check.”
-* “Rewrite `HEARTBEAT.md` so it’s shorter and focused on inbox follow-ups.”
+* 「`HEARTBEAT.md`を更新して、日々のカレンダーチェックを追加してください。」
+* 「`HEARTBEAT.md`を短くして受信トレイのフォローアップに焦点を当てるように書き直してください。」
 
-If you want this to happen proactively, you can also include an explicit line in
-your heartbeat prompt like: “If the checklist becomes stale, update HEARTBEAT.md
-with a better one.”
+これを積極的に行いたい場合は、ハートビートプロンプトに「チェックリストが古くなった場合は、より良いものに`HEARTBEAT.md`を更新してください。」という明示的な行を含めることもできます。
 
-Safety note: don’t put secrets (API keys, phone numbers, private tokens) into
-`HEARTBEAT.md` — it becomes part of the prompt context.
+安全上の注意: `HEARTBEAT.md`に秘密（APIキー、電話番号、プライベートトークン）を入れないでください — それはプロンプトコンテキストの一部になります。
 
-## Manual wake (on-demand)
+## 手動ウェイク（オンデマンド）
 
-You can enqueue a system event and trigger an immediate heartbeat with:
+システムイベントをキューに追加し、即座にハートビートをトリガーするには:
 
 ```bash
-openclaw system event --text "Check for urgent follow-ups" --mode now
+openclaw system event --text "緊急のフォローアップを確認" --mode now
 ```
 
-If multiple agents have `heartbeat` configured, a manual wake runs each of those
-agent heartbeats immediately.
+複数のエージェントが`heartbeat`を設定している場合、手動ウェイクはそれらのエージェントハートビートを即座に実行します。
 
-Use `--mode next-heartbeat` to wait for the next scheduled tick.
+`--mode next-heartbeat`を使用して、次のスケジュールされたティックを待つことができます。
 
-## Reasoning delivery (optional)
+## 推論配信（オプション）
 
-By default, heartbeats deliver only the final “answer” payload.
+デフォルトでは、ハートビートは最終的な「回答」ペイロードのみを配信します。
 
-If you want transparency, enable:
+透明性を求める場合は、次のように有効にします:
 
 * `agents.defaults.heartbeat.includeReasoning: true`
 
-When enabled, heartbeats will also deliver a separate message prefixed
-`Reasoning:` (same shape as `/reasoning on`). This can be useful when the agent
-is managing multiple sessions/codexes and you want to see why it decided to ping
-you — but it can also leak more internal detail than you want. Prefer keeping it
-off in group chats.
+有効にすると、ハートビートは`Reasoning:`というプレフィックス付きの別のメッセージも配信します（`/reasoning on`と同じ形状）。これは、エージェントが複数のセッション/コーデックスを管理している場合に、なぜあなたにピンを送信することにしたのかを確認したいときに便利ですが、内部の詳細が漏れる可能性もあります。グループチャットではオフにしておくことをお勧めします。
 
-## Cost awareness
+## コスト意識
 
-Heartbeats run full agent turns. Shorter intervals burn more tokens. Keep
-`HEARTBEAT.md` small and consider a cheaper `model` or `target: "none"` if you
-only want internal state updates.
+ハートビートはフルエージェントターンを実行します。短い間隔はより多くのトークンを消費します。`HEARTBEAT.md`を小さく保ち、内部状態の更新のみを望む場合は、より安価な`model`または`target: "none"`を検討してください。

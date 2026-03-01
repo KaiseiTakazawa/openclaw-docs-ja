@@ -4,63 +4,54 @@ title: "Windows (WSL2)"
 
 # Windows (WSL2)
 
-# Windows (WSL2)
+OpenClawをWindowsで使用する場合は、**WSL2経由**を推奨します（Ubuntu推奨）。CLIとGatewayはLinux内で実行されるため、ランタイムが一貫して保たれ、ツールがはるかに互換性のあるものになります（Node/Bun/pnpm、Linuxバイナリ、スキル）。ネイティブWindowsでは少し難しいかもしれません。WSL2は完全なLinux体験を提供します — インストールは1コマンドで：`wsl --install`。
 
-OpenClaw on Windows is recommended **via WSL2** (Ubuntu recommended). The
-CLI + Gateway run inside Linux, which keeps the runtime consistent and makes
-tooling far more compatible (Node/Bun/pnpm, Linux binaries, skills). Native
-Windows might be trickier. WSL2 gives you the full Linux experience — one command
-to install: `wsl --install`.
+ネイティブWindowsのコンパニオンアプリも計画中です。
 
-Native Windows companion apps are planned.
+## インストール (WSL2)
 
-## Install (WSL2)
-
-* [Getting Started](/start/getting-started) (use inside WSL)
-* [Install & updates](/install/updating)
-* Official WSL2 guide (Microsoft): [https://learn.microsoft.com/windows/wsl/install](https://learn.microsoft.com/windows/wsl/install)
+* [はじめに](/start/getting-started)（WSL内で使用）
+* [インストールと更新](/install/updating)
+* 公式WSL2ガイド（Microsoft）：[https://learn.microsoft.com/windows/wsl/install](https://learn.microsoft.com/windows/wsl/install)
 
 ## Gateway
 
-* [Gateway runbook](/gateway)
-* [Configuration](/gateway/configuration)
+* [Gatewayランブック](/gateway)
+* [設定](/gateway/configuration)
 
-## Gateway service install (CLI)
+## Gatewayサービスのインストール (CLI)
 
-Inside WSL2:
+WSL2内で：
 
 ```
 openclaw onboard --install-daemon
 ```
 
-Or:
+または：
 
 ```
 openclaw gateway install
 ```
 
-Or:
+または：
 
 ```
 openclaw configure
 ```
 
-Select **Gateway service** when prompted.
+プロンプトが表示されたら**Gatewayサービス**を選択してください。
 
-Repair/migrate:
+修復/移行：
 
 ```
 openclaw doctor
 ```
 
-## Advanced: expose WSL services over LAN (portproxy)
+## 高度な設定：WSLサービスをLAN経由で公開 (portproxy)
 
-WSL has its own virtual network. If another machine needs to reach a service
-running **inside WSL** (SSH, a local TTS server, or the Gateway), you must
-forward a Windows port to the current WSL IP. The WSL IP changes after restarts,
-so you may need to refresh the forwarding rule.
+WSLには独自の仮想ネットワークがあります。他のマシンが**WSL内**で実行されているサービス（SSH、ローカルTTSサーバー、またはGateway）にアクセスする必要がある場合、Windowsのポートを現在のWSL IPに転送する必要があります。WSL IPは再起動後に変更されるため、転送ルールを更新する必要があるかもしれません。
 
-Example (PowerShell **as Administrator**):
+例（PowerShell **管理者として**）：
 
 ```powershell
 $Distro = "Ubuntu-24.04"
@@ -68,20 +59,20 @@ $ListenPort = 2222
 $TargetPort = 22
 
 $WslIp = (wsl -d $Distro -- hostname -I).Trim().Split(" ")[0]
-if (-not $WslIp) { throw "WSL IP not found." }
+if (-not $WslIp) { throw "WSL IPが見つかりません。" }
 
 netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$ListenPort `
   connectaddress=$WslIp connectport=$TargetPort
 ```
 
-Allow the port through Windows Firewall (one-time):
+Windows Firewallでポートを許可する（1回限り）：
 
 ```powershell
 New-NetFirewallRule -DisplayName "WSL SSH $ListenPort" -Direction Inbound `
   -Protocol TCP -LocalPort $ListenPort -Action Allow
 ```
 
-Refresh the portproxy after WSL restarts:
+WSL再起動後にportproxyを更新：
 
 ```powershell
 netsh interface portproxy delete v4tov4 listenport=$ListenPort listenaddress=0.0.0.0 | Out-Null
@@ -89,33 +80,31 @@ netsh interface portproxy add v4tov4 listenport=$ListenPort listenaddress=0.0.0.
   connectaddress=$WslIp connectport=$TargetPort | Out-Null
 ```
 
-Notes:
+注意：
 
-* SSH from another machine targets the **Windows host IP** (example: `ssh user@windows-host -p 2222`).
-* Remote nodes must point at a **reachable** Gateway URL (not `127.0.0.1`); use
-  `openclaw status --all` to confirm.
-* Use `listenaddress=0.0.0.0` for LAN access; `127.0.0.1` keeps it local only.
-* If you want this automatic, register a Scheduled Task to run the refresh
-  step at login.
+* 他のマシンからのSSHは**WindowsホストIP**をターゲットにします（例：`ssh user@windows-host -p 2222`）。
+* リモートノードは**到達可能な**Gateway URLを指す必要があります（`127.0.0.1`ではなく）；`openclaw status --all`を使用して確認してください。
+* LANアクセスには`listenaddress=0.0.0.0`を使用してください；`127.0.0.1`はローカルのみです。
+* 自動化したい場合は、ログイン時にリフレッシュステップを実行するスケジュールタスクを登録してください。
 
-## Step-by-step WSL2 install
+## ステップバイステップWSL2インストール
 
-### 1) Install WSL2 + Ubuntu
+### 1) WSL2 + Ubuntuのインストール
 
-Open PowerShell (Admin):
+PowerShellを開く（管理者）：
 
 ```powershell
 wsl --install
-# Or pick a distro explicitly:
+# または明示的にディストリビューションを選択：
 wsl --list --online
 wsl --install -d Ubuntu-24.04
 ```
 
-Reboot if Windows asks.
+Windowsが要求した場合は再起動してください。
 
-### 2) Enable systemd (required for gateway install)
+### 2) systemdを有効にする（gatewayインストールに必要）
 
-In your WSL terminal:
+WSLターミナルで：
 
 ```bash
 sudo tee /etc/wsl.conf >/dev/null <<'EOF'
@@ -124,34 +113,33 @@ systemd=true
 EOF
 ```
 
-Then from PowerShell:
+次にPowerShellから：
 
 ```powershell
 wsl --shutdown
 ```
 
-Re-open Ubuntu, then verify:
+Ubuntuを再度開き、確認：
 
 ```bash
 systemctl --user status
 ```
 
-### 3) Install OpenClaw (inside WSL)
+### 3) OpenClawのインストール（WSL内）
 
-Follow the Linux Getting Started flow inside WSL:
+WSL内でLinuxのはじめにのフローに従ってください：
 
 ```bash
 git clone https://github.com/openclaw/openclaw.git
 cd openclaw
 pnpm install
-pnpm ui:build # auto-installs UI deps on first run
+pnpm ui:build # 初回実行時にUI依存関係を自動インストール
 pnpm build
 openclaw onboard
 ```
 
-Full guide: [Getting Started](/start/getting-started)
+完全なガイド：[はじめに](/start/getting-started)
 
-## Windows companion app
+## Windowsコンパニオンアプリ
 
-We do not have a Windows companion app yet. Contributions are welcome if you want
-contributions to make it happen.
+現在、Windowsコンパニオンアプリはありません。実現したい場合は、貢献を歓迎します。

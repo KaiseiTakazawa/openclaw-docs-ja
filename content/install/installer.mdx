@@ -6,15 +6,15 @@ title: "インストーラー内部"
 
 # Installer internals
 
-OpenClaw ships three installer scripts, served from `openclaw.ai`.
+OpenClawは、`openclaw.ai`から提供される3つのインストーラスクリプトを出荷します。
 
-| Script                             | Platform             | What it does                                                                                 |
+| スクリプト                          | プラットフォーム          | 何をするか                                                                                     |
 | ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| [`install.sh`](#installsh)         | macOS / Linux / WSL  | Installs Node if needed, installs OpenClaw via npm (default) or git, and can run onboarding. |
-| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Installs Node + OpenClaw into a local prefix (`~/.openclaw`). No root required.              |
-| [`install.ps1`](#installps1)       | Windows (PowerShell) | Installs Node if needed, installs OpenClaw via npm (default) or git, and can run onboarding. |
+| [`install.sh`](#installsh)         | macOS / Linux / WSL  | 必要に応じてNodeをインストールし、npm（デフォルト）またはgitを介してOpenClawをインストールし、オンボーディングを実行できます。 |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | Node + OpenClawをローカルプレフィックス（`~/.openclaw`）にインストールします。ルートは必要ありません。              |
+| [`install.ps1`](#installps1)       | Windows (PowerShell) | 必要に応じてNodeをインストールし、npm（デフォルト）またはgitを介してOpenClawをインストールし、オンボーディングを実行できます。 |
 
-## Quick commands
+## クイックコマンド
 
 
   
@@ -48,7 +48,7 @@ OpenClaw ships three installer scripts, served from `openclaw.ai`.
   
 
 
-  If install succeeds but `openclaw` is not found in a new terminal, see [Node.js troubleshooting](/install/node#troubleshooting).
+  インストールが成功したが、新しいターミナルで`openclaw`が見つからない場合は、[Node.jsのトラブルシューティング](/install/node#troubleshooting)を参照してください。
 
 
 ***
@@ -56,48 +56,48 @@ OpenClaw ships three installer scripts, served from `openclaw.ai`.
 ## install.sh
 
 
-  Recommended for most interactive installs on macOS/Linux/WSL.
+  macOS/Linux/WSLでのほとんどの対話型インストールに推奨されます。
 
 
-### Flow (install.sh)
+### フロー (install.sh)
 
 
   
-    Supports macOS and Linux (including WSL). If macOS is detected, installs Homebrew if missing.
+    macOSとLinux（WSLを含む）をサポートします。macOSが検出されると、Homebrewが不足している場合はインストールします。
   
 
   
-    Checks Node version and installs Node 22 if needed (Homebrew on macOS, NodeSource setup scripts on Linux apt/dnf/yum).
+    Nodeのバージョンを確認し、必要に応じてNode 22をインストールします（macOSではHomebrew、LinuxではNodeSourceのセットアップスクリプトを使用）。
   
 
   
-    Installs Git if missing.
+    Gitが不足している場合はインストールします。
   
 
   
-    * `npm` method (default): global npm install
-    * `git` method: clone/update repo, install deps with pnpm, build, then install wrapper at `~/.local/bin/openclaw`
+    * `npm`メソッド（デフォルト）：グローバルnpmインストール
+    * `git`メソッド：リポジトリをクローン/更新し、pnpmで依存関係をインストールし、ビルドしてから`~/.local/bin/openclaw`にラッパーをインストールします。
   
 
   
-    * Runs `openclaw doctor --non-interactive` on upgrades and git installs (best effort)
-    * Attempts onboarding when appropriate (TTY available, onboarding not disabled, and bootstrap/config checks pass)
-    * Defaults `SHARP_IGNORE_GLOBAL_LIBVIPS=1`
+    * アップグレードやgitインストール時に`openclaw doctor --non-interactive`を実行します（最善を尽くします）
+    * 適切な場合にオンボーディングを試みます（TTYが利用可能、オンボーディングが無効でない、ブートストラップ/設定チェックが通過する）
+    * デフォルトで`SHARP_IGNORE_GLOBAL_LIBVIPS=1`を設定します。
   
 
 
-### Source checkout detection
+### ソースチェックアウト検出
 
-If run inside an OpenClaw checkout (`package.json` + `pnpm-workspace.yaml`), the script offers:
+OpenClawのチェックアウト内で実行されると（`package.json` + `pnpm-workspace.yaml`）、スクリプトは次のオプションを提供します：
 
-* use checkout (`git`), or
-* use global install (`npm`)
+* チェックアウトを使用する（`git`）、または
+* グローバルインストールを使用する（`npm`）
 
-If no TTY is available and no install method is set, it defaults to `npm` and warns.
+TTYが利用できず、インストール方法が設定されていない場合は、デフォルトで`npm`を使用し、警告を表示します。
 
-The script exits with code `2` for invalid method selection or invalid `--install-method` values.
+スクリプトは、無効なメソッド選択または無効な`--install-method`値に対してコード`2`で終了します。
 
-### Examples (install.sh)
+### 例 (install.sh)
 
 
   
@@ -126,38 +126,37 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 
 
   
-    | Flag                            | Description                                                |
+    | フラグ                            | 説明                                                |
     | ------------------------------- | ---------------------------------------------------------- |
-    | `--install-method npm\|git`     | Choose install method (default: `npm`). Alias: `--method`  |
-    | `--npm`                         | Shortcut for npm method                                    |
-    | `--git`                         | Shortcut for git method. Alias: `--github`                 |
-    | `--version <version\|dist-tag>` | npm version or dist-tag (default: `latest`)                |
-    | `--beta`                        | Use beta dist-tag if available, else fallback to `latest`  |
-    | `--git-dir <path>`              | Checkout directory (default: `~/openclaw`). Alias: `--dir` |
-    | `--no-git-update`               | Skip `git pull` for existing checkout                      |
-    | `--no-prompt`                   | Disable prompts                                            |
-    | `--no-onboard`                  | Skip onboarding                                            |
-    | `--onboard`                     | Enable onboarding                                          |
-    | `--dry-run`                     | Print actions without applying changes                     |
-    | `--verbose`                     | Enable debug output (`set -x`, npm notice-level logs)      |
-    | `--help`                        | Show usage (`-h`)                                          |
+    | `--install-method npm\|git`     | インストール方法を選択（デフォルト：`npm`）。エイリアス：`--method`  |
+    | `--npm`                         | npmメソッドのショートカット                                    |
+    | `--git`                         | gitメソッドのショートカット。エイリアス：`--github`                 |
+    | `--version <version\|dist-tag>` | npmのバージョンまたはdist-tag（デフォルト：`latest`）                |
+    | `--beta`                        | ベータdist-tagが利用可能な場合は使用し、そうでない場合は`latest`にフォールバック  |
+    | `--git-dir <path>`              | チェックアウトディレクトリ（デフォルト：`~/openclaw`）。エイリアス：`--dir` |
+    | `--no-git-update`               | 既存のチェックアウトに対して`git pull`をスキップ                      |
+    | `--no-prompt`                   | プロンプトを無効にする                                            |
+    | `--no-onboard`                  | オンボーディングをスキップ                                            |
+    | `--onboard`                     | オンボーディングを有効にする                                          |
+    | `--dry-run`                     | 変更を適用せずにアクションを表示                                     |
+    | `--verbose`                     | デバッグ出力を有効にする（`set -x`、npm通知レベルのログ）      |
+    | `--help`                        | 使用法を表示する（`-h`）                                          |
   
 
   
-    | Variable                                    | Description                                   |
+    | 変数                                    | 説明                                   |
     | ------------------------------------------- | --------------------------------------------- |
-    | `OPENCLAW_INSTALL_METHOD=git\|npm`          | Install method                                |
-    | `OPENCLAW_VERSION=latest\|next\|<semver>`   | npm version or dist-tag                       |
-    | `OPENCLAW_BETA=0\|1`                        | Use beta if available                         |
-    | `OPENCLAW_GIT_DIR=<path>`                   | Checkout directory                            |
-    | `OPENCLAW_GIT_UPDATE=0\|1`                  | Toggle git updates                            |
-    | `OPENCLAW_NO_PROMPT=1`                      | Disable prompts                               |
-    | `OPENCLAW_NO_ONBOARD=1`                     | Skip onboarding                               |
-    | `OPENCLAW_DRY_RUN=1`                        | Dry run mode                                  |
-    | `OPENCLAW_VERBOSE=1`                        | Debug mode                                    |
-    | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                 |
-    | `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | Control sharp/libvips behavior (default: `1`) |
-  
+    | `OPENCLAW_INSTALL_METHOD=git\|npm`          | インストール方法                                |
+    | `OPENCLAW_VERSION=latest\|next\|<semver>`   | npmのバージョンまたはdist-tag                       |
+    | `OPENCLAW_BETA=0\|1`                        | 利用可能な場合はベータを使用                         |
+    | `OPENCLAW_GIT_DIR=<path>`                   | チェックアウトディレクトリ                            |
+    | `OPENCLAW_GIT_UPDATE=0\|1`                  | gitの更新を切り替える                            |
+    | `OPENCLAW_NO_PROMPT=1`                      | プロンプトを無効にする                               |
+    | `OPENCLAW_NO_ONBOARD=1`                     | オンボーディングをスキップ                               |
+    | `OPENCLAW_DRY_RUN=1`                        | ドライランモード                                  |
+    | `OPENCLAW_VERBOSE=1`                        | デバッグモード                                    |
+    | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npmのログレベル                                 |
+    | `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | sharp/libvipsの動作を制御する（デフォルト：`1`） |
 
 
 ***
@@ -165,26 +164,26 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 ## install-cli.sh
 
 
-  Designed for environments where you want everything under a local prefix (default `~/.openclaw`) and no system Node dependency.
+  ローカルプレフィックス（デフォルト`~/.openclaw`）の下ですべてを管理したい環境向けに設計されています。システムNodeの依存関係はありません。
 
 
-### Flow (install-cli.sh)
+### フロー (install-cli.sh)
 
 
   
-    Downloads Node tarball (default `22.22.0`) to `<prefix>/tools/node-v<version>` and verifies SHA-256.
+    Nodeのtarball（デフォルト`22.22.0`）を`<prefix>/tools/node-v<version>`にダウンロードし、SHA-256を検証します。
   
 
   
-    If Git is missing, attempts install via apt/dnf/yum on Linux or Homebrew on macOS.
+    Gitが不足している場合は、Linuxではapt/dnf/yumを介して、macOSではHomebrewを介してインストールを試みます。
   
 
   
-    Installs with npm using `--prefix <prefix>`, then writes wrapper to `<prefix>/bin/openclaw`.
+    `--prefix <prefix>`を使用してnpmでインストールし、その後`<prefix>/bin/openclaw`にラッパーを書き込みます。
   
 
 
-### Examples (install-cli.sh)
+### 例 (install-cli.sh)
 
 
   
@@ -213,28 +212,28 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 
 
   
-    | Flag                   | Description                                                                     |
+    | フラグ                   | 説明                                                                     |
     | ---------------------- | ------------------------------------------------------------------------------- |
-    | `--prefix <path>`      | Install prefix (default: `~/.openclaw`)                                         |
-    | `--version <ver>`      | OpenClaw version or dist-tag (default: `latest`)                                |
-    | `--node-version <ver>` | Node version (default: `22.22.0`)                                               |
-    | `--json`               | Emit NDJSON events                                                              |
-    | `--onboard`            | Run `openclaw onboard` after install                                            |
-    | `--no-onboard`         | Skip onboarding (default)                                                       |
-    | `--set-npm-prefix`     | On Linux, force npm prefix to `~/.npm-global` if current prefix is not writable |
-    | `--help`               | Show usage (`-h`)                                                               |
+    | `--prefix <path>`      | インストールプレフィックス（デフォルト：`~/.openclaw`）                                         |
+    | `--version <ver>`      | OpenClawのバージョンまたはdist-tag（デフォルト：`latest`）                                |
+    | `--node-version <ver>` | Nodeのバージョン（デフォルト：`22.22.0`）                                               |
+    | `--json`               | NDJSONイベントを出力                                                          |
+    | `--onboard`            | インストール後に`openclaw onboard`を実行                                            |
+    | `--no-onboard`         | オンボーディングをスキップ（デフォルト）                                                       |
+    | `--set-npm-prefix`     | Linuxでは、現在のプレフィックスが書き込み可能でない場合、npmプレフィックスを`~/.npm-global`に強制します |
+    | `--help`               | 使用法を表示する（`-h`）                                                               |
   
 
   
-    | Variable                                    | Description                                                                       |
+    | 変数                                    | 説明                                                                       |
     | ------------------------------------------- | --------------------------------------------------------------------------------- |
-    | `OPENCLAW_PREFIX=<path>`                    | Install prefix                                                                    |
-    | `OPENCLAW_VERSION=<ver>`                    | OpenClaw version or dist-tag                                                      |
-    | `OPENCLAW_NODE_VERSION=<ver>`               | Node version                                                                      |
-    | `OPENCLAW_NO_ONBOARD=1`                     | Skip onboarding                                                                   |
-    | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm log level                                                                     |
-    | `OPENCLAW_GIT_DIR=<path>`                   | Legacy cleanup lookup path (used when removing old `Peekaboo` submodule checkout) |
-    | `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | Control sharp/libvips behavior (default: `1`)                                     |
+    | `OPENCLAW_PREFIX=<path>`                    | インストールプレフィックス                                                                    |
+    | `OPENCLAW_VERSION=<ver>`                    | OpenClawのバージョンまたはdist-tag                                                      |
+    | `OPENCLAW_NODE_VERSION=<ver>`               | Nodeのバージョン                                                                      |
+    | `OPENCLAW_NO_ONBOARD=1`                     | オンボーディングをスキップ                                                                   |
+    | `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npmのログレベル                                                                     |
+    | `OPENCLAW_GIT_DIR=<path>`                   | レガシークリーニングルックアップパス（古い`Peekaboo`サブモジュールチェックアウトを削除する際に使用） |
+    | `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | sharp/libvipsの動作を制御する（デフォルト：`1`）                                     |
   
 
 
@@ -242,28 +241,28 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 
 ## install.ps1
 
-### Flow (install.ps1)
+### フロー (install.ps1)
 
 
   
-    Requires PowerShell 5+.
+    PowerShell 5+が必要です。
   
 
   
-    If missing, attempts install via winget, then Chocolatey, then Scoop.
+    不足している場合は、winget、次にChocolatey、次にScoopを介してインストールを試みます。
   
 
   
-    * `npm` method (default): global npm install using selected `-Tag`
-    * `git` method: clone/update repo, install/build with pnpm, and install wrapper at `%USERPROFILE%\.local\bin\openclaw.cmd`
+    * `npm`メソッド（デフォルト）：選択した`-Tag`を使用してグローバルnpmインストール
+    * `git`メソッド：リポジトリをクローン/更新し、pnpmでインストール/ビルドし、`%USERPROFILE%\.local\bin\openclaw.cmd`にラッパーをインストールします。
   
 
   
-    Adds needed bin directory to user PATH when possible, then runs `openclaw doctor --non-interactive` on upgrades and git installs (best effort).
+    必要なbinディレクトリをユーザーPATHに追加できる場合は追加し、その後アップグレードやgitインストール時に`openclaw doctor --non-interactive`を実行します（最善を尽くします）。
   
 
 
-### Examples (install.ps1)
+### 例 (install.ps1)
 
 
   
@@ -292,7 +291,7 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 
   
     ```powershell
-    # install.ps1 has no dedicated -Verbose flag yet.
+    # install.ps1にはまだ専用の-Verboseフラグはありません。
     Set-PSDebug -Trace 1
     & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1))) -NoOnboard
     Set-PSDebug -Trace 0
@@ -301,35 +300,35 @@ The script exits with code `2` for invalid method selection or invalid `--instal
 
 
   
-    | Flag                      | Description                                            |
+    | フラグ                      | 説明                                            |
     | ------------------------- | ------------------------------------------------------ |
-    | `-InstallMethod npm\|git` | Install method (default: `npm`)                        |
-    | `-Tag <tag>`              | npm dist-tag (default: `latest`)                       |
-    | `-GitDir <path>`          | Checkout directory (default: `%USERPROFILE%\openclaw`) |
-    | `-NoOnboard`              | Skip onboarding                                        |
-    | `-NoGitUpdate`            | Skip `git pull`                                        |
-    | `-DryRun`                 | Print actions only                                     |
+    | `-InstallMethod npm\|git` | インストール方法（デフォルト：`npm`）                        |
+    | `-Tag <tag>`              | npmのdist-tag（デフォルト：`latest`）                       |
+    | `-GitDir <path>`          | チェックアウトディレクトリ（デフォルト：`%USERPROFILE%\openclaw`） |
+    | `-NoOnboard`              | オンボーディングをスキップ                                        |
+    | `-NoGitUpdate`            | `git pull`をスキップ                                        |
+    | `-DryRun`                 | アクションのみを表示                                     |
   
 
   
-    | Variable                           | Description        |
+    | 変数                           | 説明        |
     | ---------------------------------- | ------------------ |
-    | `OPENCLAW_INSTALL_METHOD=git\|npm` | Install method     |
-    | `OPENCLAW_GIT_DIR=<path>`          | Checkout directory |
-    | `OPENCLAW_NO_ONBOARD=1`            | Skip onboarding    |
-    | `OPENCLAW_GIT_UPDATE=0`            | Disable git pull   |
-    | `OPENCLAW_DRY_RUN=1`               | Dry run mode       |
+    | `OPENCLAW_INSTALL_METHOD=git\|npm` | インストール方法     |
+    | `OPENCLAW_GIT_DIR=<path>`          | チェックアウトディレクトリ |
+    | `OPENCLAW_NO_ONBOARD=1`            | オンボーディングをスキップ    |
+    | `OPENCLAW_GIT_UPDATE=0`            | git pullを無効にする   |
+    | `OPENCLAW_DRY_RUN=1`               | ドライランモード       |
   
 
 
-  If `-InstallMethod git` is used and Git is missing, the script exits and prints the Git for Windows link.
+  `-InstallMethod git`が使用され、Gitが不足している場合、スクリプトは終了し、Git for Windowsのリンクを表示します。
 
 
 ***
 
-## CI and automation
+## CIと自動化
 
-Use non-interactive flags/env vars for predictable runs.
+予測可能な実行のために非対話型フラグ/env変数を使用します。
 
 
   
@@ -364,15 +363,15 @@ Use non-interactive flags/env vars for predictable runs.
 
 
   
-    Git is required for `git` install method. For `npm` installs, Git is still checked/installed to avoid `spawn git ENOENT` failures when dependencies use git URLs.
+    Gitは`git`インストールメソッドに必要です。`npm`インストールの場合でも、依存関係がgit URLを使用する際の`spawn git ENOENT`の失敗を避けるために、Gitがチェック/インストールされます。
   
 
   
-    Some Linux setups point npm global prefix to root-owned paths. `install.sh` can switch prefix to `~/.npm-global` and append PATH exports to shell rc files (when those files exist).
+    一部のLinuxセットアップでは、npmのグローバルプレフィックスがroot所有のパスを指しています。`install.sh`はプレフィックスを`~/.npm-global`に切り替え、シェルrcファイルにPATHエクスポートを追加できます（それらのファイルが存在する場合）。
   
 
   
-    The scripts default `SHARP_IGNORE_GLOBAL_LIBVIPS=1` to avoid sharp building against system libvips. To override:
+    スクリプトはデフォルトで`SHARP_IGNORE_GLOBAL_LIBVIPS=1`を設定し、システムlibvipsに対してsharpがビルドされるのを避けます。これをオーバーライドするには：
 
     ```bash
     SHARP_IGNORE_GLOBAL_LIBVIPS=0 curl -fsSL --proto '=https' --tlsv1.2 https://openclaw.ai/install.sh | bash
@@ -380,16 +379,16 @@ Use non-interactive flags/env vars for predictable runs.
   
 
   
-    Install Git for Windows, reopen PowerShell, rerun installer.
+    Git for Windowsをインストールし、PowerShellを再オープンし、インストーラーを再実行します。
   
 
   
-    Run `npm config get prefix`, append `\bin`, add that directory to user PATH, then reopen PowerShell.
+    `npm config get prefix`を実行し、`\bin`を追加し、そのディレクトリをユーザーPATHに追加し、PowerShellを再オープンします。
   
 
   
-    `install.ps1` does not currently expose a `-Verbose` switch.
-    Use PowerShell tracing for script-level diagnostics:
+    `install.ps1`は現在`-Verbose`スイッチを公開していません。
+    スクリプトレベルの診断のためにPowerShellトレースを使用します：
 
     ```powershell
     Set-PSDebug -Trace 1
@@ -399,6 +398,5 @@ Use non-interactive flags/env vars for predictable runs.
   
 
   
-    Usually a PATH issue. See [Node.js troubleshooting](/install/node#troubleshooting).
+    通常はPATHの問題です。詳細は[Node.jsのトラブルシューティング](/install/node#troubleshooting)を参照してください。
   
-

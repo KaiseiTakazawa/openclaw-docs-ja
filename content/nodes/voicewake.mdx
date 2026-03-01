@@ -4,60 +4,60 @@ title: "Voice Wake"
 
 # Voice Wake
 
-# Voice Wake (Global Wake Words)
+# Voice Wake (グローバルウェイクワード)
 
-OpenClaw treats **wake words as a single global list** owned by the **Gateway**.
+OpenClawは**ウェイクワードを単一のグローバルリスト**として扱い、これは**Gateway**が所有しています。
 
-* There are **no per-node custom wake words**.
-* **Any node/app UI may edit** the list; changes are persisted by the Gateway and broadcast to everyone.
-* Each device still keeps its own **Voice Wake enabled/disabled** toggle (local UX + permissions differ).
+* **ノードごとのカスタムウェイクワードはありません**。
+* **任意のノード/アプリのUIが**リストを編集できます。変更はGatewayによって永続化され、全員にブロードキャストされます。
+* 各デバイスは依然として独自の**Voice Wake 有効/無効**トグルを保持しています（ローカルUX + 権限は異なります）。
 
-## Storage (Gateway host)
+## ストレージ (Gatewayホスト)
 
-Wake words are stored on the gateway machine at:
+ウェイクワードはゲートウェイマシンの以下の場所に保存されます：
 
 * `~/.openclaw/settings/voicewake.json`
 
-Shape:
+形状：
 
 ```json
 { "triggers": ["openclaw", "claude", "computer"], "updatedAtMs": 1730000000000 }
 ```
 
-## Protocol
+## プロトコル
 
-### Methods
+### メソッド
 
 * `voicewake.get` → `{ triggers: string[] }`
 * `voicewake.set` with params `{ triggers: string[] }` → `{ triggers: string[] }`
 
-Notes:
+注意事項：
 
-* Triggers are normalized (trimmed, empties dropped). Empty lists fall back to defaults.
-* Limits are enforced for safety (count/length caps).
+* トリガーは正規化されます（トリム、空のものは削除）。空のリストはデフォルトに戻ります。
+* 安全のために制限が適用されます（カウント/長さの上限）。
 
-### Events
+### イベント
 
-* `voicewake.changed` payload `{ triggers: string[] }`
+* `voicewake.changed` ペイロード `{ triggers: string[] }`
 
-Who receives it:
+受信者：
 
-* All WebSocket clients (macOS app, WebChat, etc.)
-* All connected nodes (iOS/Android), and also on node connect as an initial “current state” push.
+* すべてのWebSocketクライアント（macOSアプリ、WebChatなど）
+* すべての接続されたノード（iOS/Android）、およびノード接続時に初期の「現在の状態」プッシュとしても。
 
-## Client behavior
+## クライアントの動作
 
-### macOS app
+### macOSアプリ
 
-* Uses the global list to gate `VoiceWakeRuntime` triggers.
-* Editing “Trigger words” in Voice Wake settings calls `voicewake.set` and then relies on the broadcast to keep other clients in sync.
+* グローバルリストを使用して`VoiceWakeRuntime`トリガーを制御します。
+* Voice Wake設定で「トリガーワード」を編集すると`voicewake.set`が呼び出され、その後ブロードキャストに依存して他のクライアントを同期させます。
 
-### iOS node
+### iOSノード
 
-* Uses the global list for `VoiceWakeManager` trigger detection.
-* Editing Wake Words in Settings calls `voicewake.set` (over the Gateway WS) and also keeps local wake-word detection responsive.
+* `VoiceWakeManager`トリガー検出のためにグローバルリストを使用します。
+* 設定でウェイクワードを編集すると`voicewake.set`が呼び出され（Gateway WS経由）、ローカルのウェイクワード検出も応答性を保ちます。
 
-### Android node
+### Androidノード
 
-* Exposes a Wake Words editor in Settings.
-* Calls `voicewake.set` over the Gateway WS so edits sync everywhere.
+* 設定にウェイクワードエディタを表示します。
+* `voicewake.set`をGateway WS経由で呼び出し、編集内容がどこでも同期されるようにします。

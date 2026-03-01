@@ -6,150 +6,150 @@ title: "macOS VMs"
 
 # OpenClaw on macOS VMs (Sandboxing)
 
-## Recommended default (most users)
+## 推奨デフォルト（ほとんどのユーザー向け）
 
-* **Small Linux VPS** for an always-on Gateway and low cost. See [VPS hosting](/vps).
-* **Dedicated hardware** (Mac mini or Linux box) if you want full control and a **residential IP** for browser automation. Many sites block data center IPs, so local browsing often works better.
-* **Hybrid:** keep the Gateway on a cheap VPS, and connect your Mac as a **node** when you need browser/UI automation. See [Nodes](/nodes) and [Gateway remote](/gateway/remote).
+* **小型Linux VPS**を使用して、常時稼働のGatewayを低コストで実現します。詳細は[VPSホスティング](/vps)を参照してください。
+* **専用ハードウェア**（Mac miniまたはLinuxボックス）を使用して、完全な制御とブラウザ自動化のための**住宅用IP**を取得します。多くのサイトはデータセンターのIPをブロックするため、ローカルブラウジングの方がうまくいくことが多いです。
+* **ハイブリッド:** 安価なVPS上にGatewayを保持し、ブラウザ/UI自動化が必要なときにMacを**ノード**として接続します。詳細は[ノード](/nodes)と[Gatewayリモート](/gateway/remote)を参照してください。
 
-Use a macOS VM when you specifically need macOS-only capabilities (iMessage/BlueBubbles) or want strict isolation from your daily Mac.
+macOS専用の機能（iMessage/BlueBubbles）が必要な場合や、日常のMacからの厳格な隔離を希望する場合は、macOS VMを使用してください。
 
-## macOS VM options
+## macOS VMオプション
 
-### Local VM on your Apple Silicon Mac (Lume)
+### Apple Silicon Mac上のローカルVM（Lume）
 
-Run OpenClaw in a sandboxed macOS VM on your existing Apple Silicon Mac using [Lume](https://cua.ai/docs/lume).
+既存のApple Silicon Mac上で、サンドボックス化されたmacOS VMでOpenClawを実行します。使用するのは[Lume](https://cua.ai/docs/lume)です。
 
-This gives you:
+これにより、次のことが可能になります：
 
-* Full macOS environment in isolation (your host stays clean)
-* iMessage support via BlueBubbles (impossible on Linux/Windows)
-* Instant reset by cloning VMs
-* No extra hardware or cloud costs
+* 完全なmacOS環境を隔離して利用（ホストはクリーンな状態を維持）
+* BlueBubblesを介したiMessageサポート（Linux/Windowsでは不可能）
+* VMのクローンによる即時リセット
+* 追加のハードウェアやクラウドコストが不要
 
-### Hosted Mac providers (cloud)
+### ホスティングされたMacプロバイダー（クラウド）
 
-If you want macOS in the cloud, hosted Mac providers work too:
+クラウドでmacOSを利用したい場合、ホスティングされたMacプロバイダーも利用できます：
 
-* [MacStadium](https://www.macstadium.com/) (hosted Macs)
-* Other hosted Mac vendors also work; follow their VM + SSH docs
+* [MacStadium](https://www.macstadium.com/)（ホスティングされたMac）
+* 他のホスティングされたMacベンダーも利用可能です。彼らのVM + SSHドキュメントに従ってください。
 
-Once you have SSH access to a macOS VM, continue at step 6 below.
+macOS VMへのSSHアクセスが得られたら、以下のステップ6に進んでください。
 
 ***
 
-## Quick path (Lume, experienced users)
+## クイックパス（Lume、経験者向け）
 
-1. Install Lume
+1. Lumeをインストール
 2. `lume create openclaw --os macos --ipsw latest`
-3. Complete Setup Assistant, enable Remote Login (SSH)
+3. セットアップアシスタントを完了し、リモートログイン（SSH）を有効にする
 4. `lume run openclaw --no-display`
-5. SSH in, install OpenClaw, configure channels
-6. Done
+5. SSHで接続し、OpenClawをインストールし、チャンネルを設定
+6. 完了
 
 ***
 
-## What you need (Lume)
+## 必要なもの（Lume）
 
-* Apple Silicon Mac (M1/M2/M3/M4)
-* macOS Sequoia or later on the host
-* \~60 GB free disk space per VM
-* \~20 minutes
+* Apple Silicon Mac（M1/M2/M3/M4）
+* ホストにmacOS Sequoia以降がインストールされていること
+* VMごとに約60GBの空きディスクスペース
+* 約20分
 
 ***
 
-## 1) Install Lume
+## 1) Lumeをインストール
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/trycua/cua/main/libs/lume/scripts/install.sh)"
 ```
 
-If `~/.local/bin` isn't in your PATH:
+もし`~/.local/bin`がPATHに含まれていない場合：
 
 ```bash
 echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc && source ~/.zshrc
 ```
 
-Verify:
+確認：
 
 ```bash
 lume --version
 ```
 
-Docs: [Lume Installation](https://cua.ai/docs/lume/guide/getting-started/installation)
+ドキュメント: [Lumeインストール](https://cua.ai/docs/lume/guide/getting-started/installation)
 
 ***
 
-## 2) Create the macOS VM
+## 2) macOS VMを作成
 
 ```bash
 lume create openclaw --os macos --ipsw latest
 ```
 
-This downloads macOS and creates the VM. A VNC window opens automatically.
+これにより、macOSがダウンロードされ、VMが作成されます。自動的にVNCウィンドウが開きます。
 
-Note: The download can take a while depending on your connection.
-
-***
-
-## 3) Complete Setup Assistant
-
-In the VNC window:
-
-1. Select language and region
-2. Skip Apple ID (or sign in if you want iMessage later)
-3. Create a user account (remember the username and password)
-4. Skip all optional features
-
-After setup completes, enable SSH:
-
-1. Open System Settings → General → Sharing
-2. Enable "Remote Login"
+注意: ダウンロードには接続状況に応じて時間がかかる場合があります。
 
 ***
 
-## 4) Get the VM's IP address
+## 3) セットアップアシスタントを完了
+
+VNCウィンドウ内で：
+
+1. 言語と地域を選択
+2. Apple IDをスキップ（後でiMessageを使用したい場合はサインイン）
+3. ユーザーアカウントを作成（ユーザー名とパスワードを忘れないように）
+4. すべてのオプション機能をスキップ
+
+セットアップが完了したら、SSHを有効にします：
+
+1. システム設定 → 一般 → 共有を開く
+2. 「リモートログイン」を有効にする
+
+***
+
+## 4) VMのIPアドレスを取得
 
 ```bash
 lume get openclaw
 ```
 
-Look for the IP address (usually `192.168.64.x`).
+IPアドレスを探します（通常は`192.168.64.x`）。
 
 ***
 
-## 5) SSH into the VM
+## 5) VMにSSH接続
 
 ```bash
 ssh youruser@192.168.64.X
 ```
 
-Replace `youruser` with the account you created, and the IP with your VM's IP.
+`youruser`を作成したアカウントに、IPをVMのIPに置き換えます。
 
 ***
 
-## 6) Install OpenClaw
+## 6) OpenClawをインストール
 
-Inside the VM:
+VM内で：
 
 ```bash
 npm install -g openclaw@latest
 openclaw onboard --install-daemon
 ```
 
-Follow the onboarding prompts to set up your model provider (Anthropic, OpenAI, etc.).
+オンボーディングプロンプトに従って、モデルプロバイダー（Anthropic、OpenAIなど）を設定します。
 
 ***
 
-## 7) Configure channels
+## 7) チャンネルを設定
 
-Edit the config file:
+設定ファイルを編集：
 
 ```bash
 nano ~/.openclaw/openclaw.json
 ```
 
-Add your channels:
+チャンネルを追加：
 
 ```json
 {
@@ -165,7 +165,7 @@ Add your channels:
 }
 ```
 
-Then login to WhatsApp (scan QR):
+次に、WhatsAppにログインします（QRをスキャン）：
 
 ```bash
 openclaw channels login
@@ -173,18 +173,18 @@ openclaw channels login
 
 ***
 
-## 8) Run the VM headlessly
+## 8) VMをヘッドレスで実行
 
-Stop the VM and restart without display:
+VMを停止し、表示なしで再起動：
 
 ```bash
 lume stop openclaw
 lume run openclaw --no-display
 ```
 
-The VM runs in the background. OpenClaw's daemon keeps the gateway running.
+VMはバックグラウンドで実行されます。OpenClawのデーモンがGatewayを稼働させ続けます。
 
-To check status:
+ステータスを確認するには：
 
 ```bash
 ssh youruser@192.168.64.X "openclaw status"
@@ -192,18 +192,18 @@ ssh youruser@192.168.64.X "openclaw status"
 
 ***
 
-## Bonus: iMessage integration
+## ボーナス: iMessage統合
 
-This is the killer feature of running on macOS. Use [BlueBubbles](https://bluebubbles.app) to add iMessage to OpenClaw.
+これはmacOS上で実行する際のキラーフィーチャーです。[BlueBubbles](https://bluebubbles.app)を使用して、OpenClawにiMessageを追加します。
 
-Inside the VM:
+VM内で：
 
-1. Download BlueBubbles from bluebubbles.app
-2. Sign in with your Apple ID
-3. Enable the Web API and set a password
-4. Point BlueBubbles webhooks at your gateway (example: `https://your-gateway-host:3000/bluebubbles-webhook?password=<password>`)
+1. bluebubbles.appからBlueBubblesをダウンロード
+2. Apple IDでサインイン
+3. Web APIを有効にし、パスワードを設定
+4. BlueBubblesのWebhookをあなたのGatewayにポイントします（例: `https://your-gateway-host:3000/bluebubbles-webhook?password=<password>`）
 
-Add to your OpenClaw config:
+OpenClawの設定に追加：
 
 ```json
 {
@@ -217,22 +217,22 @@ Add to your OpenClaw config:
 }
 ```
 
-Restart the gateway. Now your agent can send and receive iMessages.
+Gatewayを再起動します。これでエージェントはiMessageを送受信できるようになります。
 
-Full setup details: [BlueBubbles channel](/channels/bluebubbles)
+完全なセットアップの詳細: [BlueBubblesチャンネル](/channels/bluebubbles)
 
 ***
 
-## Save a golden image
+## ゴールデンイメージを保存
 
-Before customizing further, snapshot your clean state:
+さらにカスタマイズする前に、クリーンな状態をスナップショットします：
 
 ```bash
 lume stop openclaw
 lume clone openclaw openclaw-golden
 ```
 
-Reset anytime:
+いつでもリセット可能：
 
 ```bash
 lume stop openclaw && lume delete openclaw
@@ -242,36 +242,36 @@ lume run openclaw --no-display
 
 ***
 
-## Running 24/7
+## 24/7の運用
 
-Keep the VM running by:
+VMを稼働させ続けるには：
 
-* Keeping your Mac plugged in
-* Disabling sleep in System Settings → Energy Saver
-* Using `caffeinate` if needed
+* Macを常に接続しておく
+* システム設定 → エネルギーセーバーでスリープを無効にする
+* 必要に応じて`caffeinate`を使用する
 
-For true always-on, consider a dedicated Mac mini or a small VPS. See [VPS hosting](/vps).
+本当に常時稼働させたい場合は、専用のMac miniまたは小型VPSを検討してください。詳細は[VPSホスティング](/vps)を参照してください。
 
 ***
 
 ## トラブルシューティング
 
-| Problem                  | Solution                                                                           |
+| 問題                     | 解決策                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------------- |
-| Can't SSH into VM        | Check "Remote Login" is enabled in VM's System Settings                            |
-| VM IP not showing        | Wait for VM to fully boot, run `lume get openclaw` again                           |
-| Lume command not found   | Add `~/.local/bin` to your PATH                                                    |
-| WhatsApp QR not scanning | Ensure you're logged into the VM (not host) when running `openclaw channels login` |
+| VMにSSH接続できない      | VMのシステム設定で「リモートログイン」が有効になっているか確認してください。      |
+| VMのIPが表示されない     | VMが完全に起動するまで待ち、再度`lume get openclaw`を実行してください。           |
+| Lumeコマンドが見つからない| `~/.local/bin`をPATHに追加してください。                                          |
+| WhatsApp QRがスキャンできない| `openclaw channels login`を実行する際、ホストではなくVMにログインしていることを確認してください。 |
 
 ***
 
 ## 関連ドキュメント
 
-* [VPS hosting](/vps)
-* [Nodes](/nodes)
-* [Gateway remote](/gateway/remote)
-* [BlueBubbles channel](/channels/bluebubbles)
-* [Lume Quickstart](https://cua.ai/docs/lume/guide/getting-started/quickstart)
-* [Lume CLI Reference](https://cua.ai/docs/lume/reference/cli-reference)
-* [Unattended VM Setup](https://cua.ai/docs/lume/guide/fundamentals/unattended-setup) (advanced)
-* [Docker Sandboxing](/install/docker) (alternative isolation approach)
+* [VPSホスティング](/vps)
+* [ノード](/nodes)
+* [Gatewayリモート](/gateway/remote)
+* [BlueBubblesチャンネル](/channels/bluebubbles)
+* [Lumeクイックスタート](https://cua.ai/docs/lume/guide/getting-started/quickstart)
+* [Lume CLIリファレンス](https://cua.ai/docs/lume/reference/cli-reference)
+* [無人VMセットアップ](https://cua.ai/docs/lume/guide/fundamentals/unattended-setup)（上級者向け）
+* [Dockerサンドボックス](/install/docker)（代替の隔離アプローチ）

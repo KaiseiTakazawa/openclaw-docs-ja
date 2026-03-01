@@ -6,7 +6,7 @@ title: "qr"
 
 # `openclaw qr`
 
-Generate an iOS pairing QR and setup code from your current Gateway configuration.
+現在のGateway設定からiOSペアリングQRとセットアップコードを生成します。
 
 ## 使い方
 
@@ -20,18 +20,18 @@ openclaw qr --url wss://gateway.example/ws --token '<token>'
 
 ## オプション
 
-* `--remote`: use `gateway.remote.url` plus remote token/password from config
-* `--url <url>`: override gateway URL used in payload
-* `--public-url <url>`: override public URL used in payload
-* `--token <token>`: override gateway token for payload
-* `--password <password>`: override gateway password for payload
-* `--setup-code-only`: print only setup code
-* `--no-ascii`: skip ASCII QR rendering
-* `--json`: emit JSON (`setupCode`, `gatewayUrl`, `auth`, `urlSource`)
+* `--remote`: `gateway.remote.url`と設定からのリモートトークン/パスワードを使用
+* `--url <url>`: ペイロードで使用するGatewayのURLを上書き
+* `--public-url <url>`: ペイロードで使用する公開URLを上書き
+* `--token <token>`: ペイロード用のGatewayトークンを上書き
+* `--password <password>`: ペイロード用のGatewayパスワードを上書き
+* `--setup-code-only`: セットアップコードのみを表示
+* `--no-ascii`: ASCII QRレンダリングをスキップ
+* `--json`: JSONを出力（`setupCode`, `gatewayUrl`, `auth`, `urlSource`）
 
 ## 注意事項
 
-* `--token` and `--password` are mutually exclusive.
-* After scanning, approve device pairing with:
+* `--token`と`--password`は相互に排他的です。
+* スキャン後、デバイスのペアリングを承認するには:
   * `openclaw devices list`
   * `openclaw devices approve <requestId>`

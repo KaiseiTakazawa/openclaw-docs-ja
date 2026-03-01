@@ -6,7 +6,7 @@ title: "スキル設定"
 
 # スキル設定
 
-All skills-related configuration lives under `skills` in `~/.openclaw/openclaw.json`.
+すべてのスキル関連の設定は `~/.openclaw/openclaw.json` の `skills` の下にあります。
 
 ```json5
 {
@@ -24,7 +24,7 @@ All skills-related configuration lives under `skills` in `~/.openclaw/openclaw.j
     entries: {
       "nano-banana-pro": {
         enabled: true,
-        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" }, // or plaintext string
+        apiKey: { source: "env", provider: "default", id: "GEMINI_API_KEY" }, // またはプレーンテキストの文字列
         env: {
           GEMINI_API_KEY: "GEMINI_KEY_HERE",
         },
@@ -36,40 +36,37 @@ All skills-related configuration lives under `skills` in `~/.openclaw/openclaw.j
 }
 ```
 
-## Fields
+## フィールド
 
-* `allowBundled`: optional allowlist for **bundled** skills only. When set, only
-  bundled skills in the list are eligible (managed/workspace skills unaffected).
-* `load.extraDirs`: additional skill directories to scan (lowest precedence).
-* `load.watch`: watch skill folders and refresh the skills snapshot (default: true).
-* `load.watchDebounceMs`: debounce for skill watcher events in milliseconds (default: 250).
-* `install.preferBrew`: prefer brew installers when available (default: true).
-* `install.nodeManager`: node installer preference (`npm` | `pnpm` | `yarn` | `bun`, default: npm).
-  This only affects **skill installs**; the Gateway runtime should still be Node
-  (Bun not recommended for WhatsApp/Telegram).
-* `entries.<skillKey>`: per-skill overrides.
+* `allowBundled`: **バンドルされた**スキルのためのオプションの許可リスト。設定されている場合、リスト内のバンドルされたスキルのみが対象となります（管理された/ワークスペーススキルには影響しません）。
+* `load.extraDirs`: スキャンする追加のスキルディレクトリ（優先度は最も低い）。
+* `load.watch`: スキルフォルダを監視し、スキルスナップショットを更新します（デフォルト: true）。
+* `load.watchDebounceMs`: スキルウォッチャーイベントのデバウンス時間（ミリ秒単位、デフォルト: 250）。
+* `install.preferBrew`: 利用可能な場合、brewインストーラーを優先します（デフォルト: true）。
+* `install.nodeManager`: ノードインストーラーの優先設定（`npm` | `pnpm` | `yarn` | `bun`、デフォルト: npm）。
+  これは**スキルのインストール**にのみ影響します; Gatewayランタイムは依然としてNodeであるべきです
+  （WhatsApp/TelegramにはBunは推奨されません）。
+* `entries.<skillKey>`: スキルごとのオーバーライド。
 
-Per-skill fields:
+スキルごとのフィールド:
 
-* `enabled`: set `false` to disable a skill even if it’s bundled/installed.
-* `env`: environment variables injected for the agent run (only if not already set).
-* `apiKey`: optional convenience for skills that declare a primary env var.
-  Supports plaintext string or SecretRef object (`{ source, provider, id }`).
+* `enabled`: バンドルされている/インストールされている場合でも、スキルを無効にするには `false` に設定します。
+* `env`: エージェント実行のために注入される環境変数（すでに設定されていない場合のみ）。
+* `apiKey`: プライマリ環境変数を宣言するスキルのためのオプションの便利機能。
+  プレーンテキストの文字列またはSecretRefオブジェクト（`{ source, provider, id }`）をサポートします。
 
 ## 注意事項
 
-* Keys under `entries` map to the skill name by default. If a skill defines
-  `metadata.openclaw.skillKey`, use that key instead.
-* Changes to skills are picked up on the next agent turn when the watcher is enabled.
+* `entries` の下のキーはデフォルトでスキル名にマッピングされます。スキルが `metadata.openclaw.skillKey` を定義している場合は、そのキーを使用してください。
+* スキルの変更は、ウォッチャーが有効になっているときに次のエージェントターンで反映されます。
 
-### Sandboxed skills + env vars
+### サンドボックス化されたスキル + 環境変数
 
-When a session is **sandboxed**, skill processes run inside Docker. The sandbox
-does **not** inherit the host `process.env`.
+セッションが**サンドボックス化**されている場合、スキルプロセスはDocker内で実行されます。サンドボックスは**ホストの `process.env` を継承しません**。
 
-Use one of:
+次のいずれかを使用してください:
 
-* `agents.defaults.sandbox.docker.env` (or per-agent `agents.list[].sandbox.docker.env`)
-* bake the env into your custom sandbox image
+* `agents.defaults.sandbox.docker.env`（またはエージェントごとの `agents.list[].sandbox.docker.env`）
+* 環境をカスタムサンドボックスイメージに組み込む
 
-Global `env` and `skills.entries.<skill>.env/apiKey` apply to **host** runs only.
+グローバル `env` と `skills.entries.<skill>.env/apiKey` は**ホスト**実行にのみ適用されます。

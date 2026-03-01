@@ -6,139 +6,138 @@ title: "OAuth"
 
 # OAuth
 
-OpenClaw supports “subscription auth” via OAuth for providers that offer it (notably **OpenAI Codex (ChatGPT OAuth)**). For Anthropic subscriptions, use the **setup-token** flow. This page explains:
+OpenClawは、提供されているプロバイダーに対して「サブスクリプション認証」をOAuthを通じてサポートしています（特に**OpenAI Codex (ChatGPT OAuth)**）。Anthropicのサブスクリプションには、**setup-token**フローを使用します。このページでは以下について説明します：
 
-* how the OAuth **token exchange** works (PKCE)
-* where tokens are **stored** (and why)
-* how to handle **multiple accounts** (profiles + per-session overrides)
+* OAuthの**トークン交換**がどのように機能するか（PKCE）
+* トークンが**保存される場所**（およびその理由）
+* **複数のアカウント**（プロファイル + セッションごとのオーバーライド）を扱う方法
 
-OpenClaw also supports **provider plugins** that ship their own OAuth or API‑key
-flows. Run them via:
+OpenClawは、独自のOAuthまたはAPIキーのフローを提供する**プロバイダープラグイン**もサポートしています。次のコマンドで実行します：
 
 ```bash
 openclaw models auth login --provider <id>
 ```
 
-## The token sink (why it exists)
+## トークンシンク（存在する理由）
 
-OAuth providers commonly mint a **new refresh token** during login/refresh flows. Some providers (or OAuth clients) can invalidate older refresh tokens when a new one is issued for the same user/app.
+OAuthプロバイダーは、ログイン/リフレッシュフロー中に**新しいリフレッシュトークン**を発行することが一般的です。一部のプロバイダー（またはOAuthクライアント）は、新しいトークンが同じユーザー/アプリに対して発行されると、古いリフレッシュトークンを無効にすることがあります。
 
-Practical symptom:
+実際の症状：
 
-* you log in via OpenClaw *and* via Claude Code / Codex CLI → one of them randomly gets “logged out” later
+* OpenClawを通じてログインし、かつClaude Code / Codex CLIを通じてログインすると、どちらかが後で「ログアウト」されることがあります。
 
-To reduce that, OpenClaw treats `auth-profiles.json` as a **token sink**:
+これを軽減するために、OpenClawは`auth-profiles.json`を**トークンシンク**として扱います：
 
-* the runtime reads credentials from **one place**
-* we can keep multiple profiles and route them deterministically
+* ランタイムは**1つの場所**から認証情報を読み取ります
+* 複数のプロファイルを保持し、決定論的にルーティングできます
 
-## Storage (where tokens live)
+## ストレージ（トークンが存在する場所）
 
-Secrets are stored **per-agent**:
+シークレットは**エージェントごと**に保存されます：
 
-* Auth profiles (OAuth + API keys + optional value-level refs): `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
-* Legacy compatibility file: `~/.openclaw/agents/<agentId>/agent/auth.json`
-  (static `api_key` entries are scrubbed when discovered)
+* 認証プロファイル（OAuth + APIキー + オプションの値レベル参照）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+* レガシー互換ファイル：`~/.openclaw/agents/<agentId>/agent/auth.json`
+  （静的な`api_key`エントリは発見時に削除されます）
 
-Legacy import-only file (still supported, but not the main store):
+レガシーインポート専用ファイル（まだサポートされていますが、主なストレージではありません）：
 
-* `~/.openclaw/credentials/oauth.json` (imported into `auth-profiles.json` on first use)
+* `~/.openclaw/credentials/oauth.json`（初回使用時に`auth-profiles.json`にインポートされます）
 
-All of the above also respect `$OPENCLAW_STATE_DIR` (state dir override). Full reference: [/gateway/configuration](/gateway/configuration#auth-storage-oauth--api-keys)
+上記すべては`$OPENCLAW_STATE_DIR`（状態ディレクトリのオーバーライド）も尊重します。完全なリファレンスは、[/gateway/configuration](/gateway/configuration#auth-storage-oauth--api-keys)を参照してください。
 
-For static secret refs and runtime snapshot activation behavior, see [Secrets Management](/gateway/secrets).
+静的なシークレット参照とランタイムスナップショットのアクティベーション動作については、[Secrets Management](/gateway/secrets)を参照してください。
 
-## Anthropic setup-token (subscription auth)
+## Anthropic setup-token（サブスクリプション認証）
 
-Run `claude setup-token` on any machine, then paste it into OpenClaw:
+任意のマシンで`claude setup-token`を実行し、その後OpenClawに貼り付けます：
 
 ```bash
 openclaw models auth setup-token --provider anthropic
 ```
 
-If you generated the token elsewhere, paste it manually:
+他の場所でトークンを生成した場合は、手動で貼り付けます：
 
 ```bash
 openclaw models auth paste-token --provider anthropic
 ```
 
-Verify:
+確認：
 
 ```bash
 openclaw models status
 ```
 
-## OAuth exchange (how login works)
+## OAuth交換（ログインがどのように機能するか）
 
-OpenClaw’s interactive login flows are implemented in `@mariozechner/pi-ai` and wired into the wizards/commands.
+OpenClawのインタラクティブログインフローは`@mariozechner/pi-ai`に実装されており、ウィザード/コマンドに接続されています。
 
-### Anthropic (Claude Pro/Max) setup-token
+### Anthropic（Claude Pro/Max）setup-token
 
-Flow shape:
+フローモデル：
 
-1. run `claude setup-token`
-2. paste the token into OpenClaw
-3. store as a token auth profile (no refresh)
+1. `claude setup-token`を実行
+2. トークンをOpenClawに貼り付け
+3. トークン認証プロファイルとして保存（リフレッシュなし）
 
-The wizard path is `openclaw onboard` → auth choice `setup-token` (Anthropic).
+ウィザードパスは`openclaw onboard` → 認証選択`setup-token`（Anthropic）です。
 
-### OpenAI Codex (ChatGPT OAuth)
+### OpenAI Codex（ChatGPT OAuth）
 
-Flow shape (PKCE):
+フローモデル（PKCE）：
 
-1. generate PKCE verifier/challenge + random `state`
-2. open `https://auth.openai.com/oauth/authorize?...`
-3. try to capture callback on `http://127.0.0.1:1455/auth/callback`
-4. if callback can’t bind (or you’re remote/headless), paste the redirect URL/code
-5. exchange at `https://auth.openai.com/oauth/token`
-6. extract `accountId` from the access token and store `{ access, refresh, expires, accountId }`
+1. PKCEバリファイア/チャレンジ + ランダムな`state`を生成
+2. `https://auth.openai.com/oauth/authorize?...`を開く
+3. `http://127.0.0.1:1455/auth/callback`でコールバックをキャプチャしようとする
+4. コールバックがバインドできない場合（またはリモート/ヘッドレスの場合）、リダイレクトURL/コードを手動で貼り付ける
+5. `https://auth.openai.com/oauth/token`で交換
+6. アクセストークンから`accountId`を抽出し、`{ access, refresh, expires, accountId }`を保存
 
-Wizard path is `openclaw onboard` → auth choice `openai-codex`.
+ウィザードパスは`openclaw onboard` → 認証選択`openai-codex`です。
 
-## Refresh + expiry
+## リフレッシュ + 有効期限
 
-Profiles store an `expires` timestamp.
+プロファイルは`expires`タイムスタンプを保存します。
 
-At runtime:
+ランタイム時：
 
-* if `expires` is in the future → use the stored access token
-* if expired → refresh (under a file lock) and overwrite the stored credentials
+* `expires`が未来の場合 → 保存されたアクセストークンを使用
+* 有効期限切れの場合 → リフレッシュ（ファイルロックの下で）し、保存された認証情報を上書き
 
-The refresh flow is automatic; you generally don't need to manage tokens manually.
+リフレッシュフローは自動で行われます。一般的にトークンを手動で管理する必要はありません。
 
-## Multiple accounts (profiles) + routing
+## 複数アカウント（プロファイル） + ルーティング
 
-Two patterns:
+2つのパターン：
 
-### 1) Preferred: separate agents
+### 1) 推奨：別々のエージェント
 
-If you want “personal” and “work” to never interact, use isolated agents (separate sessions + credentials + workspace):
+「個人」と「仕事」が決して相互作用しないようにしたい場合は、孤立したエージェントを使用します（別々のセッション + 認証情報 + ワークスペース）：
 
 ```bash
 openclaw agents add work
 openclaw agents add personal
 ```
 
-Then configure auth per-agent (wizard) and route chats to the right agent.
+その後、エージェントごとに認証を設定し、チャットを正しいエージェントにルーティングします。
 
-### 2) Advanced: multiple profiles in one agent
+### 2) 高度：1つのエージェント内の複数プロファイル
 
-`auth-profiles.json` supports multiple profile IDs for the same provider.
+`auth-profiles.json`は、同じプロバイダーに対して複数のプロファイルIDをサポートしています。
 
-Pick which profile is used:
+使用するプロファイルを選択：
 
-* globally via config ordering (`auth.order`)
-* per-session via `/model ...@<profileId>`
+* グローバルに設定順序を介して（`auth.order`）
+* セッションごとに`/model ...@<profileId>`を介して
 
-Example (session override):
+例（セッションオーバーライド）：
 
 * `/model Opus@anthropic:work`
 
-How to see what profile IDs exist:
+どのプロファイルIDが存在するかを見る方法：
 
-* `openclaw channels list --json` (shows `auth[]`)
+* `openclaw channels list --json`（`auth[]`を表示）
 
-Related docs:
+関連ドキュメント：
 
-* [/concepts/model-failover](/concepts/model-failover) (rotation + cooldown rules)
-* [/tools/slash-commands](/tools/slash-commands) (command surface)
+* [/concepts/model-failover](/concepts/model-failover)（ローテーション + クールダウンルール）
+* [/tools/slash-commands](/tools/slash-commands)（コマンドサーフェス）

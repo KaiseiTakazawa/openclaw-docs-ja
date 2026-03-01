@@ -6,14 +6,11 @@ title: "ツール"
 
 # Tools (OpenClaw)
 
-OpenClaw exposes **first-class agent tools** for browser, canvas, nodes, and cron.
-These replace the old `openclaw-*` skills: the tools are typed, no shelling,
-and the agent should rely on them directly.
+OpenClawは、ブラウザ、キャンバス、ノード、およびcron用の**ファーストクラスエージェントツール**を提供します。これらは古い`openclaw-*`スキルに置き換わります：ツールは型付けされており、シェルを使用せず、エージェントはそれらに直接依存する必要があります。
 
-## Disabling tools
+## ツールの無効化
 
-You can globally allow/deny tools via `tools.allow` / `tools.deny` in `openclaw.json`
-(deny wins). This prevents disallowed tools from being sent to model providers.
+`openclaw.json`内の`tools.allow` / `tools.deny`を使用して、ツールをグローバルに許可または拒否できます（拒否が優先されます）。これにより、許可されていないツールがモデルプロバイダーに送信されることを防ぎます。
 
 ```json5
 {
@@ -21,25 +18,24 @@ You can globally allow/deny tools via `tools.allow` / `tools.deny` in `openclaw.
 }
 ```
 
-Notes:
+注意事項：
 
-* Matching is case-insensitive.
-* `*` wildcards are supported (`"*"` means all tools).
-* If `tools.allow` only references unknown or unloaded plugin tool names, OpenClaw logs a warning and ignores the allowlist so core tools stay available.
+* マッチングは大文字と小文字を区別しません。
+* `*` ワイルドカードがサポートされています（`"*"`はすべてのツールを意味します）。
+* `tools.allow`が未知または読み込まれていないプラグインツール名のみを参照している場合、OpenClawは警告をログに記録し、許可リストを無視してコアツールを利用可能にします。
 
-## Tool profiles (base allowlist)
+## ツールプロファイル（ベース許可リスト）
 
-`tools.profile` sets a **base tool allowlist** before `tools.allow`/`tools.deny`.
-Per-agent override: `agents.list[].tools.profile`.
+`tools.profile`は、`tools.allow` / `tools.deny`の前に**ベースツール許可リスト**を設定します。エージェントごとのオーバーライド：`agents.list[].tools.profile`。
 
-Profiles:
+プロファイル：
 
-* `minimal`: `session_status` only
+* `minimal`: `session_status`のみ
 * `coding`: `group:fs`, `group:runtime`, `group:sessions`, `group:memory`, `image`
 * `messaging`: `group:messaging`, `sessions_list`, `sessions_history`, `sessions_send`, `session_status`
-* `full`: no restriction (same as unset)
+* `full`: 制限なし（未設定と同じ）
 
-Example (messaging-only by default, allow Slack + Discord tools too):
+例（デフォルトでメッセージングのみ、Slack + Discordツールも許可）：
 
 ```json5
 {
@@ -50,7 +46,7 @@ Example (messaging-only by default, allow Slack + Discord tools too):
 }
 ```
 
-Example (coding profile, but deny exec/process everywhere):
+例（コーディングプロファイルだが、どこでもexec/processを拒否）：
 
 ```json5
 {
@@ -61,7 +57,7 @@ Example (coding profile, but deny exec/process everywhere):
 }
 ```
 
-Example (global coding profile, messaging-only support agent):
+例（グローバルコーディングプロファイル、メッセージングのみサポートするエージェント）：
 
 ```json5
 {
@@ -77,18 +73,13 @@ Example (global coding profile, messaging-only support agent):
 }
 ```
 
-## Provider-specific tool policy
+## プロバイダー固有のツールポリシー
 
-Use `tools.byProvider` to **further restrict** tools for specific providers
-(or a single `provider/model`) without changing your global defaults.
-Per-agent override: `agents.list[].tools.byProvider`.
+`tools.byProvider`を使用して、特定のプロバイダー（または単一の`provider/model`）に対してツールを**さらに制限**できますが、グローバルデフォルトは変更しません。エージェントごとのオーバーライド：`agents.list[].tools.byProvider`。
 
-This is applied **after** the base tool profile and **before** allow/deny lists,
-so it can only narrow the tool set.
-Provider keys accept either `provider` (e.g. `google-antigravity`) or
-`provider/model` (e.g. `openai/gpt-5.2`).
+これは、ベースツールプロファイルの**後**、許可/拒否リストの**前**に適用されるため、ツールセットを狭めることしかできません。プロバイダーキーは、`provider`（例：`google-antigravity`）または`provider/model`（例：`openai/gpt-5.2`）のいずれかを受け入れます。
 
-Example (keep global coding profile, but minimal tools for Google Antigravity):
+例（グローバルコーディングプロファイルを維持しつつ、Google Antigravity用の最小限のツール）：
 
 ```json5
 {
@@ -101,7 +92,7 @@ Example (keep global coding profile, but minimal tools for Google Antigravity):
 }
 ```
 
-Example (provider/model-specific allowlist for a flaky endpoint):
+例（不安定なエンドポイント用のプロバイダー/モデル固有の許可リスト）：
 
 ```json5
 {
@@ -114,7 +105,7 @@ Example (provider/model-specific allowlist for a flaky endpoint):
 }
 ```
 
-Example (agent-specific override for a single provider):
+例（単一プロバイダー用のエージェント固有のオーバーライド）：
 
 ```json5
 {
@@ -133,12 +124,11 @@ Example (agent-specific override for a single provider):
 }
 ```
 
-## Tool groups (shorthands)
+## ツールグループ（ショートハンド）
 
-Tool policies (global, agent, sandbox) support `group:*` entries that expand to multiple tools.
-Use these in `tools.allow` / `tools.deny`.
+ツールポリシー（グローバル、エージェント、サンドボックス）は、複数のツールに展開される`group:*`エントリをサポートします。これらを`tools.allow` / `tools.deny`で使用します。
 
-Available groups:
+利用可能なグループ：
 
 * `group:runtime`: `exec`, `bash`, `process`
 * `group:fs`: `read`, `write`, `edit`, `apply_patch`
@@ -149,9 +139,9 @@ Available groups:
 * `group:automation`: `cron`, `gateway`
 * `group:messaging`: `message`
 * `group:nodes`: `nodes`
-* `group:openclaw`: all built-in OpenClaw tools (excludes provider plugins)
+* `group:openclaw`: すべての組み込みOpenClawツール（プロバイダープラグインを除く）
 
-Example (allow only file tools + browser):
+例（ファイルツールとブラウザのみを許可）：
 
 ```json5
 {
@@ -161,71 +151,65 @@ Example (allow only file tools + browser):
 }
 ```
 
-## Plugins + tools
+## プラグイン + ツール
 
-Plugins can register **additional tools** (and CLI commands) beyond the core set.
-See [Plugins](/tools/plugin) for install + config, and [Skills](/tools/skills) for how
-tool usage guidance is injected into prompts. Some plugins ship their own skills
-alongside tools (for example, the voice-call plugin).
+プラグインは、コアセットを超えて**追加のツール**（およびCLIコマンド）を登録できます。インストールと設定については[Plugins](/tools/plugin)を、ツール使用ガイダンスがプロンプトにどのように注入されるかについては[Skills](/tools/skills)を参照してください。一部のプラグインは、ツールとともに独自のスキルを提供します（たとえば、音声通話プラグイン）。
 
-Optional plugin tools:
+オプションのプラグインツール：
 
-* [Lobster](/tools/lobster): typed workflow runtime with resumable approvals (requires the Lobster CLI on the gateway host).
-* [LLM Task](/tools/llm-task): JSON-only LLM step for structured workflow output (optional schema validation).
+* [Lobster](/tools/lobster): 再開可能な承認を持つ型付けされたワークフローランタイム（ゲートウェイホストにLobster CLIが必要）。
+* [LLM Task](/tools/llm-task): 構造化されたワークフロー出力のためのJSON専用LLMステップ（オプションのスキーマ検証）。
 
-## Tool inventory
+## ツールインベントリ
 
 ### `apply_patch`
 
-Apply structured patches across one or more files. Use for multi-hunk edits.
-Experimental: enable via `tools.exec.applyPatch.enabled` (OpenAI models only).
-`tools.exec.applyPatch.workspaceOnly` defaults to `true` (workspace-contained). Set it to `false` only if you intentionally want `apply_patch` to write/delete outside the workspace directory.
+1つ以上のファイルに構造化されたパッチを適用します。マルチハンク編集に使用します。実験的：`tools.exec.applyPatch.enabled`を介して有効にします（OpenAIモデルのみ）。`tools.exec.applyPatch.workspaceOnly`はデフォルトで`true`（ワークスペース内）。ワークスペースディレクトリの外で`apply_patch`が書き込み/削除することを意図的に望む場合のみ、`false`に設定してください。
 
 ### `exec`
 
-Run shell commands in the workspace.
+ワークスペース内でシェルコマンドを実行します。
 
-Core parameters:
+コアパラメータ：
 
-* `command` (required)
-* `yieldMs` (auto-background after timeout, default 10000)
-* `background` (immediate background)
-* `timeout` (seconds; kills the process if exceeded, default 1800)
-* `elevated` (bool; run on host if elevated mode is enabled/allowed; only changes behavior when the agent is sandboxed)
-* `host` (`sandbox | gateway | node`)
-* `security` (`deny | allowlist | full`)
-* `ask` (`off | on-miss | always`)
-* `node` (node id/name for `host=node`)
-* Need a real TTY? Set `pty: true`.
+* `command`（必須）
+* `yieldMs`（タイムアウト後に自動バックグラウンド、デフォルト10000）
+* `background`（即時バックグラウンド）
+* `timeout`（秒；超過した場合はプロセスを終了、デフォルト1800）
+* `elevated`（bool；昇格モードが有効/許可されている場合はホストで実行；エージェントがサンドボックスされているときのみ動作が変更されます）
+* `host`（`sandbox | gateway | node`）
+* `security`（`deny | allowlist | full`）
+* `ask`（`off | on-miss | always`）
+* `node`（`host=node`用のノードID/名前）
+* 実際のTTYが必要ですか？ `pty: true`を設定してください。
 
-Notes:
+注意事項：
 
-* Returns `status: "running"` with a `sessionId` when backgrounded.
-* Use `process` to poll/log/write/kill/clear background sessions.
-* If `process` is disallowed, `exec` runs synchronously and ignores `yieldMs`/`background`.
-* `elevated` is gated by `tools.elevated` plus any `agents.list[].tools.elevated` override (both must allow) and is an alias for `host=gateway` + `security=full`.
-* `elevated` only changes behavior when the agent is sandboxed (otherwise it’s a no-op).
-* `host=node` can target a macOS companion app or a headless node host (`openclaw node run`).
-* gateway/node approvals and allowlists: [Exec approvals](/tools/exec-approvals).
+* バックグラウンドで実行されているときは、`status: "running"`と`sessionId`を返します。
+* `process`を使用して、バックグラウンドセッションをポーリング/ログ/書き込み/終了/クリアします。
+* `process`が拒否されている場合、`exec`は同期的に実行され、`yieldMs`/`background`を無視します。
+* `elevated`は`tools.elevated`および`agents.list[].tools.elevated`オーバーライドの両方が許可されている場合にゲートされ、`host=gateway` + `security=full`のエイリアスです。
+* `elevated`は、エージェントがサンドボックスされているときのみ動作を変更します（そうでない場合は無操作）。
+* `host=node`は、macOSのコンパニオンアプリまたはヘッドレスノードホストをターゲットにできます（`openclaw node run`）。
+* ゲートウェイ/ノードの承認と許可リスト：[Exec approvals](/tools/exec-approvals)。
 
 ### `process`
 
-Manage background exec sessions.
+バックグラウンドexecセッションを管理します。
 
-Core actions:
+コアアクション：
 
 * `list`, `poll`, `log`, `write`, `kill`, `clear`, `remove`
 
-Notes:
+注意事項：
 
-* `poll` returns new output and exit status when complete.
-* `log` supports line-based `offset`/`limit` (omit `offset` to grab the last N lines).
-* `process` is scoped per agent; sessions from other agents are not visible.
+* `poll`は、新しい出力と完了時の終了ステータスを返します。
+* `log`は、行ベースの`offset`/`limit`をサポートしています（`offset`を省略すると、最後のN行を取得します）。
+* `process`はエージェントごとにスコープされており、他のエージェントのセッションは表示されません。
 
-### `loop-detection` (tool-call loop guardrails)
+### `loop-detection`（ツールコールループガードレール）
 
-OpenClaw tracks recent tool-call history and blocks or warns when it detects repetitive no-progress loops.
-Enable with `tools.loopDetection.enabled: true` (default is `false`).
+OpenClawは最近のツールコール履歴を追跡し、進展のない繰り返しループを検出した場合にブロックまたは警告します。`tools.loopDetection.enabled: true`で有効にします（デフォルトは`false`）。
 
 ```json5
 {
@@ -246,125 +230,125 @@ Enable with `tools.loopDetection.enabled: true` (default is `false`).
 }
 ```
 
-* `genericRepeat`: repeated same tool + same params call pattern.
-* `knownPollNoProgress`: repeating poll-like tools with identical outputs.
-* `pingPong`: alternating `A/B/A/B` no-progress patterns.
-* Per-agent override: `agents.list[].tools.loopDetection`.
+* `genericRepeat`: 同じツール + 同じパラメータの呼び出しパターンを繰り返す。
+* `knownPollNoProgress`: 同一出力のポーリングのようなツールを繰り返す。
+* `pingPong`: 交互に`A/B/A/B`の進展のないパターン。
+* エージェントごとのオーバーライド：`agents.list[].tools.loopDetection`。
 
 ### `web_search`
 
-Search the web using Brave Search API.
+Brave Search APIを使用してウェブを検索します。
 
-Core parameters:
+コアパラメータ：
 
-* `query` (required)
-* `count` (1–10; default from `tools.web.search.maxResults`)
+* `query`（必須）
+* `count`（1–10；デフォルトは`tools.web.search.maxResults`から）
 
-Notes:
+注意事項：
 
-* Requires a Brave API key (recommended: `openclaw configure --section web`, or set `BRAVE_API_KEY`).
-* Enable via `tools.web.search.enabled`.
-* Responses are cached (default 15 min).
-* See [Web tools](/tools/web) for setup.
+* Brave APIキーが必要です（推奨：`openclaw configure --section web`、または`BRAVE_API_KEY`を設定）。
+* `tools.web.search.enabled`を介して有効にします。
+* 応答はキャッシュされます（デフォルト15分）。
+* セットアップについては[Web tools](/tools/web)を参照してください。
 
 ### `web_fetch`
 
-Fetch and extract readable content from a URL (HTML → markdown/text).
+URLから読みやすいコンテンツを取得して抽出します（HTML → markdown/text）。
 
-Core parameters:
+コアパラメータ：
 
-* `url` (required)
-* `extractMode` (`markdown` | `text`)
-* `maxChars` (truncate long pages)
+* `url`（必須）
+* `extractMode`（`markdown` | `text`）
+* `maxChars`（長いページを切り詰める）
 
-Notes:
+注意事項：
 
-* Enable via `tools.web.fetch.enabled`.
-* `maxChars` is clamped by `tools.web.fetch.maxCharsCap` (default 50000).
-* Responses are cached (default 15 min).
-* For JS-heavy sites, prefer the browser tool.
-* See [Web tools](/tools/web) for setup.
-* See [Firecrawl](/tools/firecrawl) for the optional anti-bot fallback.
+* `tools.web.fetch.enabled`を介して有効にします。
+* `maxChars`は`tools.web.fetch.maxCharsCap`（デフォルト50000）によって制約されます。
+* 応答はキャッシュされます（デフォルト15分）。
+* JSが重いサイトの場合は、ブラウザツールを優先してください。
+* セットアップについては[Web tools](/tools/web)を参照してください。
+* オプションのボット対策として[Firecrawl](/tools/firecrawl)を参照してください。
 
 ### `browser`
 
-Control the dedicated OpenClaw-managed browser.
+専用のOpenClaw管理ブラウザを制御します。
 
-Core actions:
+コアアクション：
 
 * `status`, `start`, `stop`, `tabs`, `open`, `focus`, `close`
-* `snapshot` (aria/ai)
-* `screenshot` (returns image block + `MEDIA:<path>`)
-* `act` (UI actions: click/type/press/hover/drag/select/fill/resize/wait/evaluate)
+* `snapshot`（aria/ai）
+* `screenshot`（画像ブロック + `MEDIA:<path>`を返します）
+* `act`（UIアクション：クリック/タイプ/押す/ホバー/ドラッグ/選択/入力/サイズ変更/待機/評価）
 * `navigate`, `console`, `pdf`, `upload`, `dialog`
 
-Profile management:
+プロファイル管理：
 
-* `profiles` — list all browser profiles with status
-* `create-profile` — create new profile with auto-allocated port (or `cdpUrl`)
-* `delete-profile` — stop browser, delete user data, remove from config (local only)
-* `reset-profile` — kill orphan process on profile's port (local only)
+* `profiles` — ステータス付きのすべてのブラウザプロファイルをリスト
+* `create-profile` — 自動割り当てポート（または`cdpUrl`）で新しいプロファイルを作成
+* `delete-profile` — ブラウザを停止し、ユーザーデータを削除し、設定から削除（ローカルのみ）
+* `reset-profile` — プロファイルのポートで孤立プロセスを終了（ローカルのみ）
 
-Common parameters:
+共通パラメータ：
 
-* `profile` (optional; defaults to `browser.defaultProfile`)
-* `target` (`sandbox` | `host` | `node`)
-* `node` (optional; picks a specific node id/name)
-  Notes:
-* Requires `browser.enabled=true` (default is `true`; set `false` to disable).
-* All actions accept optional `profile` parameter for multi-instance support.
-* When `profile` is omitted, uses `browser.defaultProfile` (defaults to "chrome").
-* Profile names: lowercase alphanumeric + hyphens only (max 64 chars).
-* Port range: 18800-18899 (\~100 profiles max).
-* Remote profiles are attach-only (no start/stop/reset).
-* If a browser-capable node is connected, the tool may auto-route to it (unless you pin `target`).
-* `snapshot` defaults to `ai` when Playwright is installed; use `aria` for the accessibility tree.
-* `snapshot` also supports role-snapshot options (`interactive`, `compact`, `depth`, `selector`) which return refs like `e12`.
-* `act` requires `ref` from `snapshot` (numeric `12` from AI snapshots, or `e12` from role snapshots); use `evaluate` for rare CSS selector needs.
-* Avoid `act` → `wait` by default; use it only in exceptional cases (no reliable UI state to wait on).
-* `upload` can optionally pass a `ref` to auto-click after arming.
-* `upload` also supports `inputRef` (aria ref) or `element` (CSS selector) to set `<input type="file">` directly.
+* `profile`（オプション；デフォルトは`browser.defaultProfile`）
+* `target`（`sandbox` | `host` | `node`）
+* `node`（オプション；特定のノードID/名前を選択）
+  注意事項：
+* `browser.enabled=true`が必要です（デフォルトは`true`；無効にするには`false`に設定）。
+* すべてのアクションは、マルチインスタンスサポートのためにオプションの`profile`パラメータを受け入れます。
+* `profile`が省略されると、`browser.defaultProfile`が使用されます（デフォルトは"chrome"）。
+* プロファイル名：小文字の英数字 + ハイフンのみ（最大64文字）。
+* ポート範囲：18800-18899（最大約100プロファイル）。
+* リモートプロファイルはアタッチ専用（開始/停止/リセットなし）。
+* ブラウザ対応ノードが接続されている場合、ツールは自動的にそれにルーティングされる可能性があります（`target`を固定しない限り）。
+* `snapshot`はPlaywrightがインストールされているときにデフォルトで`ai`になります；アクセシビリティツリーには`aria`を使用します。
+* `snapshot`は、役割スナップショットオプション（`interactive`, `compact`, `depth`, `selector`）もサポートしており、`e12`のような参照を返します。
+* `act`は`snapshot`からの`ref`を必要とします（AIスナップショットからの数値`12`、または役割スナップショットからの`e12`）；まれなCSSセレクタのニーズには`evaluate`を使用します。
+* デフォルトで`act` → `wait`を避けてください；例外的な場合にのみ使用してください（待機する信頼できるUI状態がない）。
+* `upload`は、アーミング後に自動クリックするために`ref`をオプションで渡すことができます。
+* `upload`は、`inputRef`（aria ref）または`element`（CSSセレクタ）をサポートして、直接`<input type="file">`を設定します。
 
 ### `canvas`
 
-Drive the node Canvas (present, eval, snapshot, A2UI).
+ノードCanvasを操作します（present、eval、snapshot、A2UI）。
 
-Core actions:
+コアアクション：
 
 * `present`, `hide`, `navigate`, `eval`
-* `snapshot` (returns image block + `MEDIA:<path>`)
+* `snapshot`（画像ブロック + `MEDIA:<path>`を返します）
 * `a2ui_push`, `a2ui_reset`
 
-Notes:
+注意事項：
 
-* Uses gateway `node.invoke` under the hood.
-* If no `node` is provided, the tool picks a default (single connected node or local mac node).
-* A2UI is v0.8 only (no `createSurface`); the CLI rejects v0.9 JSONL with line errors.
-* Quick smoke: `openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"`.
+* 背後でゲートウェイの`node.invoke`を使用します。
+* `node`が提供されていない場合、ツールはデフォルト（接続されている単一ノードまたはローカルmacノード）を選択します。
+* A2UIはv0.8のみ（`createSurface`はなし）；CLIはv0.9 JSONLを行エラーで拒否します。
+* クイックスモーク：`openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"`。
 
 ### `nodes`
 
-Discover and target paired nodes; send notifications; capture camera/screen.
+ペアリングされたノードを発見し、ターゲットにします；通知を送信します；カメラ/画面をキャプチャします。
 
-Core actions:
+コアアクション：
 
 * `status`, `describe`
-* `pending`, `approve`, `reject` (pairing)
-* `notify` (macOS `system.notify`)
-* `run` (macOS `system.run`)
+* `pending`, `approve`, `reject`（ペアリング）
+* `notify`（macOS `system.notify`）
+* `run`（macOS `system.run`）
 * `camera_list`, `camera_snap`, `camera_clip`, `screen_record`
 * `location_get`, `notifications_list`, `notifications_action`
 * `device_status`, `device_info`, `device_permissions`, `device_health`
 
-Notes:
+注意事項：
 
-* Camera/screen commands require the node app to be foregrounded.
-* Images return image blocks + `MEDIA:<path>`.
-* Videos return `FILE:<path>` (mp4).
-* Location returns a JSON payload (lat/lon/accuracy/timestamp).
-* `run` params: `command` argv array; optional `cwd`, `env` (`KEY=VAL`), `commandTimeoutMs`, `invokeTimeoutMs`, `needsScreenRecording`.
+* カメラ/画面コマンドは、ノードアプリが前面にある必要があります。
+* 画像は画像ブロック + `MEDIA:<path>`を返します。
+* 動画は`FILE:<path>`（mp4）を返します。
+* 位置情報はJSONペイロード（緯度/経度/精度/タイムスタンプ）を返します。
+* `run`パラメータ：`command` argv配列；オプションの`cwd`、`env`（`KEY=VAL`）、`commandTimeoutMs`、`invokeTimeoutMs`、`needsScreenRecording`。
 
-Example (`run`):
+例（`run`）：
 
 ```json
 {
@@ -380,28 +364,28 @@ Example (`run`):
 
 ### `image`
 
-Analyze an image with the configured image model.
+設定された画像モデルで画像を分析します。
 
-Core parameters:
+コアパラメータ：
 
-* `image` (required path or URL)
-* `prompt` (optional; defaults to "Describe the image.")
-* `model` (optional override)
-* `maxBytesMb` (optional size cap)
+* `image`（必須のパスまたはURL）
+* `prompt`（オプション；デフォルトは"Describe the image."）
+* `model`（オプションのオーバーライド）
+* `maxBytesMb`（オプションのサイズ制限）
 
-Notes:
+注意事項：
 
-* Only available when `agents.defaults.imageModel` is configured (primary or fallbacks), or when an implicit image model can be inferred from your default model + configured auth (best-effort pairing).
-* Uses the image model directly (independent of the main chat model).
+* `agents.defaults.imageModel`が設定されている場合（プライマリまたはフォールバック）、またはデフォルトモデル + 設定された認証から暗黙的に画像モデルが推測できる場合にのみ利用可能です（最善の努力によるペアリング）。
+* 画像モデルを直接使用します（メインチャットモデルとは独立しています）。
 
 ### `message`
 
-Send messages and channel actions across Discord/Google Chat/Slack/Telegram/WhatsApp/Signal/iMessage/MS Teams.
+Discord/Google Chat/Slack/Telegram/WhatsApp/Signal/iMessage/MS Teamsを通じてメッセージとチャンネルアクションを送信します。
 
-Core actions:
+コアアクション：
 
-* `send` (text + optional media; MS Teams also supports `card` for Adaptive Cards)
-* `poll` (WhatsApp/Discord/MS Teams polls)
+* `send`（テキスト + オプションのメディア；MS TeamsはAdaptive Cards用に`card`もサポート）
+* `poll`（WhatsApp/Discord/MS Teamsのポール）
 * `react` / `reactions` / `read` / `edit` / `delete`
 * `pin` / `unpin` / `list-pins`
 * `permissions`
@@ -416,137 +400,135 @@ Core actions:
 * `event-list` / `event-create`
 * `timeout` / `kick` / `ban`
 
-Notes:
+注意事項：
 
-* `send` routes WhatsApp via the Gateway; other channels go direct.
-* `poll` uses the Gateway for WhatsApp and MS Teams; Discord polls go direct.
-* When a message tool call is bound to an active chat session, sends are constrained to that session’s target to avoid cross-context leaks.
+* `send`はWhatsAppをゲートウェイ経由でルーティングし、他のチャネルは直接送信します。
+* `poll`はWhatsAppとMS Teamsのためにゲートウェイを使用し、Discordのポールは直接行います。
+* メッセージツールコールがアクティブなチャットセッションにバインドされている場合、送信はそのセッションのターゲットに制約され、コンテキストの漏洩を防ぎます。
 
 ### `cron`
 
-Manage Gateway cron jobs and wakeups.
+ゲートウェイのcronジョブとウェイクアップを管理します。
 
-Core actions:
+コアアクション：
 
 * `status`, `list`
 * `add`, `update`, `remove`, `run`, `runs`
-* `wake` (enqueue system event + optional immediate heartbeat)
+* `wake`（システムイベントをエンキュー + オプションの即時ハートビート）
 
-Notes:
+注意事項：
 
-* `add` expects a full cron job object (same schema as `cron.add` RPC).
-* `update` uses `{ jobId, patch }` (`id` accepted for compatibility).
+* `add`は完全なcronジョブオブジェクトを期待します（`cron.add` RPCと同じスキーマ）。
+* `update`は`{ jobId, patch }`を使用します（互換性のために`id`も受け入れられます）。
 
 ### `gateway`
 
-Restart or apply updates to the running Gateway process (in-place).
+実行中のゲートウェイプロセスを再起動または更新を適用します（インプレース）。
 
-Core actions:
+コアアクション：
 
-* `restart` (authorizes + sends `SIGUSR1` for in-process restart; `openclaw gateway` restart in-place)
+* `restart`（承認 + プロセス内再起動のために`SIGUSR1`を送信；`openclaw gateway`でインプレース再起動）
 * `config.get` / `config.schema`
-* `config.apply` (validate + write config + restart + wake)
-* `config.patch` (merge partial update + restart + wake)
-* `update.run` (run update + restart + wake)
+* `config.apply`（設定を検証 + 書き込み + 再起動 + ウェイク）
+* `config.patch`（部分更新をマージ + 再起動 + ウェイク）
+* `update.run`（更新を実行 + 再起動 + ウェイク）
 
-Notes:
+注意事項：
 
-* Use `delayMs` (defaults to 2000) to avoid interrupting an in-flight reply.
-* `restart` is enabled by default; set `commands.restart: false` to disable it.
+* 進行中の応答を中断しないように`delayMs`（デフォルトは2000）を使用します。
+* `restart`はデフォルトで有効です；無効にするには`commands.restart: false`を設定します。
 
 ### `sessions_list` / `sessions_history` / `sessions_send` / `sessions_spawn` / `session_status`
 
-List sessions, inspect transcript history, or send to another session.
+セッションをリストし、トランスクリプト履歴を調査したり、別のセッションに送信したりします。
 
-Core parameters:
+コアパラメータ：
 
-* `sessions_list`: `kinds?`, `limit?`, `activeMinutes?`, `messageLimit?` (0 = none)
-* `sessions_history`: `sessionKey` (or `sessionId`), `limit?`, `includeTools?`
-* `sessions_send`: `sessionKey` (or `sessionId`), `message`, `timeoutSeconds?` (0 = fire-and-forget)
+* `sessions_list`: `kinds?`, `limit?`, `activeMinutes?`, `messageLimit?`（0 = なし）
+* `sessions_history`: `sessionKey`（または`sessionId`）、`limit?`, `includeTools?`
+* `sessions_send`: `sessionKey`（または`sessionId`）、`message`、`timeoutSeconds?`（0 = fire-and-forget）
 * `sessions_spawn`: `task`, `label?`, `runtime?`, `agentId?`, `model?`, `thinking?`, `cwd?`, `runTimeoutSeconds?`, `thread?`, `mode?`, `cleanup?`
-* `session_status`: `sessionKey?` (default current; accepts `sessionId`), `model?` (`default` clears override)
+* `session_status`: `sessionKey?`（デフォルトは現在；`sessionId`を受け入れ）、`model?`（`default`はオーバーライドをクリア）
 
-Notes:
+注意事項：
 
-* `main` is the canonical direct-chat key; global/unknown are hidden.
-* `messageLimit > 0` fetches last N messages per session (tool messages filtered).
-* Session targeting is controlled by `tools.sessions.visibility` (default `tree`: current session + spawned subagent sessions). If you run a shared agent for multiple users, consider setting `tools.sessions.visibility: "self"` to prevent cross-session browsing.
-* `sessions_send` waits for final completion when `timeoutSeconds > 0`.
-* Delivery/announce happens after completion and is best-effort; `status: "ok"` confirms the agent run finished, not that the announce was delivered.
-* `sessions_spawn` supports `runtime: "subagent" | "acp"` (`subagent` default). For ACP runtime behavior, see [ACP Agents](/tools/acp-agents).
-* `sessions_spawn` starts a sub-agent run and posts an announce reply back to the requester chat.
-  * Supports one-shot mode (`mode: "run"`) and persistent thread-bound mode (`mode: "session"` with `thread: true`).
-  * If `thread: true` and `mode` is omitted, mode defaults to `session`.
-  * `mode: "session"` requires `thread: true`.
-  * If `runTimeoutSeconds` is omitted, OpenClaw uses `agents.defaults.subagents.runTimeoutSeconds` when set; otherwise timeout defaults to `0` (no timeout).
-  * Discord thread-bound flows depend on `session.threadBindings.*` and `channels.discord.threadBindings.*`.
-  * Reply format includes `Status`, `Result`, and compact stats.
-  * `Result` is the assistant completion text; if missing, the latest `toolResult` is used as fallback.
-* Manual completion-mode spawns send directly first, with queue fallback and retry on transient failures (`status: "ok"` means run finished, not that announce delivered).
-* `sessions_spawn` is non-blocking and returns `status: "accepted"` immediately.
-* `sessions_send` runs a reply‑back ping‑pong (reply `REPLY_SKIP` to stop; max turns via `session.agentToAgent.maxPingPongTurns`, 0–5).
-* After the ping‑pong, the target agent runs an **announce step**; reply `ANNOUNCE_SKIP` to suppress the announcement.
-* Sandbox clamp: when the current session is sandboxed and `agents.defaults.sandbox.sessionToolsVisibility: "spawned"`, OpenClaw clamps `tools.sessions.visibility` to `tree`.
+* `main`は正規のダイレクトチャットキーであり、グローバル/未知は非表示です。
+* `messageLimit > 0`は、セッションごとに最後のNメッセージを取得します（ツールメッセージはフィルタリングされます）。
+* セッションターゲティングは`tools.sessions.visibility`によって制御されます（デフォルトは`tree`：現在のセッション + スポーンされたサブエージェントセッション）。複数のユーザーのために共有エージェントを実行する場合、`tools.sessions.visibility: "self"`を設定してクロスセッションの閲覧を防ぐことを検討してください。
+* `sessions_send`は、`timeoutSeconds > 0`のときに最終的な完了を待ちます。
+* 配信/発表は完了後に行われ、最善の努力で行われます；`status: "ok"`はエージェントの実行が完了したことを確認しますが、発表が配信されたことを確認するものではありません。
+* `sessions_spawn`は`runtime: "subagent" | "acp"`をサポートします（`subagent`がデフォルト）。ACPランタイムの動作については[ACP Agents](/tools/acp-agents)を参照してください。
+* `sessions_spawn`はサブエージェントの実行を開始し、リクエスターチャットに発表応答を投稿します。
+  * ワンショットモード（`mode: "run"`）と永続スレッドバウンドモード（`mode: "session"`で`thread: true`）をサポートします。
+  * `thread: true`かつ`mode`が省略された場合、モードはデフォルトで`session`になります。
+  * `mode: "session"`には`thread: true`が必要です。
+  * `runTimeoutSeconds`が省略された場合、OpenClawは設定されている場合に`agents.defaults.subagents.runTimeoutSeconds`を使用します；そうでない場合、タイムアウトはデフォルトで`0`（タイムアウトなし）になります。
+  * Discordのスレッドバウンドフローは、`session.threadBindings.*`および`channels.discord.threadBindings.*`に依存します。
+  * 応答形式には`Status`、`Result`、およびコンパクトな統計が含まれます。
+  * `Result`はアシスタントの完了テキストです；欠落している場合、最新の`toolResult`がフォールバックとして使用されます。
+* 手動完了モードのスポーンは、最初に直接送信し、キューのフォールバックと一時的な失敗時の再試行を行います（`status: "ok"`は実行が完了したことを意味し、発表が配信されたことを意味しません）。
+* `sessions_spawn`はノンブロッキングであり、すぐに`status: "accepted"`を返します。
+* `sessions_send`は応答バックのピンポンを実行します（`REPLY_SKIP`で停止；最大ターンは`session.agentToAgent.maxPingPongTurns`、0–5）。
+* ピンポンの後、ターゲットエージェントは**発表ステップ**を実行します；`ANNOUNCE_SKIP`で発表を抑制します。
+* サンドボックス制限：現在のセッションがサンドボックスされており、`agents.defaults.sandbox.sessionToolsVisibility: "spawned"`の場合、OpenClawは`tools.sessions.visibility`を`tree`に制限します。
 
 ### `agents_list`
 
-List agent ids that the current session may target with `sessions_spawn`.
+現在のセッションが`sessions_spawn`でターゲットにできるエージェントIDをリストします。
 
-Notes:
+注意事項：
 
-* Result is restricted to per-agent allowlists (`agents.list[].subagents.allowAgents`).
-* When `["*"]` is configured, the tool includes all configured agents and marks `allowAny: true`.
+* 結果はエージェントごとの許可リストに制限されます（`agents.list[].subagents.allowAgents`）。
+* `["*"]`が設定されている場合、ツールはすべての設定されたエージェントを含め、`allowAny: true`とマークします。
 
-## Parameters (common)
+## パラメータ（共通）
 
-Gateway-backed tools (`canvas`, `nodes`, `cron`):
+ゲートウェイバックのツール（`canvas`、`nodes`、`cron`）：
 
-* `gatewayUrl` (default `ws://127.0.0.1:18789`)
-* `gatewayToken` (if auth enabled)
+* `gatewayUrl`（デフォルト`ws://127.0.0.1:18789`）
+* `gatewayToken`（認証が有効な場合）
 * `timeoutMs`
 
-Note: when `gatewayUrl` is set, include `gatewayToken` explicitly. Tools do not inherit config
-or environment credentials for overrides, and missing explicit credentials is an error.
+注意：`gatewayUrl`が設定されている場合、`gatewayToken`を明示的に含めてください。ツールはオーバーライドのために設定や環境の資格情報を継承せず、明示的な資格情報が欠落しているのはエラーです。
 
-Browser tool:
+ブラウザツール：
 
-* `profile` (optional; defaults to `browser.defaultProfile`)
-* `target` (`sandbox` | `host` | `node`)
-* `node` (optional; pin a specific node id/name)
+* `profile`（オプション；デフォルトは`browser.defaultProfile`）
+* `target`（`sandbox` | `host` | `node`）
+* `node`（オプション；特定のノードID/名前を固定）
 
-## Recommended agent flows
+## 推奨エージェントフロー
 
-Browser automation:
+ブラウザ自動化：
 
 1. `browser` → `status` / `start`
-2. `snapshot` (ai or aria)
-3. `act` (click/type/press)
-4. `screenshot` if you need visual confirmation
+2. `snapshot`（aiまたはaria）
+3. `act`（クリック/タイプ/押す）
+4. 視覚的確認が必要な場合は`screenshot`
 
-Canvas render:
+キャンバスレンダリング：
 
 1. `canvas` → `present`
-2. `a2ui_push` (optional)
+2. `a2ui_push`（オプション）
 3. `snapshot`
 
-Node targeting:
+ノードターゲティング：
 
 1. `nodes` → `status`
-2. `describe` on the chosen node
+2. 選択したノードで`describe`
 3. `notify` / `run` / `camera_snap` / `screen_record`
 
-## Safety
+## 安全性
 
-* Avoid direct `system.run`; use `nodes` → `run` only with explicit user consent.
-* Respect user consent for camera/screen capture.
-* Use `status/describe` to ensure permissions before invoking media commands.
+* 直接の`system.run`は避けてください；明示的なユーザーの同意がある場合にのみ`nodes` → `run`を使用してください。
+* カメラ/画面キャプチャのためのユーザーの同意を尊重してください。
+* メディアコマンドを呼び出す前に、`status/describe`を使用して権限を確認してください。
 
-## How tools are presented to the agent
+## ツールがエージェントにどのように提示されるか
 
-Tools are exposed in two parallel channels:
+ツールは2つの並行したチャネルで公開されます：
 
-1. **System prompt text**: a human-readable list + guidance.
-2. **Tool schema**: the structured function definitions sent to the model API.
+1. **システムプロンプトテキスト**：人間が読みやすいリスト + ガイダンス。
+2. **ツールスキーマ**：モデルAPIに送信される構造化された関数定義。
 
-That means the agent sees both “what tools exist” and “how to call them.” If a tool
-doesn’t appear in the system prompt or the schema, the model cannot call it.
+つまり、エージェントは「どのツールが存在するか」と「それらをどのように呼び出すか」の両方を見ることができます。ツールがシステムプロンプトやスキーマに表示されない場合、モデルはそれを呼び出すことができません。

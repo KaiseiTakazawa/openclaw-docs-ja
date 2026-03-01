@@ -6,79 +6,59 @@ title: "ゲートウェイランブック"
 
 # Gateway runbook
 
-Use this page for day-1 startup and day-2 operations of the Gateway service.
+このページは、Gatewayサービスの初日のスタートアップと2日目の運用に使用します。
 
+## 5分間のローカルスタートアップ
 
-  
+```bash
+openclaw gateway --port 18789
+# デバッグ/トレースをstdioにミラーリング
+openclaw gateway --port 18789 --verbose
+# 選択したポートのリスナーを強制終了し、その後開始
+openclaw gateway --force
+```
 
-  
+```bash
+openclaw gateway status
+openclaw status
+openclaw logs --follow
+```
 
-  
+正常なベースライン: `Runtime: running` と `RPC probe: ok`。
 
-  
+```bash
+openclaw channels status --probe
+```
 
+Gatewayの設定再読み込みは、アクティブな設定ファイルパスを監視します（プロファイル/状態のデフォルトから解決されるか、設定されている場合は `OPENCLAW_CONFIG_PATH` から）。デフォルトモードは `gateway.reload.mode="hybrid"` です。
 
-## 5-minute local startup
+## 実行モデル
 
+* ルーティング、コントロールプレーン、およびチャネル接続のための常時稼働プロセス。
+* 次のための単一の多重化ポート:
+  * WebSocketコントロール/RPC
+  * HTTP API（OpenAI互換、レスポンス、ツールの呼び出し）
+  * コントロールUIおよびフック
+* デフォルトのバインドモード: `loopback`。
+* 認証はデフォルトで必要です（`gateway.auth.token` / `gateway.auth.password`、または `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`）。
 
-  
-    ```bash
-    openclaw gateway --port 18789
-    # debug/trace mirrored to stdio
-    openclaw gateway --port 18789 --verbose
-    # force-kill listener on selected port, then start
-    openclaw gateway --force
-    ```
-  
+### ポートとバインドの優先順位
 
-  
-    ```bash
-    openclaw gateway status
-    openclaw status
-    openclaw logs --follow
-    ```
+| 設定          | 解決順序                                                  |
+| -------------- | --------------------------------------------------------- |
+| Gatewayポート | `--port` → `OPENCLAW_GATEWAY_PORT` → `gateway.port` → `18789` |
+| バインドモード | CLI/オーバーライド → `gateway.bind` → `loopback`        |
 
-    Healthy baseline: `Runtime: running` and `RPC probe: ok`.
-  
+### ホットリロードモード
 
-  
-    ```bash
-    openclaw channels status --probe
-    ```
-  
-
-
-  Gateway config reload watches the active config file path (resolved from profile/state defaults, or `OPENCLAW_CONFIG_PATH` when set).
-  Default mode is `gateway.reload.mode="hybrid"`.
-
-
-## Runtime model
-
-* One always-on process for routing, control plane, and channel connections.
-* Single multiplexed port for:
-  * WebSocket control/RPC
-  * HTTP APIs (OpenAI-compatible, Responses, tools invoke)
-  * Control UI and hooks
-* Default bind mode: `loopback`.
-* Auth is required by default (`gateway.auth.token` / `gateway.auth.password`, or `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`).
-
-### Port and bind precedence
-
-| Setting      | Resolution order                                              |
-| ------------ | ------------------------------------------------------------- |
-| Gateway port | `--port` → `OPENCLAW_GATEWAY_PORT` → `gateway.port` → `18789` |
-| Bind mode    | CLI/override → `gateway.bind` → `loopback`                    |
-
-### Hot reload modes
-
-| `gateway.reload.mode` | Behavior                                   |
+| `gateway.reload.mode` | 動作                                       |
 | --------------------- | ------------------------------------------ |
-| `off`                 | No config reload                           |
-| `hot`                 | Apply only hot-safe changes                |
-| `restart`             | Restart on reload-required changes         |
-| `hybrid` (default)    | Hot-apply when safe, restart when required |
+| `off`                 | 設定の再読み込みなし                       |
+| `hot`                 | ホットセーフな変更のみ適用               |
+| `restart`             | 再読み込みが必要な変更時に再起動         |
+| `hybrid` (デフォルト) | 安全な場合はホット適用、必要な場合は再起動 |
 
-## Operator command set
+## オペレーターコマンドセット
 
 ```bash
 openclaw gateway status
@@ -92,85 +72,75 @@ openclaw logs --follow
 openclaw doctor
 ```
 
-## Remote access
+## リモートアクセス
 
-Preferred: Tailscale/VPN.
-Fallback: SSH tunnel.
+推奨: Tailscale/VPN。  
+フォールバック: SSHトンネル。
 
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 user@host
 ```
 
-Then connect clients to `ws://127.0.0.1:18789` locally.
+その後、クライアントをローカルで `ws://127.0.0.1:18789` に接続します。
 
+Gatewayの認証が設定されている場合、クライアントはSSHトンネル経由でも認証（`token`/`password`）を送信する必要があります。
 
-  If gateway auth is configured, clients still must send auth (`token`/`password`) even over SSH tunnels.
+参照: [Remote Gateway](/gateway/remote), [Authentication](/gateway/authentication), [Tailscale](/gateway/tailscale)。
 
+## 監視とサービスライフサイクル
 
-See: [Remote Gateway](/gateway/remote), [Authentication](/gateway/authentication), [Tailscale](/gateway/tailscale).
+生産に近い信頼性のために、監視された実行を使用します。
 
-## Supervision and service lifecycle
+```bash
+openclaw gateway install
+openclaw gateway status
+openclaw gateway restart
+openclaw gateway stop
+```
 
-Use supervised runs for production-like reliability.
+LaunchAgentラベルは `ai.openclaw.gateway`（デフォルト）または `ai.openclaw.<profile>`（名前付きプロファイル）です。 `openclaw doctor` はサービス設定のドリフトを監査し修復します。
 
+```bash
+openclaw gateway install
+systemctl --user enable --now openclaw-gateway[-<profile>].service
+openclaw gateway status
+```
 
-  
-    ```bash
-    openclaw gateway install
-    openclaw gateway status
-    openclaw gateway restart
-    openclaw gateway stop
-    ```
+ログアウト後の持続性のために、リンダリングを有効にします：
 
-    LaunchAgent labels are `ai.openclaw.gateway` (default) or `ai.openclaw.<profile>` (named profile). `openclaw doctor` audits and repairs service config drift.
-  
+```bash
+sudo loginctl enable-linger <user>
+```
 
-  
-    ```bash
-    openclaw gateway install
-    systemctl --user enable --now openclaw-gateway[-<profile>].service
-    openclaw gateway status
-    ```
+マルチユーザー/常時稼働ホスト用にシステムユニットを使用します。
 
-    For persistence after logout, enable lingering:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclaw-gateway[-<profile>].service
+```
 
-    ```bash
-    sudo loginctl enable-linger <user>
-    ```
-  
+## 1つのホスト上の複数のゲートウェイ
 
-  
-    Use a system unit for multi-user/always-on hosts.
+ほとんどのセットアップでは **1つの** Gatewayを実行する必要があります。  
+厳密な分離/冗長性のためにのみ複数を使用します（例えば、レスキュープロファイル）。
 
-    ```bash
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now openclaw-gateway[-<profile>].service
-    ```
-  
+インスタンスごとのチェックリスト:
 
+* ユニークな `gateway.port`
+* ユニークな `OPENCLAW_CONFIG_PATH`
+* ユニークな `OPENCLAW_STATE_DIR`
+* ユニークな `agents.defaults.workspace`
 
-## Multiple gateways on one host
-
-Most setups should run **one** Gateway.
-Use multiple only for strict isolation/redundancy (for example a rescue profile).
-
-Checklist per instance:
-
-* Unique `gateway.port`
-* Unique `OPENCLAW_CONFIG_PATH`
-* Unique `OPENCLAW_STATE_DIR`
-* Unique `agents.defaults.workspace`
-
-Example:
+例:
 
 ```bash
 OPENCLAW_CONFIG_PATH=~/.openclaw/a.json OPENCLAW_STATE_DIR=~/.openclaw-a openclaw gateway --port 19001
 OPENCLAW_CONFIG_PATH=~/.openclaw/b.json OPENCLAW_STATE_DIR=~/.openclaw-b openclaw gateway --port 19002
 ```
 
-See: [Multiple gateways](/gateway/multiple-gateways).
+参照: [Multiple gateways](/gateway/multiple-gateways)。
 
-### Dev profile quick path
+### 開発プロファイルのクイックパス
 
 ```bash
 openclaw --dev setup
@@ -178,30 +148,30 @@ openclaw --dev gateway --allow-unconfigured
 openclaw --dev status
 ```
 
-Defaults include isolated state/config and base gateway port `19001`.
+デフォルトには、孤立した状態/設定と基本Gatewayポート `19001` が含まれます。
 
-## Protocol quick reference (operator view)
+## プロトコルクイックリファレンス（オペレーター視点）
 
-* First client frame must be `connect`.
-* Gateway returns `hello-ok` snapshot (`presence`, `health`, `stateVersion`, `uptimeMs`, limits/policy).
-* Requests: `req(method, params)` → `res(ok/payload|error)`.
-* Common events: `connect.challenge`, `agent`, `chat`, `presence`, `tick`, `health`, `heartbeat`, `shutdown`.
+* 最初のクライアントフレームは `connect` でなければなりません。
+* Gatewayは `hello-ok` スナップショット（`presence`、`health`、`stateVersion`、`uptimeMs`、制限/ポリシー）を返します。
+* リクエスト: `req(method, params)` → `res(ok/payload|error)`。
+* 一般的なイベント: `connect.challenge`、`agent`、`chat`、`presence`、`tick`、`health`、`heartbeat`、`shutdown`。
 
-Agent runs are two-stage:
+Agentの実行は二段階です：
 
-1. Immediate accepted ack (`status:"accepted"`)
-2. Final completion response (`status:"ok"|"error"`), with streamed `agent` events in between.
+1. 即時に受け入れられたack（`status:"accepted"`）
+2. 最終的な完了レスポンス（`status:"ok"|"error"`）、その間にストリーミングされた `agent` イベント。
 
-See full protocol docs: [Gateway Protocol](/gateway/protocol).
+完全なプロトコルドキュメントを参照: [Gateway Protocol](/gateway/protocol)。
 
-## Operational checks
+## 運用チェック
 
-### Liveness
+### ライバルネス
 
-* Open WS and send `connect`.
-* Expect `hello-ok` response with snapshot.
+* WSを開いて `connect` を送信します。
+* スナップショットを伴う `hello-ok` レスポンスを期待します。
 
-### Readiness
+### レディネス
 
 ```bash
 openclaw gateway status
@@ -209,30 +179,30 @@ openclaw channels status --probe
 openclaw health
 ```
 
-### Gap recovery
+### ギャップ回復
 
-Events are not replayed. On sequence gaps, refresh state (`health`, `system-presence`) before continuing.
+イベントは再生されません。シーケンスのギャップがある場合は、続行する前に状態を更新します（`health`、`system-presence`）。
 
-## Common failure signatures
+## 一般的な失敗シグネチャ
 
-| Signature                                                      | Likely issue                             |
-| -------------------------------------------------------------- | ---------------------------------------- |
-| `refusing to bind gateway ... without auth`                    | Non-loopback bind without token/password |
-| `another gateway instance is already listening` / `EADDRINUSE` | Port conflict                            |
-| `Gateway start blocked: set gateway.mode=local`                | Config set to remote mode                |
-| `unauthorized` during connect                                  | Auth mismatch between client and gateway |
+| シグネチャ                                                      | 考えられる問題                             |
+| -------------------------------------------------------------- | ------------------------------------------ |
+| `refusing to bind gateway ... without auth`                    | トークン/パスワードなしのループバック外バインド |
+| `another gateway instance is already listening` / `EADDRINUSE` | ポートの競合                              |
+| `Gateway start blocked: set gateway.mode=local`                | 設定がリモートモードに設定されている       |
+| `unauthorized` during connect                                  | クライアントとGateway間の認証不一致       |
 
-For full diagnosis ladders, use [Gateway Troubleshooting](/gateway/troubleshooting).
+完全な診断ラダーについては、[Gateway Troubleshooting](/gateway/troubleshooting)を使用してください。
 
-## Safety guarantees
+## 安全保証
 
-* Gateway protocol clients fail fast when Gateway is unavailable (no implicit direct-channel fallback).
-* Invalid/non-connect first frames are rejected and closed.
-* Graceful shutdown emits `shutdown` event before socket close.
+* Gatewayプロトコルクライアントは、Gatewayが利用できない場合に迅速に失敗します（暗黙の直接チャネルフォールバックなし）。
+* 無効または接続されていない最初のフレームは拒否され、閉じられます。
+* 優雅なシャットダウンは、ソケットを閉じる前に `shutdown` イベントを発信します。
 
 ***
 
-Related:
+関連:
 
 * [Troubleshooting](/gateway/troubleshooting)
 * [Background Process](/gateway/background-process)

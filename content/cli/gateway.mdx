@@ -6,77 +6,76 @@ title: "gateway"
 
 # Gateway CLI
 
-The Gateway is OpenClaw’s WebSocket server (channels, nodes, sessions, hooks).
+GatewayはOpenClawのWebSocketサーバーです（チャネル、ノード、セッション、フック）。
 
-Subcommands in this page live under `openclaw gateway …`.
+このページのサブコマンドは`openclaw gateway …`の下にあります。
 
-Related docs:
+関連ドキュメント:
 
 * [/gateway/bonjour](/gateway/bonjour)
 * [/gateway/discovery](/gateway/discovery)
 * [/gateway/configuration](/gateway/configuration)
 
-## Run the Gateway
+## Gatewayを実行する
 
-Run a local Gateway process:
+ローカルのGatewayプロセスを実行します:
 
 ```bash
 openclaw gateway
 ```
 
-Foreground alias:
+フォアグラウンドエイリアス:
 
 ```bash
 openclaw gateway run
 ```
 
-Notes:
+注意事項:
 
-* By default, the Gateway refuses to start unless `gateway.mode=local` is set in `~/.openclaw/openclaw.json`. Use `--allow-unconfigured` for ad-hoc/dev runs.
-* Binding beyond loopback without auth is blocked (safety guardrail).
-* `SIGUSR1` triggers an in-process restart when authorized (`commands.restart` is enabled by default; set `commands.restart: false` to block manual restart, while gateway tool/config apply/update remain allowed).
-* `SIGINT`/`SIGTERM` handlers stop the gateway process, but they don’t restore any custom terminal state. If you wrap the CLI with a TUI or raw-mode input, restore the terminal before exit.
+* デフォルトでは、`~/.openclaw/openclaw.json`に`gateway.mode=local`が設定されていないとGatewayは起動を拒否します。アドホック/開発用の実行には`--allow-unconfigured`を使用してください。
+* 認証なしでループバックを超えたバインディングはブロックされます（安全ガードレール）。
+* `SIGUSR1`は認証されている場合にプロセス内再起動をトリガーします（`commands.restart`はデフォルトで有効です; 手動再起動をブロックするには`commands.restart: false`を設定し、gatewayツール/設定の適用/更新は許可されます）。
+* `SIGINT`/`SIGTERM`ハンドラーはGatewayプロセスを停止しますが、カスタムターミナル状態は復元しません。CLIをTUIまたは生モード入力でラップする場合は、終了前にターミナルを復元してください。
 
 ### オプション
 
-* `--port <port>`: WebSocket port (default comes from config/env; usually `18789`).
-* `--bind <loopback|lan|tailnet|auto|custom>`: listener bind mode.
-* `--auth <token|password>`: auth mode override.
-* `--token <token>`: token override (also sets `OPENCLAW_GATEWAY_TOKEN` for the process).
-* `--password <password>`: password override (also sets `OPENCLAW_GATEWAY_PASSWORD` for the process).
-* `--tailscale <off|serve|funnel>`: expose the Gateway via Tailscale.
-* `--tailscale-reset-on-exit`: reset Tailscale serve/funnel config on shutdown.
-* `--allow-unconfigured`: allow gateway start without `gateway.mode=local` in config.
-* `--dev`: create a dev config + workspace if missing (skips BOOTSTRAP.md).
-* `--reset`: reset dev config + credentials + sessions + workspace (requires `--dev`).
-* `--force`: kill any existing listener on the selected port before starting.
-* `--verbose`: verbose logs.
-* `--claude-cli-logs`: only show claude-cli logs in the console (and enable its stdout/stderr).
-* `--ws-log <auto|full|compact>`: websocket log style (default `auto`).
-* `--compact`: alias for `--ws-log compact`.
-* `--raw-stream`: log raw model stream events to jsonl.
-* `--raw-stream-path <path>`: raw stream jsonl path.
+* `--port <port>`: WebSocketポート（デフォルトは設定/環境から取得; 通常は`18789`）。
+* `--bind <loopback|lan|tailnet|auto|custom>`: リスナーのバインドモード。
+* `--auth <token|password>`: 認証モードのオーバーライド。
+* `--token <token>`: トークンのオーバーライド（プロセスのために`OPENCLAW_GATEWAY_TOKEN`も設定）。
+* `--password <password>`: パスワードのオーバーライド（プロセスのために`OPENCLAW_GATEWAY_PASSWORD`も設定）。
+* `--tailscale <off|serve|funnel>`: Tailscale経由でGatewayを公開。
+* `--tailscale-reset-on-exit`: シャットダウン時にTailscaleのserve/funnel設定をリセット。
+* `--allow-unconfigured`: 設定に`gateway.mode=local`がなくてもGatewayの起動を許可。
+* `--dev`: 存在しない場合はdev設定+ワークスペースを作成（BOOTSTRAP.mdをスキップ）。
+* `--reset`: dev設定+資格情報+セッション+ワークスペースをリセット（`--dev`が必要）。
+* `--force`: 開始前に選択したポートで既存のリスナーを強制終了。
+* `--verbose`: 詳細ログ。
+* `--claude-cli-logs`: コンソールにclaude-cliログのみを表示（そのstdout/stderrも有効）。
+* `--ws-log <auto|full|compact>`: websocketログスタイル（デフォルトは`auto`）。
+* `--compact`: `--ws-log compact`のエイリアス。
+* `--raw-stream`: 生モデルストリームイベントをjsonlにログ。
+* `--raw-stream-path <path>`: 生ストリームjsonlパス。
 
-## Query a running Gateway
+## 実行中のGatewayをクエリする
 
-All query commands use WebSocket RPC.
+すべてのクエリコマンドはWebSocket RPCを使用します。
 
-Output modes:
+出力モード:
 
-* Default: human-readable (colored in TTY).
-* `--json`: machine-readable JSON (no styling/spinner).
-* `--no-color` (or `NO_COLOR=1`): disable ANSI while keeping human layout.
+* デフォルト: 人間が読みやすい（TTYで色付け）。
+* `--json`: 機械が読みやすいJSON（スタイリング/スピナーなし）。
+* `--no-color`（または`NO_COLOR=1`）: 人間のレイアウトを維持しつつANSIを無効に。
 
-Shared options (where supported):
+共有オプション（サポートされている場合）:
 
-* `--url <url>`: Gateway WebSocket URL.
-* `--token <token>`: Gateway token.
-* `--password <password>`: Gateway password.
-* `--timeout <ms>`: timeout/budget (varies per command).
-* `--expect-final`: wait for a “final” response (agent calls).
+* `--url <url>`: Gateway WebSocket URL。
+* `--token <token>`: Gatewayトークン。
+* `--password <password>`: Gatewayパスワード。
+* `--timeout <ms>`: タイムアウト/予算（コマンドごとに異なる）。
+* `--expect-final`: “最終”レスポンスを待つ（エージェント呼び出し）。
 
-Note: when you set `--url`, the CLI does not fall back to config or environment credentials.
-Pass `--token` or `--password` explicitly. Missing explicit credentials is an error.
+注意: `--url`を設定すると、CLIは設定や環境の資格情報にフォールバックしません。`--token`または`--password`を明示的に渡してください。明示的な資格情報が欠けているとエラーになります。
 
 ### `gateway health`
 
@@ -86,67 +85,67 @@ openclaw gateway health --url ws://127.0.0.1:18789
 
 ### `gateway status`
 
-`gateway status` shows the Gateway service (launchd/systemd/schtasks) plus an optional RPC probe.
+`gateway status`はGatewayサービス（launchd/systemd/schtasks）を表示し、オプションのRPCプローブを追加します。
 
 ```bash
 openclaw gateway status
 openclaw gateway status --json
 ```
 
-Options:
+オプション:
 
-* `--url <url>`: override the probe URL.
-* `--token <token>`: token auth for the probe.
-* `--password <password>`: password auth for the probe.
-* `--timeout <ms>`: probe timeout (default `10000`).
-* `--no-probe`: skip the RPC probe (service-only view).
-* `--deep`: scan system-level services too.
+* `--url <url>`: プローブURLをオーバーライド。
+* `--token <token>`: プローブ用のトークン認証。
+* `--password <password>`: プローブ用のパスワード認証。
+* `--timeout <ms>`: プローブタイムアウト（デフォルトは`10000`）。
+* `--no-probe`: RPCプローブをスキップ（サービスのみのビュー）。
+* `--deep`: システムレベルのサービスもスキャン。
 
 ### `gateway probe`
 
-`gateway probe` is the “debug everything” command. It always probes:
+`gateway probe`は「すべてをデバッグ」するコマンドです。常にプローブを実行します:
 
-* your configured remote gateway (if set), and
-* localhost (loopback) **even if remote is configured**.
+* 設定されたリモートGateway（もしあれば）、および
+* localhost（ループバック）**リモートが設定されていても**。
 
-If multiple gateways are reachable, it prints all of them. Multiple gateways are supported when you use isolated profiles/ports (e.g., a rescue bot), but most installs still run a single gateway.
+複数のGatewayにアクセス可能な場合、それらすべてを表示します。複数のGatewayは、孤立したプロファイル/ポートを使用する場合（例: レスキューボット）にサポートされますが、ほとんどのインストールでは単一のGatewayが実行されます。
 
 ```bash
 openclaw gateway probe
 openclaw gateway probe --json
 ```
 
-#### Remote over SSH (Mac app parity)
+#### SSH経由のリモート（Macアプリの互換性）
 
-The macOS app “Remote over SSH” mode uses a local port-forward so the remote gateway (which may be bound to loopback only) becomes reachable at `ws://127.0.0.1:<port>`.
+macOSアプリの「SSH経由のリモート」モードは、ローカルポートフォワードを使用してリモートGateway（ループバックのみにバインドされている可能性がある）が`ws://127.0.0.1:<port>`で到達可能になります。
 
-CLI equivalent:
+CLIの同等:
 
 ```bash
 openclaw gateway probe --ssh user@gateway-host
 ```
 
-Options:
+オプション:
 
-* `--ssh <target>`: `user@host` or `user@host:port` (port defaults to `22`).
-* `--ssh-identity <path>`: identity file.
-* `--ssh-auto`: pick the first discovered gateway host as SSH target (LAN/WAB only).
+* `--ssh <target>`: `user@host`または`user@host:port`（ポートはデフォルトで`22`）。
+* `--ssh-identity <path>`: アイデンティティファイル。
+* `--ssh-auto`: 最初に発見されたGatewayホストをSSHターゲットとして選択（LAN/WABのみ）。
 
-Config (optional, used as defaults):
+設定（オプション、デフォルトとして使用）:
 
 * `gateway.remote.sshTarget`
 * `gateway.remote.sshIdentity`
 
 ### `gateway call <method>`
 
-Low-level RPC helper.
+低レベルRPCヘルパー。
 
 ```bash
 openclaw gateway call status
 openclaw gateway call logs.tail --params '{"sinceMs": 60000}'
 ```
 
-## Manage the Gateway service
+## Gatewayサービスを管理する
 
 ```bash
 openclaw gateway install
@@ -156,29 +155,29 @@ openclaw gateway restart
 openclaw gateway uninstall
 ```
 
-Notes:
+注意事項:
 
-* `gateway install` supports `--port`, `--runtime`, `--token`, `--force`, `--json`.
-* Lifecycle commands accept `--json` for scripting.
+* `gateway install`は`--port`、`--runtime`、`--token`、`--force`、`--json`をサポートします。
+* ライフサイクルコマンドはスクリプト用に`--json`を受け入れます。
 
-## Discover gateways (Bonjour)
+## Gatewayを発見する（Bonjour）
 
-`gateway discover` scans for Gateway beacons (`_openclaw-gw._tcp`).
+`gateway discover`はGatewayビーコン（`_openclaw-gw._tcp`）をスキャンします。
 
-* Multicast DNS-SD: `local.`
-* Unicast DNS-SD (Wide-Area Bonjour): choose a domain (example: `openclaw.internal.`) and set up split DNS + a DNS server; see [/gateway/bonjour](/gateway/bonjour)
+* マルチキャストDNS-SD: `local.`
+* ユニキャストDNS-SD（広域Bonjour）: ドメインを選択（例: `openclaw.internal.`）し、スプリットDNSとDNSサーバーを設定; [/gateway/bonjour](/gateway/bonjour)を参照
 
-Only gateways with Bonjour discovery enabled (default) advertise the beacon.
+Bonjour発見が有効なGatewayのみがビーコンを広告します（デフォルト）。
 
-Wide-Area discovery records include (TXT):
+広域発見レコードには（TXT）以下が含まれます:
 
-* `role` (gateway role hint)
-* `transport` (transport hint, e.g. `gateway`)
-* `gatewayPort` (WebSocket port, usually `18789`)
-* `sshPort` (SSH port; defaults to `22` if not present)
-* `tailnetDns` (MagicDNS hostname, when available)
-* `gatewayTls` / `gatewayTlsSha256` (TLS enabled + cert fingerprint)
-* `cliPath` (optional hint for remote installs)
+* `role`（Gatewayの役割ヒント）
+* `transport`（トランスポートヒント、例: `gateway`）
+* `gatewayPort`（WebSocketポート、通常は`18789`）
+* `sshPort`（SSHポート; 存在しない場合はデフォルトで`22`）
+* `tailnetDns`（MagicDNSホスト名、利用可能な場合）
+* `gatewayTls` / `gatewayTlsSha256`（TLS有効 + 証明書フィンガープリント）
+* `cliPath`（リモートインストール用のオプションヒント）
 
 ### `gateway discover`
 
@@ -186,12 +185,12 @@ Wide-Area discovery records include (TXT):
 openclaw gateway discover
 ```
 
-Options:
+オプション:
 
-* `--timeout <ms>`: per-command timeout (browse/resolve); default `2000`.
-* `--json`: machine-readable output (also disables styling/spinner).
+* `--timeout <ms>`: コマンドごとのタイムアウト（ブラウズ/解決）；デフォルトは`2000`。
+* `--json`: 機械が読みやすい出力（スタイリング/スピナーも無効）。
 
-Examples:
+例:
 
 ```bash
 openclaw gateway discover --timeout 4000

@@ -6,26 +6,26 @@ title: "Tools Invoke API"
 
 # Tools Invoke (HTTP)
 
-OpenClaw’s Gateway exposes a simple HTTP endpoint for invoking a single tool directly. It is always enabled, but gated by Gateway auth and tool policy.
+OpenClawのGatewayは、単一のツールを直接呼び出すためのシンプルなHTTPエンドポイントを公開しています。常に有効ですが、Gatewayの認証とツールポリシーによって制限されています。
 
 * `POST /tools/invoke`
-* Same port as the Gateway (WS + HTTP multiplex): `http://<gateway-host>:<port>/tools/invoke`
+* Gatewayと同じポート（WS + HTTPマルチプレクス）： `http://<gateway-host>:<port>/tools/invoke`
 
-Default max payload size is 2 MB.
+デフォルトの最大ペイロードサイズは2 MBです。
 
 ## 認証
 
-Uses the Gateway auth configuration. Send a bearer token:
+Gatewayの認証設定を使用します。ベアラートークンを送信してください：
 
 * `Authorization: Bearer <token>`
 
-Notes:
+注意事項：
 
-* When `gateway.auth.mode="token"`, use `gateway.auth.token` (or `OPENCLAW_GATEWAY_TOKEN`).
-* When `gateway.auth.mode="password"`, use `gateway.auth.password` (or `OPENCLAW_GATEWAY_PASSWORD`).
-* If `gateway.auth.rateLimit` is configured and too many auth failures occur, the endpoint returns `429` with `Retry-After`.
+* `gateway.auth.mode="token"` の場合、 `gateway.auth.token` （または `OPENCLAW_GATEWAY_TOKEN`）を使用します。
+* `gateway.auth.mode="password"` の場合、 `gateway.auth.password` （または `OPENCLAW_GATEWAY_PASSWORD`）を使用します。
+* `gateway.auth.rateLimit` が設定されていて、認証失敗が多すぎると、エンドポイントは `429` を返し、 `Retry-After` を含みます。
 
-## Request body
+## リクエストボディ
 
 ```json
 {
@@ -37,62 +37,62 @@ Notes:
 }
 ```
 
-Fields:
+フィールド：
 
-* `tool` (string, required): tool name to invoke.
-* `action` (string, optional): mapped into args if the tool schema supports `action` and the args payload omitted it.
-* `args` (object, optional): tool-specific arguments.
-* `sessionKey` (string, optional): target session key. If omitted or `"main"`, the Gateway uses the configured main session key (honors `session.mainKey` and default agent, or `global` in global scope).
-* `dryRun` (boolean, optional): reserved for future use; currently ignored.
+* `tool` (string, 必須): 呼び出すツールの名前。
+* `action` (string, 任意): ツールスキーマが `action` をサポートし、argsペイロードが省略されている場合にargsにマッピングされます。
+* `args` (object, 任意): ツール固有の引数。
+* `sessionKey` (string, 任意): 対象のセッションキー。省略されるか `"main"` の場合、Gatewayは設定されたメインセッションキーを使用します（`session.mainKey` とデフォルトエージェント、またはグローバルスコープでの `global` を尊重します）。
+* `dryRun` (boolean, 任意): 将来の使用のために予約されています; 現在は無視されます。
 
-## Policy + routing behavior
+## ポリシー + ルーティング動作
 
-Tool availability is filtered through the same policy chain used by Gateway agents:
+ツールの可用性は、Gatewayエージェントによって使用されるのと同じポリシーチェーンを通じてフィルタリングされます：
 
 * `tools.profile` / `tools.byProvider.profile`
 * `tools.allow` / `tools.byProvider.allow`
 * `agents.<id>.tools.allow` / `agents.<id>.tools.byProvider.allow`
-* group policies (if the session key maps to a group or channel)
-* subagent policy (when invoking with a subagent session key)
+* グループポリシー（セッションキーがグループまたはチャンネルにマッピングされている場合）
+* サブエージェントポリシー（サブエージェントセッションキーで呼び出す場合）
 
-If a tool is not allowed by policy, the endpoint returns **404**.
+ポリシーによってツールが許可されていない場合、エンドポイントは **404** を返します。
 
-Gateway HTTP also applies a hard deny list by default (even if session policy allows the tool):
+Gateway HTTPはデフォルトでハードデナイリストも適用します（セッションポリシーがツールを許可していても）：
 
 * `sessions_spawn`
 * `sessions_send`
 * `gateway`
 * `whatsapp_login`
 
-You can customize this deny list via `gateway.tools`:
+このデナイリストは `gateway.tools` を介してカスタマイズできます：
 
 ```json5
 {
   gateway: {
     tools: {
-      // Additional tools to block over HTTP /tools/invoke
+      // HTTP /tools/invokeでブロックする追加のツール
       deny: ["browser"],
-      // Remove tools from the default deny list
+      // デフォルトのデナイリストからツールを削除
       allow: ["gateway"],
     },
   },
 }
 ```
 
-To help group policies resolve context, you can optionally set:
+グループポリシーがコンテキストを解決するのを助けるために、オプションで設定できます：
 
-* `x-openclaw-message-channel: <channel>` (example: `slack`, `telegram`)
-* `x-openclaw-account-id: <accountId>` (when multiple accounts exist)
+* `x-openclaw-message-channel: <channel>` （例: `slack`, `telegram`）
+* `x-openclaw-account-id: <accountId>` （複数のアカウントが存在する場合）
 
-## Responses
+## レスポンス
 
 * `200` → `{ ok: true, result }`
-* `400` → `{ ok: false, error: { type, message } }` (invalid request or tool input error)
-* `401` → unauthorized
-* `429` → auth rate-limited (`Retry-After` set)
-* `404` → tool not available (not found or not allowlisted)
-* `405` → method not allowed
-* `500` → `{ ok: false, error: { type, message } }` (unexpected tool execution error; sanitized message)
+* `400` → `{ ok: false, error: { type, message } }` （無効なリクエストまたはツール入力エラー）
+* `401` → 認証されていない
+* `429` → 認証レート制限（`Retry-After` が設定されている）
+* `404` → ツールが利用できない（見つからないか、許可されていない）
+* `405` → メソッドが許可されていない
+* `500` → `{ ok: false, error: { type, message } }` （予期しないツール実行エラー; サニタイズされたメッセージ）
 
 ## 例
 

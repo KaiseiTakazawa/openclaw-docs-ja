@@ -6,45 +6,45 @@ title: "directory"
 
 # `openclaw directory`
 
-Directory lookups for channels that support it (contacts/peers, groups, and “me”).
+ディレクトリ検索は、サポートされているチャンネル（連絡先/ピア、グループ、そして「自分」）のためのものです。
 
 ## 共通フラグ
 
-* `--channel <name>`: channel id/alias (required when multiple channels are configured; auto when only one is configured)
-* `--account <id>`: account id (default: channel default)
-* `--json`: output JSON
+* `--channel <name>`: チャンネルID/エイリアス（複数のチャンネルが設定されている場合は必須；1つだけ設定されている場合は自動）
+* `--account <id>`: アカウントID（デフォルト: チャンネルのデフォルト）
+* `--json`: JSON形式で出力
 
 ## 注意事項
 
-* `directory` is meant to help you find IDs you can paste into other commands (especially `openclaw message send --target ...`).
-* For many channels, results are config-backed (allowlists / configured groups) rather than a live provider directory.
-* Default output is `id` (and sometimes `name`) separated by a tab; use `--json` for scripting.
+* `directory` は、他のコマンドにペーストできるIDを見つける手助けをすることを目的としています（特に `openclaw message send --target ...`）。
+* 多くのチャンネルでは、結果はライブプロバイダーディレクトリではなく、設定に基づいています（許可リスト/設定されたグループ）。
+* デフォルトの出力は `id`（時には `name`）がタブで区切られたものです；スクリプト用には `--json` を使用してください。
 
-## Using results with `message send`
+## `message send` での結果の使用
 
 ```bash
 openclaw directory peers list --channel slack --query "U0"
 openclaw message send --channel slack --target user:U012ABCDEF --message "hello"
 ```
 
-## ID formats (by channel)
+## IDフォーマット（チャンネル別）
 
-* WhatsApp: `+15551234567` (DM), `1234567890-1234567890@g.us` (group)
-* Telegram: `@username` or numeric chat id; groups are numeric ids
-* Slack: `user:U…` and `channel:C…`
-* Discord: `user:<id>` and `channel:<id>`
-* Matrix (plugin): `user:@user:server`, `room:!roomId:server`, or `#alias:server`
-* Microsoft Teams (plugin): `user:<id>` and `conversation:<id>`
-* Zalo (plugin): user id (Bot API)
-* Zalo Personal / `zalouser` (plugin): thread id (DM/group) from `zca` (`me`, `friend list`, `group list`)
+* WhatsApp: `+15551234567`（DM）、`1234567890-1234567890@g.us`（グループ）
+* Telegram: `@username` または数値チャットID；グループは数値ID
+* Slack: `user:U…` および `channel:C…`
+* Discord: `user:<id>` および `channel:<id>`
+* Matrix（プラグイン）: `user:@user:server`、`room:!roomId:server`、または `#alias:server`
+* Microsoft Teams（プラグイン）: `user:<id>` および `conversation:<id>`
+* Zalo（プラグイン）: ユーザーID（Bot API）
+* Zalo Personal / `zalouser`（プラグイン）: `zca` からのスレッドID（DM/グループ）（`me`、`friend list`、`group list`）
 
-## Self (“me”)
+## 自分（“me”）
 
 ```bash
 openclaw directory self --channel zalouser
 ```
 
-## Peers (contacts/users)
+## ピア（連絡先/ユーザー）
 
 ```bash
 openclaw directory peers list --channel zalouser

@@ -6,121 +6,83 @@ title: "はじめに"
 
 # はじめに
 
-Goal: go from zero to a first working chat with minimal setup.
+目標: 最小限のセットアップでゼロから最初の動作するチャットを作成すること。
 
+  最速のチャット: コントロールUIを開く（チャンネルのセットアップは不要）。`openclaw dashboard`を実行してブラウザでチャットするか、ゲートウェイホストで`http://127.0.0.1:18789/`を開きます。
+  ドキュメント: [ダッシュボード](/web/dashboard) と [コントロールUI](/web/control-ui)。
 
-  Fastest chat: open the Control UI (no channel setup needed). Run `openclaw dashboard`
-  and chat in the browser, or open `http://127.0.0.1:18789/` on the
-  gateway host.
-  Docs: [Dashboard](/web/dashboard) and [Control UI](/web/control-ui).
+## 前提条件
 
+* Node 22 以上
 
-## Prereqs
+  不明な場合は、`node --version`でNodeのバージョンを確認してください。
 
-* Node 22 or newer
+## クイックセットアップ (CLI)
 
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
 
-  Check your Node version with `node --version` if you are unsure.
+<img src="https://mintcdn.com/clawdhub/A8OxQpxR3DcyCCHY/assets/install-script.svg?fit=max&auto=format&n=A8OxQpxR3DcyCCHY&q=85&s=461cd845ecef4a1e5bda13a958ab6eac" alt="インストールスクリプトのプロセス" className="rounded-lg" width="1370" height="581" />
 
+```powershell
+iwr -useb https://openclaw.ai/install.ps1 | iex
+```
 
-## Quick setup (CLI)
+他のインストール方法と要件: [インストール](/install)。
 
+```bash
+openclaw onboard --install-daemon
+```
 
-  
-    
-      
-        ```bash
-        curl -fsSL https://openclaw.ai/install.sh | bash
-        ```
+ウィザードが認証、ゲートウェイ設定、およびオプションのチャンネルを構成します。詳細については[オンボーディングウィザード](/start/wizard)を参照してください。
 
-        <img src="https://mintcdn.com/clawdhub/A8OxQpxR3DcyCCHY/assets/install-script.svg?fit=max&auto=format&n=A8OxQpxR3DcyCCHY&q=85&s=461cd845ecef4a1e5bda13a958ab6eac" alt="Install Script Process" className="rounded-lg" width="1370" height="581" />
-      
+サービスをインストールした場合、すでに実行中であるはずです：
 
-      
-        ```powershell
-        iwr -useb https://openclaw.ai/install.ps1 | iex
-        ```
-      
-    
+```bash
+openclaw gateway status
+```
 
-    
-      Other install methods and requirements: [Install](/install).
-    
-  
+```bash
+openclaw dashboard
+```
 
-  
-    ```bash
-    openclaw onboard --install-daemon
-    ```
+コントロールUIが読み込まれれば、あなたのGatewayは使用可能です。
 
-    The wizard configures auth, gateway settings, and optional channels.
-    See [Onboarding Wizard](/start/wizard) for details.
-  
+## オプションのチェックと追加機能
 
-  
-    If you installed the service, it should already be running:
+クイックテストやトラブルシューティングに便利です。
 
-    ```bash
-    openclaw gateway status
-    ```
-  
+```bash
+openclaw gateway --port 18789
+```
 
-  
-    ```bash
-    openclaw dashboard
-    ```
-  
+構成されたチャンネルが必要です。
 
+```bash
+openclaw message send --target +15555550123 --message "Hello from OpenClaw"
+```
 
-  If the Control UI loads, your Gateway is ready for use.
+## 有用な環境変数
 
+OpenClawをサービスアカウントとして実行する場合やカスタムの設定/状態の場所を指定したい場合：
 
-## Optional checks and extras
+* `OPENCLAW_HOME` は内部パス解決に使用されるホームディレクトリを設定します。
+* `OPENCLAW_STATE_DIR` は状態ディレクトリをオーバーライドします。
+* `OPENCLAW_CONFIG_PATH` は設定ファイルのパスをオーバーライドします。
 
+完全な環境変数のリファレンス: [環境変数](/help/environment)。
 
-  
-    Useful for quick tests or troubleshooting.
+## 深く掘り下げる
 
-    ```bash
-    openclaw gateway --port 18789
-    ```
-  
+## あなたが得られるもの
 
-  
-    Requires a configured channel.
+* 実行中のGateway
+* 設定された認証
+* コントロールUIへのアクセスまたは接続されたチャンネル
 
-    ```bash
-    openclaw message send --target +15555550123 --message "Hello from OpenClaw"
-    ```
-  
+## 次のステップ
 
-
-## Useful environment variables
-
-If you run OpenClaw as a service account or want custom config/state locations:
-
-* `OPENCLAW_HOME` sets the home directory used for internal path resolution.
-* `OPENCLAW_STATE_DIR` overrides the state directory.
-* `OPENCLAW_CONFIG_PATH` overrides the config file path.
-
-Full environment variable reference: [Environment vars](/help/environment).
-
-## Go deeper
-
-
-  
-
-  
-
-
-## What you will have
-
-* A running Gateway
-* Auth configured
-* Control UI access or a connected channel
-
-## Next steps
-
-* DM safety and approvals: [Pairing](/channels/pairing)
-* Connect more channels: [Channels](/channels)
-* Advanced workflows and from source: [Setup](/start/setup)
+* DMの安全性と承認: [ペアリング](/channels/pairing)
+* さらに多くのチャンネルを接続: [チャンネル](/channels)
+* 高度なワークフローとソースからの設定: [セットアップ](/start/setup)

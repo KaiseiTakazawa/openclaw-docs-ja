@@ -4,63 +4,63 @@ title: "Voice Wake"
 
 # Voice Wake
 
-# Voice Wake & Push-to-Talk
+# Voice Wake & プッシュ・トゥ・トーク
 
-## Modes
+## モード
 
-* **Wake-word mode** (default): always-on Speech recognizer waits for trigger tokens (`swabbleTriggerWords`). On match it starts capture, shows the overlay with partial text, and auto-sends after silence.
-* **Push-to-talk (Right Option hold)**: hold the right Option key to capture immediately—no trigger needed. The overlay appears while held; releasing finalizes and forwards after a short delay so you can tweak text.
+* **ウェイクワードモード**（デフォルト）：常にオンの音声認識器がトリガートークン（`swabbleTriggerWords`）を待機します。一致するとキャプチャを開始し、部分テキストを表示し、サイレンスの後に自動送信します。
+* **プッシュ・トゥ・トーク（右オプションキーを押し続ける）**：右オプションキーを押し続けることで即座にキャプチャします—トリガーは必要ありません。押し続けている間はオーバーレイが表示され、放すと短い遅延の後に確定し、テキストを調整できます。
 
-## Runtime behavior (wake-word)
+## ランタイム動作（ウェイクワード）
 
-* Speech recognizer lives in `VoiceWakeRuntime`.
-* Trigger only fires when there’s a **meaningful pause** between the wake word and the next word (\~0.55s gap). The overlay/chime can start on the pause even before the command begins.
-* Silence windows: 2.0s when speech is flowing, 5.0s if only the trigger was heard.
-* Hard stop: 120s to prevent runaway sessions.
-* Debounce between sessions: 350ms.
-* Overlay is driven via `VoiceWakeOverlayController` with committed/volatile coloring.
-* After send, recognizer restarts cleanly to listen for the next trigger.
+* 音声認識器は `VoiceWakeRuntime` に存在します。
+* トリガーは、ウェイクワードと次の単語の間に**意味のあるポーズ**（約0.55秒のギャップ）があるときのみ発火します。コマンドが始まる前にポーズ中にオーバーレイ/チャイムが開始されることがあります。
+* サイレンスウィンドウ：スピーチが流れているときは2.0秒、トリガーのみが聞こえた場合は5.0秒。
+* ハードストップ：120秒でランawayセッションを防ぎます。
+* セッション間のデバウンス：350ms。
+* オーバーレイは `VoiceWakeOverlayController` を介して、コミットされた/揮発性の色付けで制御されます。
+* 送信後、認識器は次のトリガーを聞くためにクリーンに再起動します。
 
-## Lifecycle invariants
+## ライフサイクル不変条件
 
-* If Voice Wake is enabled and permissions are granted, the wake-word recognizer should be listening (except during an explicit push-to-talk capture).
-* Overlay visibility (including manual dismiss via the X button) must never prevent the recognizer from resuming.
+* Voice Wakeが有効で、権限が付与されている場合、ウェイクワード認識器はリスニングしている必要があります（明示的なプッシュ・トゥ・トークキャプチャ中を除く）。
+* オーバーレイの可視性（Xボタンによる手動の閉じるを含む）は、認識器が再開するのを妨げてはいけません。
 
-## Sticky overlay failure mode (previous)
+## スティッキーオーバーレイ失敗モード（以前）
 
-Previously, if the overlay got stuck visible and you manually closed it, Voice Wake could appear “dead” because the runtime’s restart attempt could be blocked by overlay visibility and no subsequent restart was scheduled.
+以前は、オーバーレイが表示されたまま固まって手動で閉じた場合、Voice Wakeが「死んでいる」ように見えることがありました。これは、ランタイムの再起動試行がオーバーレイの可視性によってブロックされ、以降の再起動がスケジュールされなかったためです。
 
-Hardening:
+強化：
 
-* Wake runtime restart is no longer blocked by overlay visibility.
-* Overlay dismiss completion triggers a `VoiceWakeRuntime.refresh(...)` via `VoiceSessionCoordinator`, so manual X-dismiss always resumes listening.
+* ウェイクランタイムの再起動は、もはやオーバーレイの可視性によってブロックされません。
+* オーバーレイの閉じる完了は、`VoiceSessionCoordinator` を介して `VoiceWakeRuntime.refresh(...)` をトリガーするため、手動のX閉じるは常にリスニングを再開します。
 
-## Push-to-talk specifics
+## プッシュ・トゥ・トークの詳細
 
-* Hotkey detection uses a global `.flagsChanged` monitor for **right Option** (`keyCode 61` + `.option`). We only observe events (no swallowing).
-* Capture pipeline lives in `VoicePushToTalk`: starts Speech immediately, streams partials to the overlay, and calls `VoiceWakeForwarder` on release.
-* When push-to-talk starts we pause the wake-word runtime to avoid dueling audio taps; it restarts automatically after release.
-* Permissions: requires Microphone + Speech; seeing events needs Accessibility/Input Monitoring approval.
-* External keyboards: some may not expose right Option as expected—offer a fallback shortcut if users report misses.
+* ホットキー検出は、**右オプション**（`keyCode 61` + `.option`）のためのグローバルな `.flagsChanged` モニターを使用します。イベントを観察するだけで、飲み込むことはありません。
+* キャプチャパイプラインは `VoicePushToTalk` に存在し、音声を即座に開始し、部分をオーバーレイにストリーミングし、放すと `VoiceWakeForwarder` を呼び出します。
+* プッシュ・トゥ・トークが開始されると、音声ウェイクランタイムを一時停止して音声タップの競合を避けます。放すと自動的に再起動します。
+* 権限：マイク + スピーチが必要です。イベントを見るにはアクセシビリティ/入力モニタリングの承認が必要です。
+* 外部キーボード：一部は右オプションを期待通りに露出しない場合があります—ユーザーがミスを報告した場合はフォールバックショートカットを提供します。
 
-## User-facing settings
+## ユーザー向け設定
 
-* **Voice Wake** toggle: enables wake-word runtime.
-* **Hold Cmd+Fn to talk**: enables the push-to-talk monitor. Disabled on macOS \< 26.
-* Language & mic pickers, live level meter, trigger-word table, tester (local-only; does not forward).
-* Mic picker preserves the last selection if a device disconnects, shows a disconnected hint, and temporarily falls back to the system default until it returns.
-* **Sounds**: chimes on trigger detect and on send; defaults to the macOS “Glass” system sound. You can pick any `NSSound`-loadable file (e.g. MP3/WAV/AIFF) for each event or choose **No Sound**.
+* **Voice Wake** トグル：ウェイクワードランタイムを有効にします。
+* **Cmd+Fnを押し続けて話す**：プッシュ・トゥ・トークモニターを有効にします。macOS < 26では無効です。
+* 言語とマイクの選択、ライブレベルメーター、トリガーワードテーブル、テスター（ローカル専用；転送しません）。
+* マイクピッカーはデバイスが切断された場合、最後の選択を保持し、切断されたヒントを表示し、戻るまで一時的にシステムデフォルトにフォールバックします。
+* **サウンド**：トリガー検出時と送信時にチャイムが鳴ります；デフォルトはmacOSの「Glass」システムサウンドです。各イベントに対して任意の `NSSound` ロード可能なファイル（例：MP3/WAV/AIFF）を選択するか、**音なし**を選択できます。
 
-## Forwarding behavior
+## 転送動作
 
-* When Voice Wake is enabled, transcripts are forwarded to the active gateway/agent (the same local vs remote mode used by the rest of the mac app).
-* Replies are delivered to the **last-used main provider** (WhatsApp/Telegram/Discord/WebChat). If delivery fails, the error is logged and the run is still visible via WebChat/session logs.
+* Voice Wakeが有効な場合、トランスクリプトはアクティブなゲートウェイ/エージェントに転送されます（macアプリの残りで使用されるローカル対リモートモードと同じ）。
+* 返信は**最後に使用したメインプロバイダー**（WhatsApp/Telegram/Discord/WebChat）に配信されます。配信に失敗した場合、エラーがログに記録され、実行はWebChat/セッションログを介してまだ表示されます。
 
-## Forwarding payload
+## 転送ペイロード
 
-* `VoiceWakeForwarder.prefixedTranscript(_:)` prepends the machine hint before sending. Shared between wake-word and push-to-talk paths.
+* `VoiceWakeForwarder.prefixedTranscript(_:)` は送信前にマシンヒントを追加します。ウェイクワードとプッシュ・トゥ・トークのパス間で共有されています。
 
-## Quick verification
+## クイック検証
 
-* Toggle push-to-talk on, hold Cmd+Fn, speak, release: overlay should show partials then send.
-* While holding, menu-bar ears should stay enlarged (uses `triggerVoiceEars(ttl:nil)`); they drop after release.
+* プッシュ・トゥ・トークをオンにし、Cmd+Fnを押し続けて話し、放す：オーバーレイは部分を表示し、その後送信します。
+* 押し続けている間、メニューバーの耳は拡大されたままにします（`triggerVoiceEars(ttl:nil)`を使用）；放すと元に戻ります。

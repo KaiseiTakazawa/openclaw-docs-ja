@@ -4,37 +4,34 @@ title: "Matrix"
 
 # Matrix
 # Matrix (plugin)
-Matrix is an open, decentralized messaging protocol. OpenClaw connects as a Matrix \*\*user\*\*
-on any homeserver, so you need a Matrix account for the bot. Once it is logged in, you can DM
-the bot directly or invite it to rooms (Matrix "groups"). Beeper is a valid client option too,
-but it requires E2EE to be enabled.
-Status: supported via plugin (@vector-im/matrix-bot-sdk). Direct messages, rooms, threads, media, reactions,
-polls (send + poll-start as text), location, and E2EE (with crypto support).
-## Plugin required
-Matrix ships as a plugin and is not bundled with the core install.
-Install via CLI (npm registry):
+Matrixはオープンで分散型のメッセージングプロトコルです。OpenClawは任意のホームサーバー上でMatrix **ユーザー**として接続するため、ボット用のMatrixアカウントが必要です。ログインすると、ボットに直接DMを送信するか、ルーム（Matrixの「グループ」）に招待できます。Beeperも有効なクライアントオプションですが、E2EEを有効にする必要があります。
+ステータス: プラグインを通じてサポートされています（@vector-im/matrix-bot-sdk）。ダイレクトメッセージ、ルーム、スレッド、メディア、リアクション、投票（テキストとして送信 + poll-start）、位置情報、E2EE（暗号化サポートあり）。
+
+## プラグインが必要
+Matrixはプラグインとして提供され、コアインストールにはバンドルされていません。
+CLIを通じてインストールします（npmレジストリ）:
 ```bash
 openclaw plugins install @openclaw/matrix
 ```
-Local checkout (when running from a git repo):
+ローカルチェックアウト（gitリポジトリから実行する場合）:
 ```bash
 openclaw plugins install ./extensions/matrix
 ```
-If you choose Matrix during configure/onboarding and a git checkout is detected,
-OpenClaw will offer the local install path automatically.
-Details: [Plugins](/tools/plugin)
+設定/オンボーディング中にMatrixを選択し、gitチェックアウトが検出されると、OpenClawはローカルインストールパスを自動的に提案します。
+詳細: [Plugins](/tools/plugin)
+
 ## セットアップ
-1. Install the Matrix plugin:
-\* From npm: `openclaw plugins install @openclaw/matrix`
-\* From a local checkout: `openclaw plugins install ./extensions/matrix`
-2. Create a Matrix account on a homeserver:
-\* Browse hosting options at [https://matrix.org/ecosystem/hosting/](https://matrix.org/ecosystem/hosting/)
-\* Or host it yourself.
-3. Get an access token for the bot account:
-\* Use the Matrix login API with `curl` at your home server:
+1. Matrixプラグインをインストールします:
+   * npmから: `openclaw plugins install @openclaw/matrix`
+   * ローカルチェックアウトから: `openclaw plugins install ./extensions/matrix`
+2. ホームサーバー上にMatrixアカウントを作成します:
+   * ホスティングオプションを[https://matrix.org/ecosystem/hosting/](https://matrix.org/ecosystem/hosting/)で確認します。
+   * または、自分でホストします。
+3. ボットアカウントのアクセストークンを取得します:
+   * ホームサーバーで`curl`を使用してMatrixログインAPIを実行します:
 ```bash
 curl --request POST \
---url https://matrix.example.org/\_matrix/client/v3/login \
+--url https://matrix.example.org/_matrix/client/v3/login \
 --header 'Content-Type: application/json' \
 --data '{
 "type": "m.login.password",
@@ -45,74 +42,62 @@ curl --request POST \
 "password": "your-password"
 }'
 ```
-\* Replace `matrix.example.org` with your homeserver URL.
-\* Or set `channels.matrix.userId` + `channels.matrix.password`: OpenClaw calls the same
-login endpoint, stores the access token in `~/.openclaw/credentials/matrix/credentials.json`,
-and reuses it on next start.
-4. Configure credentials:
-\* Env: `MATRIX\_HOMESERVER`, `MATRIX\_ACCESS\_TOKEN` (or `MATRIX\_USER\_ID` + `MATRIX\_PASSWORD`)
-\* Or config: `channels.matrix.\*`
-\* If both are set, config takes precedence.
-\* With access token: user ID is fetched automatically via `/whoami`.
-\* When set, `channels.matrix.userId` should be the full Matrix ID (example: `@bot:example.org`).
-5. Restart the gateway (or finish onboarding).
-6. Start a DM with the bot or invite it to a room from any Matrix client
-(Element, Beeper, etc.; see [https://matrix.org/ecosystem/clients/](https://matrix.org/ecosystem/clients/)). Beeper requires E2EE,
-so set `channels.matrix.encryption: true` and verify the device.
-Minimal config (access token, user ID auto-fetched):
+   * `matrix.example.org`をあなたのホームサーバーのURLに置き換えます。
+   * または、`channels.matrix.userId` + `channels.matrix.password`を設定します: OpenClawは同じログインエンドポイントを呼び出し、アクセストークンを`~/.openclaw/credentials/matrix/credentials.json`に保存し、次回の起動時に再利用します。
+4. 認証情報を設定します:
+   * 環境変数: `MATRIX_HOMESERVER`, `MATRIX_ACCESS_TOKEN`（または`MATRIX_USER_ID` + `MATRIX_PASSWORD`）
+   * または設定: `channels.matrix.*`
+   * 両方が設定されている場合、設定が優先されます。
+   * アクセストークンを使用する場合: ユーザーIDは`/whoami`を介して自動的に取得されます。
+   * 設定されている場合、`channels.matrix.userId`は完全なMatrix IDである必要があります（例: `@bot:example.org`）。
+5. ゲートウェイを再起動します（またはオンボーディングを完了します）。
+6. ボットとのDMを開始するか、任意のMatrixクライアントからルームに招待します（Element、Beeperなど; [https://matrix.org/ecosystem/clients/](https://matrix.org/ecosystem/clients/)を参照）。BeeperはE2EEを必要とするため、`channels.matrix.encryption: true`を設定し、デバイスを確認します。
+最小構成（アクセストークン、ユーザーID自動取得）:
 ```json5
 {
 channels: {
 matrix: {
 enabled: true,
 homeserver: "https://matrix.example.org",
-accessToken: "syt\_\*\*\*",
+accessToken: "syt_***",
 dm: { policy: "pairing" },
 },
 },
 }
 ```
-E2EE config (end to end encryption enabled):
+E2EE構成（エンドツーエンド暗号化が有効）:
 ```json5
 {
 channels: {
 matrix: {
 enabled: true,
 homeserver: "https://matrix.example.org",
-accessToken: "syt\_\*\*\*",
+accessToken: "syt_***",
 encryption: true,
 dm: { policy: "pairing" },
 },
 },
 }
 ```
-## Encryption (E2EE)
-End-to-end encryption is \*\*supported\*\* via the Rust crypto SDK.
-Enable with `channels.matrix.encryption: true`:
-\* If the crypto module loads, encrypted rooms are decrypted automatically.
-\* Outbound media is encrypted when sending to encrypted rooms.
-\* On first connection, OpenClaw requests device verification from your other sessions.
-\* Verify the device in another Matrix client (Element, etc.) to enable key sharing.
-\* If the crypto module cannot be loaded, E2EE is disabled and encrypted rooms will not decrypt;
-OpenClaw logs a warning.
-\* If you see missing crypto module errors (for example, `@matrix-org/matrix-sdk-crypto-nodejs-\*`),
-allow build scripts for `@matrix-org/matrix-sdk-crypto-nodejs` and run
-`pnpm rebuild @matrix-org/matrix-sdk-crypto-nodejs` or fetch the binary with
-`node node\_modules/@matrix-org/matrix-sdk-crypto-nodejs/download-lib.js`.
-Crypto state is stored per account + access token in
-`~/.openclaw/matrix/accounts//\_\_//crypto/`
-(SQLite database). Sync state lives alongside it in `bot-storage.json`.
-If the access token (device) changes, a new store is created and the bot must be
-re-verified for encrypted rooms.
-\*\*Device verification:\*\*
-When E2EE is enabled, the bot will request verification from your other sessions on startup.
-Open Element (or another client) and approve the verification request to establish trust.
-Once verified, the bot can decrypt messages in encrypted rooms.
-## Multi-account
-Multi-account support: use `channels.matrix.accounts` with per-account credentials and optional `name`. See [`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts) for the shared pattern.
-Each account runs as a separate Matrix user on any homeserver. Per-account config
-inherits from the top-level `channels.matrix` settings and can override any option
-(DM policy, groups, encryption, etc.).
+## 暗号化 (E2EE)
+エンドツーエンド暗号化は**サポートされています**（Rust暗号SDKを介して）。
+`channels.matrix.encryption: true`で有効にします:
+* 暗号化モジュールがロードされると、暗号化されたルームは自動的に復号されます。
+* 暗号化されたルームに送信する際、送信メディアは暗号化されます。
+* 最初の接続時に、OpenClawは他のセッションからデバイスの確認を要求します。
+* 他のMatrixクライアント（Elementなど）でデバイスを確認して、キー共有を有効にします。
+* 暗号化モジュールがロードできない場合、E2EEは無効になり、暗号化されたルームは復号されません; OpenClawは警告をログに記録します。
+* `@matrix-org/matrix-sdk-crypto-nodejs-*`のような暗号モジュールエラーが表示された場合、`@matrix-org/matrix-sdk-crypto-nodejs`のビルドスクリプトを許可し、`pnpm rebuild @matrix-org/matrix-sdk-crypto-nodejs`を実行するか、`node node_modules/@matrix-org/matrix-sdk-crypto-nodejs/download-lib.js`でバイナリを取得します。
+暗号状態はアカウントごとに+アクセストークンで`~/.openclaw/matrix/accounts//__/crypto/`に保存されます（SQLiteデータベース）。同期状態は`bot-storage.json`に同時に存在します。
+アクセストークン（デバイス）が変更されると、新しいストアが作成され、ボットは暗号化されたルームのために再確認される必要があります。
+**デバイス確認:**
+E2EEが有効な場合、ボットは起動時に他のセッションから確認を要求します。
+Element（または他のクライアント）を開いて、確認リクエストを承認して信頼を確立します。
+確認されると、ボットは暗号化されたルーム内のメッセージを復号できます。
+
+## マルチアカウント
+マルチアカウントサポート: `channels.matrix.accounts`を使用して、アカウントごとの認証情報とオプションの`name`を設定します。共有パターンについては[`gateway/configuration`](/gateway/configuration#telegramaccounts--discordaccounts--slackaccounts--signalaccounts--imessageaccounts)を参照してください。
+各アカウントは任意のホームサーバー上で別々のMatrixユーザーとして実行されます。アカウントごとの構成は、トップレベルの`channels.matrix`設定を継承し、任意のオプション（DMポリシー、グループ、暗号化など）を上書きできます。
 ```json5
 {
 channels: {
@@ -123,13 +108,13 @@ accounts: {
 assistant: {
 name: "Main assistant",
 homeserver: "https://matrix.example.org",
-accessToken: "syt\_assistant\_\*\*\*",
+accessToken: "syt_assistant_***",
 encryption: true,
 },
 alerts: {
 name: "Alerts bot",
 homeserver: "https://matrix.example.org",
-accessToken: "syt\_alerts\_\*\*\*",
+accessToken: "syt_alerts_***",
 dm: { policy: "allowlist", allowFrom: ["@admin:example.org"] },
 },
 },
@@ -137,27 +122,30 @@ dm: { policy: "allowlist", allowFrom: ["@admin:example.org"] },
 },
 }
 ```
-Notes:
-\* Account startup is serialized to avoid race conditions with concurrent module imports.
-\* Env variables (`MATRIX\_HOMESERVER`, `MATRIX\_ACCESS\_TOKEN`, etc.) only apply to the \*\*default\*\* account.
-\* Base channel settings (DM policy, group policy, mention gating, etc.) apply to all accounts unless overridden per account.
-\* Use `bindings[].match.accountId` to route each account to a different agent.
-\* Crypto state is stored per account + access token (separate key stores per account).
-## Routing model
-\* Replies always go back to Matrix.
-\* DMs share the agent's main session; rooms map to group sessions.
-## Access control (DMs)
-\* Default: `channels.matrix.dm.policy = "pairing"`. Unknown senders get a pairing code.
-\* Approve via:
-\* `openclaw pairing list matrix`
-\* `openclaw pairing approve matrix ```` `
-* Public DMs: `channels.matrix.dm.policy="open"` plus `channels.matrix.dm.allowFrom=["*"]`.
-* `channels.matrix.dm.allowFrom` accepts full Matrix user IDs (example: `@user:server`). The wizard resolves display names to user IDs when directory search finds a single exact match.
-* Do not use display names or bare localparts (example: `"Alice"` or `"alice"`). They are ambiguous and are ignored for allowlist matching. Use full `@user:server` IDs.
-## Rooms (groups)
-* Default: `channels.matrix.groupPolicy = "allowlist"` (mention-gated). Use `channels.defaults.groupPolicy` to override the default when unset.
-* Runtime note: if `channels.matrix` is completely missing, runtime falls back to `groupPolicy="allowlist"` for room checks (even if `channels.defaults.groupPolicy` is set).
-* Allowlist rooms with `channels.matrix.groups` (room IDs or aliases; names are resolved to IDs when directory search finds a single exact match):
+ノート:
+* アカウントの起動は、同時モジュールインポートによる競合状態を避けるために直列化されます。
+* 環境変数（`MATRIX_HOMESERVER`, `MATRIX_ACCESS_TOKEN`など）は**デフォルト**アカウントにのみ適用されます。
+* ベースチャネル設定（DMポリシー、グループポリシー、メンションゲーティングなど）は、アカウントごとに上書きされない限り、すべてのアカウントに適用されます。
+* `bindings[].match.accountId`を使用して、各アカウントを異なるエージェントにルーティングします。
+* 暗号状態はアカウントごとに+アクセストークンで保存されます（アカウントごとの別々のキー保管庫）。
+
+## ルーティングモデル
+* 返信は常にMatrixに戻ります。
+* DMはエージェントのメインセッションを共有し、ルームはグループセッションにマッピングされます。
+
+## アクセス制御 (DM)
+* デフォルト: `channels.matrix.dm.policy = "pairing"`。未知の送信者にはペアリングコードが付与されます。
+* 承認方法:
+   * `openclaw pairing list matrix`
+   * `openclaw pairing approve matrix ```` `
+* パブリックDM: `channels.matrix.dm.policy="open"`に加えて`channels.matrix.dm.allowFrom=["*"]`。
+* `channels.matrix.dm.allowFrom`は完全なMatrixユーザーID（例: `@user:server`）を受け入れます。ウィザードは、ディレクトリ検索が単一の正確な一致を見つけた場合に表示名をユーザーIDに解決します。
+* 表示名やベアローカルパーツ（例: `"Alice"`や`"alice"`）は使用しないでください。これらは曖昧であり、許可リストの一致には無視されます。完全な`@user:server` IDを使用してください。
+
+## ルーム (グループ)
+* デフォルト: `channels.matrix.groupPolicy = "allowlist"`（メンションゲート）。未設定の場合は、`channels.defaults.groupPolicy`を使用してデフォルトを上書きできます。
+* ランタイムノート: `channels.matrix`が完全に欠如している場合、ランタイムはルームチェックのために`groupPolicy="allowlist"`にフォールバックします（`channels.defaults.groupPolicy`が設定されていても）。
+* `channels.matrix.groups`を使用してルームを許可リスト化します（ルームIDまたはエイリアス; 名前はディレクトリ検索が単一の正確な一致を見つけた場合にIDに解決されます）:
 ```json5
 {
 channels: {
@@ -172,35 +160,38 @@ groupAllowFrom: ["@owner:example.org"],
 },
 }
 ```
-* `requireMention: false` enables auto-reply in that room.
-* `groups."*"` can set defaults for mention gating across rooms.
-* `groupAllowFrom` restricts which senders can trigger the bot in rooms (full Matrix user IDs).
-* Per-room `users` allowlists can further restrict senders inside a specific room (use full Matrix user IDs).
-* The configure wizard prompts for room allowlists (room IDs, aliases, or names) and resolves names only on an exact, unique match.
-* On startup, OpenClaw resolves room/user names in allowlists to IDs and logs the mapping; unresolved entries are ignored for allowlist matching.
-* Invites are auto-joined by default; control with `channels.matrix.autoJoin` and `channels.matrix.autoJoinAllowlist`.
-* To allow **no rooms**, set `channels.matrix.groupPolicy: "disabled"` (or keep an empty allowlist).
-* Legacy key: `channels.matrix.rooms` (same shape as `groups`).
-## Threads
-* Reply threading is supported.
-* `channels.matrix.threadReplies` controls whether replies stay in threads:
-* `off`, `inbound` (default), `always`
-* `channels.matrix.replyToMode` controls reply-to metadata when not replying in a thread:
-* `off` (default), `first`, `all`
-## Capabilities
-| Feature | Status |
+* `requireMention: false`は、そのルームでの自動返信を有効にします。
+* `groups."*"`は、ルーム全体でのメンションゲーティングのデフォルトを設定できます。
+* `groupAllowFrom`は、ルーム内でボットをトリガーできる送信者を制限します（完全なMatrixユーザーID）。
+* ルームごとの`users`許可リストは、特定のルーム内での送信者をさらに制限できます（完全なMatrixユーザーIDを使用）。
+* 設定ウィザードはルームの許可リスト（ルームID、エイリアス、または名前）を要求し、正確で一意の一致のみで名前を解決します。
+* 起動時に、OpenClawは許可リスト内のルーム/ユーザー名をIDに解決し、マッピングをログに記録します; 解決されていないエントリは許可リストの一致には無視されます。
+* 招待はデフォルトで自動参加します; `channels.matrix.autoJoin`と`channels.matrix.autoJoinAllowlist`で制御します。
+* **ルームを許可しない**には、`channels.matrix.groupPolicy: "disabled"`を設定します（または空の許可リストを維持します）。
+* レガシーキー: `channels.matrix.rooms`（`groups`と同じ形状）。
+
+## スレッド
+* 返信スレッドがサポートされています。
+* `channels.matrix.threadReplies`は、返信がスレッドに留まるかどうかを制御します:
+   * `off`, `inbound`（デフォルト）、`always`
+* `channels.matrix.replyToMode`は、スレッド内で返信しない場合の返信メタデータを制御します:
+   * `off`（デフォルト）、`first`, `all`
+
+## 機能
+| 機能 | ステータス |
 | --------------- | ------------------------------------------------------------------------------------ |
-| Direct messages | ✅ Supported |
-| Rooms | ✅ Supported |
-| Threads | ✅ Supported |
-| Media | ✅ Supported |
-| E2EE | ✅ Supported (crypto module required) |
-| Reactions | ✅ Supported (send/read via tools) |
-| Polls | ✅ Send supported; inbound poll starts are converted to text (responses/ends ignored) |
-| Location | ✅ Supported (geo URI; altitude ignored) |
-| Native commands | ✅ Supported |
+| ダイレクトメッセージ | ✅ サポートされています |
+| ルーム | ✅ サポートされています |
+| スレッド | ✅ サポートされています |
+| メディア | ✅ サポートされています |
+| E2EE | ✅ サポートされています（暗号モジュールが必要） |
+| リアクション | ✅ サポートされています（ツールを介して送信/読み取り） |
+| 投票 | ✅ 送信サポート; 受信投票開始はテキストに変換されます（応答/終了は無視されます） |
+| 位置情報 | ✅ サポートされています（geo URI; 高度は無視されます） |
+| ネイティブコマンド | ✅ サポートされています |
+
 ## トラブルシューティング
-Run this ladder first:
+まずこのラダーを実行します:
 ```bash
 openclaw status
 openclaw gateway status
@@ -208,39 +199,40 @@ openclaw logs --follow
 openclaw doctor
 openclaw channels status --probe
 ```
-Then confirm DM pairing state if needed:
+次に、必要に応じてDMペアリング状態を確認します:
 ```bash
 openclaw pairing list matrix
 ```
-Common failures:
-* Logged in but room messages ignored: room blocked by `groupPolicy` or room allowlist.
-* DMs ignored: sender pending approval when `channels.matrix.dm.policy="pairing"`.
-* Encrypted rooms fail: crypto support or encryption settings mismatch.
-For triage flow: [/channels/troubleshooting](/channels/troubleshooting).
-## Configuration reference (Matrix)
-Full configuration: [Configuration](/gateway/configuration)
-Provider options:
-* `channels.matrix.enabled`: enable/disable channel startup.
-* `channels.matrix.homeserver`: homeserver URL.
-* `channels.matrix.userId`: Matrix user ID (optional with access token).
-* `channels.matrix.accessToken`: access token.
-* `channels.matrix.password`: password for login (token stored).
-* `channels.matrix.deviceName`: device display name.
-* `channels.matrix.encryption`: enable E2EE (default: false).
-* `channels.matrix.initialSyncLimit`: initial sync limit.
-* `channels.matrix.threadReplies`: `off | inbound | always` (default: inbound).
-* `channels.matrix.textChunkLimit`: outbound text chunk size (chars).
-* `channels.matrix.chunkMode`: `length` (default) or `newline` to split on blank lines (paragraph boundaries) before length chunking.
-* `channels.matrix.dm.policy`: `pairing | allowlist | open | disabled` (default: pairing).
-* `channels.matrix.dm.allowFrom`: DM allowlist (full Matrix user IDs). `open` requires `"*"`. The wizard resolves names to IDs when possible.
-* `channels.matrix.groupPolicy`: `allowlist | open | disabled` (default: allowlist).
-* `channels.matrix.groupAllowFrom`: allowlisted senders for group messages (full Matrix user IDs).
-* `channels.matrix.allowlistOnly`: force allowlist rules for DMs + rooms.
-* `channels.matrix.groups`: group allowlist + per-room settings map.
-* `channels.matrix.rooms`: legacy group allowlist/config.
-* `channels.matrix.replyToMode`: reply-to mode for threads/tags.
-* `channels.matrix.mediaMaxMb`: inbound/outbound media cap (MB).
-* `channels.matrix.autoJoin`: invite handling (`always | allowlist | off`, default: always).
-* `channels.matrix.autoJoinAllowlist`: allowed room IDs/aliases for auto-join.
-* `channels.matrix.accounts`: multi-account configuration keyed by account ID (each account inherits top-level settings).
-* `channels.matrix.actions`: per-action tool gating (reactions/messages/pins/memberInfo/channelInfo). ````
+一般的な失敗:
+* ログインしているがルームメッセージが無視される: ルームが`groupPolicy`またはルーム許可リストによってブロックされています。
+* DMが無視される: `channels.matrix.dm.policy="pairing"`のとき、送信者が承認待ちです。
+* 暗号化されたルームが失敗する: 暗号化サポートまたは暗号化設定の不一致。
+トリアージフロー: [/channels/troubleshooting](/channels/troubleshooting).
+
+## 設定リファレンス (Matrix)
+完全な設定: [Configuration](/gateway/configuration)
+プロバイダーオプション:
+* `channels.matrix.enabled`: チャネルの起動を有効/無効にします。
+* `channels.matrix.homeserver`: ホームサーバーのURL。
+* `channels.matrix.userId`: MatrixユーザーID（アクセストークンがある場合はオプション）。
+* `channels.matrix.accessToken`: アクセストークン。
+* `channels.matrix.password`: ログイン用のパスワード（トークンが保存されます）。
+* `channels.matrix.deviceName`: デバイスの表示名。
+* `channels.matrix.encryption`: E2EEを有効にします（デフォルト: false）。
+* `channels.matrix.initialSyncLimit`: 初期同期制限。
+* `channels.matrix.threadReplies`: `off | inbound | always`（デフォルト: inbound）。
+* `channels.matrix.textChunkLimit`: アウトバウンドテキストチャンクサイズ（文字）。
+* `channels.matrix.chunkMode`: `length`（デフォルト）または`newline`で、長さチャンク化の前に空白行（段落境界）で分割します。
+* `channels.matrix.dm.policy`: `pairing | allowlist | open | disabled`（デフォルト: pairing）。
+* `channels.matrix.dm.allowFrom`: DM許可リスト（完全なMatrixユーザーID）。`open`は`"*"`を必要とします。ウィザードは名前をIDに解決します。
+* `channels.matrix.groupPolicy`: `allowlist | open | disabled`（デフォルト: allowlist）。
+* `channels.matrix.groupAllowFrom`: グループメッセージのための許可リスト送信者（完全なMatrixユーザーID）。
+* `channels.matrix.allowlistOnly`: DM + ルームのために許可リストルールを強制します。
+* `channels.matrix.groups`: グループ許可リスト + ルームごとの設定マップ。
+* `channels.matrix.rooms`: レガシーグループ許可リスト/設定。
+* `channels.matrix.replyToMode`: スレッド/タグのための返信モード。
+* `channels.matrix.mediaMaxMb`: インバウンド/アウトバウンドメディアの上限（MB）。
+* `channels.matrix.autoJoin`: 招待処理（`always | allowlist | off`、デフォルト: always）。
+* `channels.matrix.autoJoinAllowlist`: 自動参加のための許可されたルームID/エイリアス。
+* `channels.matrix.accounts`: アカウントIDでキー付けされたマルチアカウント構成（各アカウントはトップレベルの設定を継承します）。
+* `channels.matrix.actions`: アクションごとのツールゲーティング（リアクション/メッセージ/ピン/メンバー情報/チャネル情報）。

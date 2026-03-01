@@ -6,8 +6,7 @@ title: "config"
 
 # `openclaw config`
 
-Config helpers: get/set/unset values by path. Run without a subcommand to open
-the configure wizard (same as `openclaw configure`).
+設定ヘルパー: パスによって値を取得/設定/解除します。サブコマンドなしで実行すると、設定ウィザードが開きます（`openclaw configure`と同じです）。
 
 ## 例
 
@@ -21,14 +20,14 @@ openclaw config unset tools.web.search.apiKey
 
 ## パス
 
-Paths use dot or bracket notation:
+パスはドットまたはブラケット表記を使用します：
 
 ```bash
 openclaw config get agents.defaults.workspace
 openclaw config get agents.list[0].id
 ```
 
-Use the agent list index to target a specific agent:
+エージェントリストのインデックスを使用して特定のエージェントをターゲットにします：
 
 ```bash
 openclaw config get agents.list
@@ -37,8 +36,7 @@ openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
 
 ## 値
 
-Values are parsed as JSON5 when possible; otherwise they are treated as strings.
-Use `--strict-json` to require JSON5 parsing. `--json` remains supported as a legacy alias.
+値は可能な限りJSON5として解析されます。それ以外の場合は文字列として扱われます。JSON5解析を要求するには`--strict-json`を使用します。`--json`はレガシーエイリアスとして引き続きサポートされています。
 
 ```bash
 openclaw config set agents.defaults.heartbeat.every "0m"
@@ -46,4 +44,4 @@ openclaw config set gateway.port 19001 --strict-json
 openclaw config set channels.whatsapp.groups '["*"]' --strict-json
 ```
 
-Restart the gateway after edits.
+編集後はゲートウェイを再起動してください。

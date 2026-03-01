@@ -6,23 +6,22 @@ title: "OpenAI"
 
 # OpenAI
 
-OpenAI provides developer APIs for GPT models. Codex supports **ChatGPT sign-in** for subscription
-access or **API key** sign-in for usage-based access. Codex cloud requires ChatGPT sign-in.
+OpenAIは、GPTモデル用の開発者APIを提供しています。Codexは、サブスクリプションアクセスのための**ChatGPTサインイン**または使用ベースのアクセスのための**APIキー**サインインをサポートしています。CodexクラウドはChatGPTサインインを必要とします。
 
-## Option A: OpenAI API key (OpenAI Platform)
+## オプションA: OpenAI APIキー (OpenAIプラットフォーム)
 
-**Best for:** direct API access and usage-based billing.
-Get your API key from the OpenAI dashboard.
+**最適:** 直接APIアクセスと使用ベースの請求。
+OpenAIダッシュボードからAPIキーを取得してください。
 
-### CLI setup
+### CLIセットアップ
 
 ```bash
 openclaw onboard --auth-choice openai-api-key
-# or non-interactive
+# または非対話型
 openclaw onboard --openai-api-key "$OPENAI_API_KEY"
 ```
 
-### Config snippet
+### 設定スニペット
 
 ```json5
 {
@@ -31,22 +30,22 @@ openclaw onboard --openai-api-key "$OPENAI_API_KEY"
 }
 ```
 
-## Option B: OpenAI Code (Codex) subscription
+## オプションB: OpenAI Code (Codex) サブスクリプション
 
-**Best for:** using ChatGPT/Codex subscription access instead of an API key.
-Codex cloud requires ChatGPT sign-in, while the Codex CLI supports ChatGPT or API key sign-in.
+**最適:** APIキーの代わりにChatGPT/Codexサブスクリプションアクセスを使用する。
+CodexクラウドはChatGPTサインインを必要とし、Codex CLIはChatGPTまたはAPIキーサインインをサポートしています。
 
-### CLI setup (Codex OAuth)
+### CLIセットアップ (Codex OAuth)
 
 ```bash
-# Run Codex OAuth in the wizard
+# ウィザードでCodex OAuthを実行
 openclaw onboard --auth-choice openai-codex
 
-# Or run OAuth directly
+# またはOAuthを直接実行
 openclaw models auth login --provider openai-codex
 ```
 
-### Config snippet (Codex subscription)
+### 設定スニペット (Codexサブスクリプション)
 
 ```json5
 {
@@ -54,15 +53,14 @@ openclaw models auth login --provider openai-codex
 }
 ```
 
-### Codex transport default
+### Codexトランスポートのデフォルト
 
-OpenClaw uses `pi-ai` for model streaming. For `openai-codex/*` models you can set
-`agents.defaults.models.<provider/model>.params.transport` to select transport:
+OpenClawはモデルストリーミングに`pi-ai`を使用します。`openai-codex/*`モデルについては、`agents.defaults.models.<provider/model>.params.transport`を設定してトランスポートを選択できます：
 
-* Default is `"auto"` (WebSocket-first, then SSE fallback).
-* `"sse"`: force SSE
-* `"websocket"`: force WebSocket
-* `"auto"`: try WebSocket, then fall back to SSE
+* デフォルトは`"auto"`（WebSocket優先、その後SSEフォールバック）。
+* `"sse"`: SSEを強制
+* `"websocket"`: WebSocketを強制
+* `"auto"`: WebSocketを試み、その後SSEにフォールバック
 
 ```json5
 {
@@ -81,22 +79,18 @@ OpenClaw uses `pi-ai` for model streaming. For `openai-codex/*` models you can s
 }
 ```
 
-### OpenAI Responses server-side compaction
+### OpenAIレスポンスのサーバーサイド圧縮
 
-For direct OpenAI Responses models (`openai/*` using `api: "openai-responses"` with
-`baseUrl` on `api.openai.com`), OpenClaw now auto-enables OpenAI server-side
-compaction payload hints:
+直接OpenAIレスポンスモデル（`openai/*`で`api: "openai-responses"`を使用し、`baseUrl`が`api.openai.com`の場合）について、OpenClawは現在OpenAIサーバーサイド圧縮ペイロードヒントを自動的に有効にします：
 
-* Forces `store: true` (unless model compat sets `supportsStore: false`)
-* Injects `context_management: [{ type: "compaction", compact_threshold: ... }]`
+* `store: true`を強制（モデルの互換性が`supportsStore: false`を設定しない限り）
+* `context_management: [{ type: "compaction", compact_threshold: ... }]`を注入
 
-By default, `compact_threshold` is `70%` of model `contextWindow` (or `80000`
-when unavailable).
+デフォルトでは、`compact_threshold`はモデルの`contextWindow`の`70%`（または利用できない場合は`80000`）です。
 
-### Enable server-side compaction explicitly
+### サーバーサイド圧縮を明示的に有効にする
 
-Use this when you want to force `context_management` injection on compatible
-Responses models (for example Azure OpenAI Responses):
+互換性のあるレスポンスモデル（例えばAzure OpenAIレスポンス）で`context_management`の注入を強制したい場合は、これを使用します：
 
 ```json5
 {
@@ -114,7 +108,7 @@ Responses models (for example Azure OpenAI Responses):
 }
 ```
 
-### Enable with a custom threshold
+### カスタムしきい値で有効にする
 
 ```json5
 {
@@ -133,7 +127,7 @@ Responses models (for example Azure OpenAI Responses):
 }
 ```
 
-### Disable server-side compaction
+### サーバーサイド圧縮を無効にする
 
 ```json5
 {
@@ -151,11 +145,9 @@ Responses models (for example Azure OpenAI Responses):
 }
 ```
 
-`responsesServerCompaction` only controls `context_management` injection.
-Direct OpenAI Responses models still force `store: true` unless compat sets
-`supportsStore: false`.
+`responsesServerCompaction`は`context_management`の注入のみを制御します。直接OpenAIレスポンスモデルは、互換性が`supportsStore: false`を設定しない限り、`store: true`を強制します。
 
 ## 注意事項
 
-* Model refs always use `provider/model` (see [/concepts/models](/concepts/models)).
-* Auth details + reuse rules are in [/concepts/oauth](/concepts/oauth).
+* モデル参照は常に`provider/model`を使用します（詳細は[/concepts/models](/concepts/models)を参照）。
+* 認証の詳細と再利用ルールは[/concepts/oauth](/concepts/oauth)にあります。

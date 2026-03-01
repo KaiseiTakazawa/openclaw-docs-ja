@@ -6,52 +6,52 @@ title: "Bun (Experimental)"
 
 # Bun (experimental)
 
-Goal: run this repo with **Bun** (optional, not recommended for WhatsApp/Telegram)
-without diverging from pnpm workflows.
+目標: このリポジトリを **Bun** で実行する（オプション、WhatsApp/Telegramには推奨されません）
+pnpm ワークフローから逸脱せずに。
 
-⚠️ **Not recommended for Gateway runtime** (WhatsApp/Telegram bugs). Use Node for production.
+⚠️ **Gateway ランタイムには推奨されません**（WhatsApp/Telegram のバグ）。プロダクションには Node を使用してください。
 
-## Status
+## ステータス
 
-* Bun is an optional local runtime for running TypeScript directly (`bun run …`, `bun --watch …`).
-* `pnpm` is the default for builds and remains fully supported (and used by some docs tooling).
-* Bun cannot use `pnpm-lock.yaml` and will ignore it.
+* Bun は TypeScript を直接実行するためのオプションのローカルランタイムです（`bun run …`, `bun --watch …`）。
+* `pnpm` はビルドのデフォルトであり、完全にサポートされています（いくつかのドキュメントツールによって使用されています）。
+* Bun は `pnpm-lock.yaml` を使用できず、無視します。
 
 ## インストール
 
-Default:
+デフォルト:
 
 ```sh
 bun install
 ```
 
-Note: `bun.lock`/`bun.lockb` are gitignored, so there’s no repo churn either way. If you want *no lockfile writes*:
+注意: `bun.lock`/`bun.lockb` は gitignore されているため、リポジトリの変更はありません。*ロックファイルの書き込みを行いたくない場合*:
 
 ```sh
 bun install --no-save
 ```
 
-## Build / Test (Bun)
+## ビルド / テスト (Bun)
 
 ```sh
 bun run build
 bun run vitest run
 ```
 
-## Bun lifecycle scripts (blocked by default)
+## Bun ライフサイクルスクリプト（デフォルトでブロック）
 
-Bun may block dependency lifecycle scripts unless explicitly trusted (`bun pm untrusted` / `bun pm trust`).
-For this repo, the commonly blocked scripts are not required:
+Bun は明示的に信頼されない限り、依存関係のライフサイクルスクリプトをブロックする場合があります（`bun pm untrusted` / `bun pm trust`）。
+このリポジトリでは、一般的にブロックされるスクリプトは必要ありません：
 
-* `@whiskeysockets/baileys` `preinstall`: checks Node major >= 20 (we run Node 22+).
-* `protobufjs` `postinstall`: emits warnings about incompatible version schemes (no build artifacts).
+* `@whiskeysockets/baileys` `preinstall`: Node のメジャーバージョンが >= 20 であることを確認します（私たちは Node 22+ を実行しています）。
+* `protobufjs` `postinstall`: 非互換のバージョンスキームに関する警告を出力します（ビルドアーティファクトはありません）。
 
-If you hit a real runtime issue that requires these scripts, trust them explicitly:
+これらのスクリプトが必要な実際のランタイムの問題に直面した場合は、明示的に信頼してください：
 
 ```sh
 bun pm trust @whiskeysockets/baileys protobufjs
 ```
 
-## Caveats
+## 注意事項
 
-* Some scripts still hardcode pnpm (e.g. `docs:build`, `ui:*`, `protocol:check`). Run those via pnpm for now.
+* 一部のスクリプトはまだ pnpm をハードコーディングしています（例: `docs:build`, `ui:*`, `protocol:check`）。現時点ではそれらを pnpm 経由で実行してください。

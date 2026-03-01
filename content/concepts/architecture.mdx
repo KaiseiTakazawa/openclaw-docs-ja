@@ -10,52 +10,46 @@ Last updated: 2026-01-22
 
 ## 概要
 
-* A single long‑lived **Gateway** owns all messaging surfaces (WhatsApp via
-  Baileys, Telegram via grammY, Slack, Discord, Signal, iMessage, WebChat).
-* Control-plane clients (macOS app, CLI, web UI, automations) connect to the
-  Gateway over **WebSocket** on the configured bind host (default
-  `127.0.0.1:18789`).
-* **Nodes** (macOS/iOS/Android/headless) also connect over **WebSocket**, but
-  declare `role: node` with explicit caps/commands.
-* One Gateway per host; it is the only place that opens a WhatsApp session.
-* The **canvas host** is served by the Gateway HTTP server under:
-  * `/__openclaw__/canvas/` (agent-editable HTML/CSS/JS)
-  * `/__openclaw__/a2ui/` (A2UI host)
-    It uses the same port as the Gateway (default `18789`).
+* 単一の長寿命の**Gateway**がすべてのメッセージングサーフェス（WhatsApp via Baileys、Telegram via grammY、Slack、Discord、Signal、iMessage、WebChat）を所有します。
+* コントロールプレーンクライアント（macOSアプリ、CLI、Web UI、自動化）は、設定されたバインドホスト（デフォルトは`127.0.0.1:18789`）上の**WebSocket**経由でGatewayに接続します。
+* **ノード**（macOS/iOS/Android/headless）も**WebSocket**経由で接続しますが、明示的なcaps/commandsを持つ`role: node`を宣言します。
+* ホストごとに1つのGatewayがあり、それがWhatsAppセッションを開く唯一の場所です。
+* **canvas host**はGateway HTTPサーバーによって提供されます：
+  * `/__openclaw__/canvas/`（エージェント編集可能なHTML/CSS/JS）
+  * `/__openclaw__/a2ui/`（A2UIホスト）
+    これはGatewayと同じポート（デフォルトは`18789`）を使用します。
 
-## Components and flows
+## コンポーネントとフロー
 
 ### Gateway (daemon)
 
-* Maintains provider connections.
-* Exposes a typed WS API (requests, responses, server‑push events).
-* Validates inbound frames against JSON Schema.
-* Emits events like `agent`, `chat`, `presence`, `health`, `heartbeat`, `cron`.
+* プロバイダー接続を維持します。
+* 型付けされたWS API（リクエスト、レスポンス、サーバープッシュイベント）を公開します。
+* JSON Schemaに対して受信フレームを検証します。
+* `agent`、`chat`、`presence`、`health`、`heartbeat`、`cron`のようなイベントを発行します。
 
-### Clients (mac app / CLI / web admin)
+### クライアント（macアプリ / CLI / web管理）
 
-* One WS connection per client.
-* Send requests (`health`, `status`, `send`, `agent`, `system-presence`).
-* Subscribe to events (`tick`, `agent`, `presence`, `shutdown`).
+* クライアントごとに1つのWS接続。
+* リクエストを送信します（`health`、`status`、`send`、`agent`、`system-presence`）。
+* イベントにサブスクライブします（`tick`、`agent`、`presence`、`shutdown`）。
 
-### Nodes (macOS / iOS / Android / headless)
+### ノード（macOS / iOS / Android / headless）
 
-* Connect to the **same WS server** with `role: node`.
-* Provide a device identity in `connect`; pairing is **device‑based** (role `node`) and
-  approval lives in the device pairing store.
-* Expose commands like `canvas.*`, `camera.*`, `screen.record`, `location.get`.
+* **同じWSサーバー**に`role: node`で接続します。
+* `connect`でデバイスIDを提供します；ペアリングは**デバイスベース**（役割`node`）で、承認はデバイスペアリングストアに保存されます。
+* `canvas.*`、`camera.*`、`screen.record`、`location.get`のようなコマンドを公開します。
 
-Protocol details:
+プロトコルの詳細：
 
 * [Gateway protocol](/gateway/protocol)
 
 ### WebChat
 
-* Static UI that uses the Gateway WS API for chat history and sends.
-* In remote setups, connects through the same SSH/Tailscale tunnel as other
-  clients.
+* Gateway WS APIを使用してチャット履歴と送信を行う静的UI。
+* リモートセットアップでは、他のクライアントと同じSSH/Tailscaleトンネルを通じて接続します。
 
-## Connection lifecycle (single client)
+## 接続ライフサイクル（単一クライアント）
 
 ```mermaid
 sequenceDiagram
@@ -64,7 +58,7 @@ sequenceDiagram
 
     Client->>Gateway: req:connect
     Gateway-->>Client: res (ok)
-    Note right of Gateway: or res error + close
+    Note right of Gateway: または res error + close
     Note left of Client: payload=hello-ok<br>snapshot: presence + health
 
     Gateway-->>Client: event:presence
@@ -76,65 +70,57 @@ sequenceDiagram
     Gateway-->>Client: res:agent<br>final {runId, status, summary}
 ```
 
-## Wire protocol (summary)
+## ワイヤプロトコル（概要）
 
-* Transport: WebSocket, text frames with JSON payloads.
-* First frame **must** be `connect`.
-* After handshake:
-  * Requests: `{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
-  * Events: `{type:"event", event, payload, seq?, stateVersion?}`
-* If `OPENCLAW_GATEWAY_TOKEN` (or `--token`) is set, `connect.params.auth.token`
-  must match or the socket closes.
-* Idempotency keys are required for side‑effecting methods (`send`, `agent`) to
-  safely retry; the server keeps a short‑lived dedupe cache.
-* Nodes must include `role: "node"` plus caps/commands/permissions in `connect`.
+* トランスポート：WebSocket、JSONペイロードを持つテキストフレーム。
+* 最初のフレームは**connect**でなければなりません。
+* ハンドシェイク後：
+  * リクエスト：`{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
+  * イベント：`{type:"event", event, payload, seq?, stateVersion?}`
+* `OPENCLAW_GATEWAY_TOKEN`（または`--token`）が設定されている場合、`connect.params.auth.token`は一致しなければならず、そうでない場合はソケットが閉じます。
+* 副作用を持つメソッド（`send`、`agent`）のために冪等性キーが必要で、安全に再試行できます；サーバーは短命のデデュープキャッシュを保持します。
+* ノードは`role: "node"`に加えてcaps/commands/permissionsを`connect`に含める必要があります。
 
-## Pairing + local trust
+## ペアリング + ローカルトラスト
 
-* All WS clients (operators + nodes) include a **device identity** on `connect`.
-* New device IDs require pairing approval; the Gateway issues a **device token**
-  for subsequent connects.
-* **Local** connects (loopback or the gateway host’s own tailnet address) can be
-  auto‑approved to keep same‑host UX smooth.
-* All connects must sign the `connect.challenge` nonce.
-* Signature payload `v3` also binds `platform` + `deviceFamily`; the gateway
-  pins paired metadata on reconnect and requires repair pairing for metadata
-  changes.
-* **Non‑local** connects still require explicit approval.
-* Gateway auth (`gateway.auth.*`) still applies to **all** connections, local or
-  remote.
+* すべてのWSクライアント（オペレーター + ノード）は`connect`で**デバイスID**を含めます。
+* 新しいデバイスIDはペアリング承認を必要とします；Gatewayは後続の接続のために**デバイストークン**を発行します。
+* **ローカル**接続（ループバックまたはGatewayホスト自身のtailnetアドレス）は、自動承認されて同ホストのUXをスムーズに保つことができます。
+* すべての接続は`connect.challenge`ノンスに署名する必要があります。
+* 署名ペイロード`v3`は`platform` + `deviceFamily`にもバインドされます；Gatewayは再接続時にペアリングメタデータを固定し、メタデータの変更にはペアリングの修復を要求します。
+* **非ローカル**接続は明示的な承認を必要とします。
+* Gateway認証（`gateway.auth.*`）は**すべての**接続、ローカルまたはリモートに適用されます。
 
-Details: [Gateway protocol](/gateway/protocol), [Pairing](/channels/pairing),
-[Security](/gateway/security).
+詳細：[Gateway protocol](/gateway/protocol)、[Pairing](/channels/pairing)、[Security](/gateway/security)。
 
-## Protocol typing and codegen
+## プロトコルタイプとコード生成
 
-* TypeBox schemas define the protocol.
-* JSON Schema is generated from those schemas.
-* Swift models are generated from the JSON Schema.
+* TypeBoxスキーマがプロトコルを定義します。
+* JSON Schemaはこれらのスキーマから生成されます。
+* SwiftモデルはJSON Schemaから生成されます。
 
-## Remote access
+## リモートアクセス
 
-* Preferred: Tailscale or VPN.
+* 推奨：TailscaleまたはVPN。
 
-* Alternative: SSH tunnel
+* 代替：SSHトンネル
 
   ```bash
   ssh -N -L 18789:127.0.0.1:18789 user@host
   ```
 
-* The same handshake + auth token apply over the tunnel.
+* 同じハンドシェイク + 認証トークンがトンネルを介して適用されます。
 
-* TLS + optional pinning can be enabled for WS in remote setups.
+* TLS + オプションのピン留めはリモートセットアップでWSに対して有効にできます。
 
-## Operations snapshot
+## 操作スナップショット
 
-* Start: `openclaw gateway` (foreground, logs to stdout).
-* Health: `health` over WS (also included in `hello-ok`).
-* Supervision: launchd/systemd for auto‑restart.
+* 開始：`openclaw gateway`（フォアグラウンド、stdoutにログ）。
+* 健康：WS経由の`health`（`hello-ok`にも含まれます）。
+* 監視：launchd/systemdによる自動再起動。
 
-## Invariants
+## 不変条件
 
-* Exactly one Gateway controls a single Baileys session per host.
-* Handshake is mandatory; any non‑JSON or non‑connect first frame is a hard close.
-* Events are not replayed; clients must refresh on gaps.
+* 正確に1つのGatewayがホストごとに1つのBaileysセッションを制御します。
+* ハンドシェイクは必須です；非JSONまたは非connectの最初のフレームはハードクローズです。
+* イベントは再生されず、クライアントはギャップでリフレッシュする必要があります。

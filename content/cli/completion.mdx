@@ -6,7 +6,7 @@ title: "completion"
 
 # `openclaw completion`
 
-Generate shell completion scripts and optionally install them into your shell profile.
+シェルの補完スクリプトを生成し、オプションでシェルプロファイルにインストールします。
 
 ## 使い方
 
@@ -21,13 +21,13 @@ openclaw completion --shell bash --write-state
 
 ## オプション
 
-* `-s, --shell <shell>`: shell target (`zsh`, `bash`, `powershell`, `fish`; default: `zsh`)
-* `-i, --install`: install completion by adding a source line to your shell profile
-* `--write-state`: write completion script(s) to `$OPENCLAW_STATE_DIR/completions` without printing to stdout
-* `-y, --yes`: skip install confirmation prompts
+* `-s, --shell <shell>`: シェルターゲット（`zsh`, `bash`, `powershell`, `fish`; デフォルト: `zsh`）
+* `-i, --install`: シェルプロファイルにソース行を追加して補完をインストール
+* `--write-state`: stdoutに出力せずに補完スクリプトを`$OPENCLAW_STATE_DIR/completions`に書き込む
+* `-y, --yes`: インストール確認プロンプトをスキップ
 
 ## 注意事項
 
-* `--install` writes a small "OpenClaw Completion" block into your shell profile and points it at the cached script.
-* Without `--install` or `--write-state`, the command prints the script to stdout.
-* Completion generation eagerly loads command trees so nested subcommands are included.
+* `--install`はシェルプロファイルに小さな「OpenClaw Completion」ブロックを書き込み、キャッシュされたスクリプトを指します。
+* `--install`または`--write-state`なしでは、コマンドはスクリプトをstdoutに出力します。
+* 補完生成はコマンドツリーを積極的にロードするため、ネストされたサブコマンドが含まれます。

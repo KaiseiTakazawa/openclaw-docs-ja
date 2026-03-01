@@ -6,38 +6,38 @@ title: "Talk モード"
 
 # Talk モード
 
-Talk mode is a continuous voice conversation loop:
+Talkモードは、継続的な音声会話ループです：
 
-1. Listen for speech
-2. Send transcript to the model (main session, chat.send)
-3. Wait for the response
-4. Speak it via ElevenLabs (streaming playback)
+1. 音声を聞く
+2. トランスクリプトをモデルに送信する（メインセッション、chat.send）
+3. 応答を待つ
+4. ElevenLabsを介して話す（ストリーミング再生）
 
-## Behavior (macOS)
+## 動作（macOS）
 
-* **Always-on overlay** while Talk mode is enabled.
-* **Listening → Thinking → Speaking** phase transitions.
-* On a **short pause** (silence window), the current transcript is sent.
-* Replies are **written to WebChat** (same as typing).
-* **Interrupt on speech** (default on): if the user starts talking while the assistant is speaking, we stop playback and note the interruption timestamp for the next prompt.
+* Talkモードが有効な間は**常時表示のオーバーレイ**。
+* **聴取 → 思考 → 話す**のフェーズ遷移。
+* **短いポーズ**（サイレンスウィンドウ）では、現在のトランスクリプトが送信されます。
+* 返信は**WebChatに書き込まれる**（タイピングと同じ）。
+* **音声による中断**（デフォルトオン）：ユーザーがアシスタントが話している間に話し始めると、再生を停止し、次のプロンプトのために中断のタイムスタンプを記録します。
 
-## Voice directives in replies
+## 返信における音声指示
 
-The assistant may prefix its reply with a **single JSON line** to control voice:
+アシスタントは、音声を制御するために**単一のJSON行**で返信を接頭辞することがあります：
 
 ```json
 { "voice": "<voice-id>", "once": true }
 ```
 
-Rules:
+ルール：
 
-* First non-empty line only.
-* Unknown keys are ignored.
-* `once: true` applies to the current reply only.
-* Without `once`, the voice becomes the new default for Talk mode.
-* The JSON line is stripped before TTS playback.
+* 最初の非空行のみ。
+* 不明なキーは無視されます。
+* `once: true`は現在の返信のみに適用されます。
+* `once`がない場合、音声はTalkモードの新しいデフォルトになります。
+* JSON行はTTS再生前に削除されます。
 
-Supported keys:
+サポートされているキー：
 
 * `voice` / `voice_id` / `voiceId`
 * `model` / `model_id` / `modelId`
@@ -45,7 +45,7 @@ Supported keys:
 * `seed`, `normalize`, `lang`, `output_format`, `latency_tier`
 * `once`
 
-## Config (`~/.openclaw/openclaw.json`)
+## 設定（`~/.openclaw/openclaw.json`）
 
 ```json5
 {
@@ -59,30 +59,30 @@ Supported keys:
 }
 ```
 
-Defaults:
+デフォルト：
 
 * `interruptOnSpeech`: true
-* `voiceId`: falls back to `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID` (or first ElevenLabs voice when API key is available)
-* `modelId`: defaults to `eleven_v3` when unset
-* `apiKey`: falls back to `ELEVENLABS_API_KEY` (or gateway shell profile if available)
-* `outputFormat`: defaults to `pcm_44100` on macOS/iOS and `pcm_24000` on Android (set `mp3_*` to force MP3 streaming)
+* `voiceId`: `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（またはAPIキーが利用可能な場合は最初のElevenLabs音声）にフォールバック
+* `modelId`: 設定されていない場合は`eleven_v3`がデフォルト
+* `apiKey`: `ELEVENLABS_API_KEY`（または利用可能な場合はゲートウェイシェルプロファイル）にフォールバック
+* `outputFormat`: macOS/iOSでは`pcm_44100`、Androidでは`pcm_24000`がデフォルト（MP3ストリーミングを強制するには`mp3_*`を設定）
 
 ## macOS UI
 
-* Menu bar toggle: **Talk**
-* Config tab: **Talk Mode** group (voice id + interrupt toggle)
-* Overlay:
-  * **Listening**: cloud pulses with mic level
-  * **Thinking**: sinking animation
-  * **Speaking**: radiating rings
-  * Click cloud: stop speaking
-  * Click X: exit Talk mode
+* メニューバーのトグル：**Talk**
+* 設定タブ：**Talk Mode**グループ（音声ID + 中断トグル）
+* オーバーレイ：
+  * **Listening**：マイクレベルでパルスするクラウド
+  * **Thinking**：沈むアニメーション
+  * **Speaking**：放射状のリング
+  * クラウドをクリック：話すのを停止
+  * Xをクリック：Talkモードを終了
 
 ## 注意事項
 
-* Requires Speech + Microphone permissions.
-* Uses `chat.send` against session key `main`.
-* TTS uses ElevenLabs streaming API with `ELEVENLABS_API_KEY` and incremental playback on macOS/iOS/Android for lower latency.
-* `stability` for `eleven_v3` is validated to `0.0`, `0.5`, or `1.0`; other models accept `0..1`.
-* `latency_tier` is validated to `0..4` when set.
-* Android supports `pcm_16000`, `pcm_22050`, `pcm_24000`, and `pcm_44100` output formats for low-latency AudioTrack streaming.
+* 音声 + マイクの権限が必要です。
+* セッションキー`main`に対して`chat.send`を使用します。
+* TTSは、低遅延のためにmacOS/iOS/Androidで`ELEVENLABS_API_KEY`を使用したElevenLabsストリーミングAPIとインクリメンタル再生を使用します。
+* `eleven_v3`の`stability`は`0.0`、`0.5`、または`1.0`に検証されています。他のモデルは`0..1`を受け入れます。
+* `latency_tier`は設定時に`0..4`に検証されます。
+* Androidは、低遅延のAudioTrackストリーミングのために`pcm_16000`、`pcm_22050`、`pcm_24000`、および`pcm_44100`出力フォーマットをサポートしています。

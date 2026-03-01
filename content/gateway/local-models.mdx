@@ -6,11 +6,11 @@ title: "ローカルモデル"
 
 # Local models
 
-Local is doable, but OpenClaw expects large context + strong defenses against prompt injection. Small cards truncate context and leak safety. Aim high: **≥2 maxed-out Mac Studios or equivalent GPU rig (\~\$30k+)**. A single **24 GB** GPU works only for lighter prompts with higher latency. Use the **largest / full-size model variant you can run**; aggressively quantized or “small” checkpoints raise prompt-injection risk (see [Security](/gateway/security)).
+ローカルは実現可能ですが、OpenClawは大きなコンテキストとプロンプトインジェクションに対する強力な防御を期待しています。小さなカードはコンテキストを切り捨て、安全性を漏洩させます。高い目標を設定しましょう: **≥2台の最大限に強化されたMac Studioまたは同等のGPUリグ（約\$30k+）**。単一の**24 GB** GPUは、より軽いプロンプトに対してのみ機能し、レイテンシが高くなります。実行可能な**最大の/フルサイズのモデルバリアントを使用**してください。攻撃的に量子化されたり「小さな」チェックポイントはプロンプトインジェクションのリスクを高めます（[セキュリティ](/gateway/security)を参照）。
 
-## Recommended: LM Studio + MiniMax M2.1 (Responses API, full-size)
+## 推奨: LM Studio + MiniMax M2.1 (Responses API, フルサイズ)
 
-Best current local stack. Load MiniMax M2.1 in LM Studio, enable the local server (default `http://127.0.0.1:1234`), and use Responses API to keep reasoning separate from final text.
+現在の最良のローカルスタックです。LM StudioにMiniMax M2.1をロードし、ローカルサーバーを有効にします（デフォルトは`http://127.0.0.1:1234`）、Responses APIを使用して推論を最終テキストから分離します。
 
 ```json5
 {
@@ -47,17 +47,17 @@ Best current local stack. Load MiniMax M2.1 in LM Studio, enable the local serve
 }
 ```
 
-**Setup checklist**
+**セットアップチェックリスト**
 
-* Install LM Studio: [https://lmstudio.ai](https://lmstudio.ai)
-* In LM Studio, download the **largest MiniMax M2.1 build available** (avoid “small”/heavily quantized variants), start the server, confirm `http://127.0.0.1:1234/v1/models` lists it.
-* Keep the model loaded; cold-load adds startup latency.
-* Adjust `contextWindow`/`maxTokens` if your LM Studio build differs.
-* For WhatsApp, stick to Responses API so only final text is sent.
+* LM Studioをインストール: [https://lmstudio.ai](https://lmstudio.ai)
+* LM Studioで**利用可能な最大のMiniMax M2.1ビルドをダウンロード**（「小さな」/強く量子化されたバリアントは避ける）、サーバーを起動し、`http://127.0.0.1:1234/v1/models`がリストされていることを確認します。
+* モデルをロードしたままにしてください; コールドロードは起動時のレイテンシを追加します。
+* LM Studioのビルドが異なる場合は`contextWindow`/`maxTokens`を調整してください。
+* WhatsAppの場合、Responses APIを使用して最終テキストのみを送信します。
 
-Keep hosted models configured even when running local; use `models.mode: "merge"` so fallbacks stay available.
+ローカルで実行しているときでもホストされたモデルを構成したままにしてください; `models.mode: "merge"`を使用してフォールバックが利用可能な状態を保ちます。
 
-### Hybrid config: hosted primary, local fallback
+### ハイブリッド構成: ホストされたプライマリ、ローカルフォールバック
 
 ```json5
 {
@@ -98,18 +98,18 @@ Keep hosted models configured even when running local; use `models.mode: "merge"
 }
 ```
 
-### Local-first with hosted safety net
+### ローカルファーストでホストされたセーフティネット
 
-Swap the primary and fallback order; keep the same providers block and `models.mode: "merge"` so you can fall back to Sonnet or Opus when the local box is down.
+プライマリとフォールバックの順序を入れ替え、同じプロバイダーブロックと`models.mode: "merge"`を維持して、ローカルボックスがダウンしているときにSonnetまたはOpusにフォールバックできるようにします。
 
-### Regional hosting / data routing
+### 地域ホスティング / データルーティング
 
-* Hosted MiniMax/Kimi/GLM variants also exist on OpenRouter with region-pinned endpoints (e.g., US-hosted). Pick the regional variant there to keep traffic in your chosen jurisdiction while still using `models.mode: "merge"` for Anthropic/OpenAI fallbacks.
-* Local-only remains the strongest privacy path; hosted regional routing is the middle ground when you need provider features but want control over data flow.
+* ホストされたMiniMax/Kimi/GLMバリアントは、地域に固定されたエンドポイント（例: 米国ホスト）でOpenRouterにも存在します。そこから地域バリアントを選択して、選択した管轄内でトラフィックを維持しながら、Anthropic/OpenAIのフォールバック用に`models.mode: "merge"`を使用します。
+* ローカル専用は最も強力なプライバシーパスであり、ホストされた地域ルーティングは、プロバイダー機能が必要だがデータフローを制御したい場合の中間手段です。
 
-## Other OpenAI-compatible local proxies
+## その他のOpenAI互換のローカルプロキシ
 
-vLLM, LiteLLM, OAI-proxy, or custom gateways work if they expose an OpenAI-style `/v1` endpoint. Replace the provider block above with your endpoint and model ID:
+vLLM、LiteLLM、OAI-proxy、またはカスタムゲートウェイは、OpenAIスタイルの`/v1`エンドポイントを公開している場合に機能します。上記のプロバイダーブロックをあなたのエンドポイントとモデルIDで置き換えます。
 
 ```json5
 {
@@ -137,11 +137,11 @@ vLLM, LiteLLM, OAI-proxy, or custom gateways work if they expose an OpenAI-style
 }
 ```
 
-Keep `models.mode: "merge"` so hosted models stay available as fallbacks.
+`models.mode: "merge"`を維持して、ホストされたモデルがフォールバックとして利用可能な状態を保ちます。
 
 ## トラブルシューティング
 
-* Gateway can reach the proxy? `curl http://127.0.0.1:1234/v1/models`.
-* LM Studio model unloaded? Reload; cold start is a common “hanging” cause.
-* Context errors? Lower `contextWindow` or raise your server limit.
-* Safety: local models skip provider-side filters; keep agents narrow and compaction on to limit prompt injection blast radius.
+* Gatewayはプロキシに到達できますか？ `curl http://127.0.0.1:1234/v1/models`。
+* LM Studioのモデルがアンロードされていますか？ リロードしてください; コールドスタートは一般的な「ハング」の原因です。
+* コンテキストエラー？ `contextWindow`を下げるか、サーバー制限を上げてください。
+* 安全性: ローカルモデルはプロバイダー側のフィルターをスキップします; エージェントを狭く保ち、プロンプトインジェクションの爆発半径を制限するために圧縮をオンにしてください。

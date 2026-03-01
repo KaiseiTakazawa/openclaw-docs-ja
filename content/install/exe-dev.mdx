@@ -6,68 +6,67 @@ title: "exe.dev"
 
 # exe.dev
 
-Goal: OpenClaw Gateway running on an exe.dev VM, reachable from your laptop via: `https://<vm-name>.exe.xyz`
+目標: exe.dev VM上で動作するOpenClaw Gatewayに、あなたのラップトップから`https://<vm-name>.exe.xyz`でアクセスできるようにすること。
 
-This page assumes exe.dev's default **exeuntu** image. If you picked a different distro, map packages accordingly.
+このページでは、exe.devのデフォルト**exeuntu**イメージを前提としています。異なるディストリビューションを選択した場合は、パッケージを適切にマッピングしてください。
 
-## Beginner quick path
+## 初心者のためのクイックパス
 
 1. [https://exe.new/openclaw](https://exe.new/openclaw)
-2. Fill in your auth key/token as needed
-3. Click on "Agent" next to your VM, and wait...
+2. 必要に応じて認証キー/トークンを入力
+3. あなたのVMの隣にある「Agent」をクリックし、待機...
 4. ???
-5. Profit
+5. 利益
 
-## What you need
+## 必要なもの
 
-* exe.dev account
-* `ssh exe.dev` access to [exe.dev](https://exe.dev) virtual machines (optional)
+* exe.devアカウント
+* [exe.dev](https://exe.dev)の仮想マシンへの`ssh exe.dev`アクセス（オプション）
 
-## Automated Install with Shelley
+## Shelleyを使った自動インストール
 
-Shelley, [exe.dev](https://exe.dev)'s agent, can install OpenClaw instantly with our
-prompt. The prompt used is as below:
+Shelleyは、[exe.dev](https://exe.dev)のエージェントで、私たちのプロンプトを使ってOpenClawを瞬時にインストールできます。使用されるプロンプトは以下の通りです：
 
 ```
-Set up OpenClaw (https://docs.openclaw.ai/install) on this VM. Use the non-interactive and accept-risk flags for openclaw onboarding. Add the supplied auth or token as needed. Configure nginx to forward from the default port 18789 to the root location on the default enabled site config, making sure to enable Websocket support. Pairing is done by "openclaw devices list" and "openclaw devices approve <request id>". Make sure the dashboard shows that OpenClaw's health is OK. exe.dev handles forwarding from port 8000 to port 80/443 and HTTPS for us, so the final "reachable" should be <vm-name>.exe.xyz, without port specification.
+このVMにOpenClaw (https://docs.openclaw.ai/install) をセットアップします。非対話モードとリスクを受け入れるフラグを使用してopenclawのオンボーディングを行います。必要に応じて提供された認証またはトークンを追加します。nginxを構成して、デフォルトのポート18789からデフォルトの有効サイト構成のルートロケーションに転送し、WebSocketサポートを有効にします。ペアリングは「openclaw devices list」と「openclaw devices approve <request id>」で行います。ダッシュボードにOpenClawのヘルスがOKと表示されていることを確認してください。exe.devはポート8000からポート80/443およびHTTPSへの転送を処理するので、最終的に「到達可能」なアドレスは<vm-name>.exe.xyzで、ポート指定は不要です。
 ```
 
-## Manual installation
+## 手動インストール
 
-## 1) Create the VM
+## 1) VMを作成する
 
-From your device:
+あなたのデバイスから：
 
 ```bash
 ssh exe.dev new
 ```
 
-Then connect:
+次に接続します：
 
 ```bash
 ssh <vm-name>.exe.xyz
 ```
 
-Tip: keep this VM **stateful**. OpenClaw stores state under `~/.openclaw/` and `~/.openclaw/workspace/`.
+ヒント: このVMは**ステートフル**に保ってください。OpenClawは`~/.openclaw/`および`~/.openclaw/workspace/`に状態を保存します。
 
-## 2) Install prerequisites (on the VM)
+## 2) 前提条件をインストールする（VM上で）
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y git curl jq ca-certificates openssl
 ```
 
-## 3) Install OpenClaw
+## 3) OpenClawをインストールする
 
-Run the OpenClaw install script:
+OpenClawインストールスクリプトを実行します：
 
 ```bash
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-## 4) Setup nginx to proxy OpenClaw to port 8000
+## 4) nginxを設定してOpenClawをポート8000にプロキシする
 
-Edit `/etc/nginx/sites-enabled/default` with
+`/etc/nginx/sites-enabled/default`を以下のように編集します：
 
 ```
 server {
@@ -82,35 +81,30 @@ server {
         proxy_pass http://127.0.0.1:18789;
         proxy_http_version 1.1;
 
-        # WebSocket support
+        # WebSocketサポート
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        # Standard proxy headers
+        # 標準プロキシヘッダー
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeout settings for long-lived connections
+        # 長期間接続のためのタイムアウト設定
         proxy_read_timeout 86400s;
         proxy_send_timeout 86400s;
     }
 }
 ```
 
-## 5) Access OpenClaw and grant privileges
+## 5) OpenClawにアクセスし、権限を付与する
 
-Access `https://<vm-name>.exe.xyz/` (see the Control UI output from onboarding). If it prompts for auth, paste the
-token from `gateway.auth.token` on the VM (retrieve with `openclaw config get gateway.auth.token`, or generate one
-with `openclaw doctor --generate-gateway-token`). Approve devices with `openclaw devices list` and
-`openclaw devices approve <requestId>`. When in doubt, use Shelley from your browser!
+`https://<vm-name>.exe.xyz/`にアクセスします（オンボーディングからのControl UI出力を参照）。認証を求められた場合は、VM上の`gateway.auth.token`からトークンを貼り付けます（`openclaw config get gateway.auth.token`で取得するか、`openclaw doctor --generate-gateway-token`で生成します）。デバイスを承認するには`openclaw devices list`と`openclaw devices approve <requestId>`を使用します。疑問がある場合は、ブラウザからShelleyを使用してください！
 
 ## リモートアクセス
 
-Remote access is handled by [exe.dev](https://exe.dev)'s authentication. By
-default, HTTP traffic from port 8000 is forwarded to `https://<vm-name>.exe.xyz`
-with email auth.
+リモートアクセスは[exe.dev](https://exe.dev)の認証によって処理されます。デフォルトでは、ポート8000からのHTTPトラフィックは`https://<vm-name>.exe.xyz`にメール認証で転送されます。
 
 ## アップデート
 
@@ -121,4 +115,4 @@ openclaw gateway restart
 openclaw health
 ```
 
-Guide: [Updating](/install/updating)
+ガイド: [Updating](/install/updating)

@@ -6,90 +6,86 @@ title: "モデルフェイルオーバー"
 
 # Model failover
 
-OpenClaw handles failures in two stages:
+OpenClawは、失敗を2段階で処理します。
 
-1. **Auth profile rotation** within the current provider.
-2. **Model fallback** to the next model in `agents.defaults.model.fallbacks`.
+1. **現在のプロバイダー内での認証プロファイルのローテーション**。
+2. **次のモデルへのモデルフォールバック** (`agents.defaults.model.fallbacks`内)。
 
-This doc explains the runtime rules and the data that backs them.
+このドキュメントでは、実行時のルールとそれを支えるデータについて説明します。
 
-## Auth storage (keys + OAuth)
+## 認証ストレージ（キー + OAuth）
 
-OpenClaw uses **auth profiles** for both API keys and OAuth tokens.
+OpenClawは、APIキーとOAuthトークンの両方に**認証プロファイル**を使用します。
 
-* Secrets live in `~/.openclaw/agents/<agentId>/agent/auth-profiles.json` (legacy: `~/.openclaw/agent/auth-profiles.json`).
-* Config `auth.profiles` / `auth.order` are **metadata + routing only** (no secrets).
-* Legacy import-only OAuth file: `~/.openclaw/credentials/oauth.json` (imported into `auth-profiles.json` on first use).
+* シークレットは`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`に保存されます（レガシー: `~/.openclaw/agent/auth-profiles.json`）。
+* 設定の`auth.profiles` / `auth.order`は**メタデータ + ルーティングのみ**（シークレットは含まれません）。
+* レガシーのインポート専用OAuthファイル: `~/.openclaw/credentials/oauth.json`（初回使用時に`auth-profiles.json`にインポートされます）。
 
-More detail: [/concepts/oauth](/concepts/oauth)
+詳細については、[/concepts/oauth](/concepts/oauth)を参照してください。
 
-Credential types:
+資格情報の種類：
 
 * `type: "api_key"` → `{ provider, key }`
-* `type: "oauth"` → `{ provider, access, refresh, expires, email? }` (+ `projectId`/`enterpriseUrl` for some providers)
+* `type: "oauth"` → `{ provider, access, refresh, expires, email? }`（一部のプロバイダーには`projectId`/`enterpriseUrl`が必要）
 
-## Profile IDs
+## プロファイルID
 
-OAuth logins create distinct profiles so multiple accounts can coexist.
+OAuthログインは異なるプロファイルを作成するため、複数のアカウントが共存できます。
 
-* Default: `provider:default` when no email is available.
-* OAuth with email: `provider:<email>` (for example `google-antigravity:user@gmail.com`).
+* デフォルト: メールが利用できない場合は`provider:default`。
+* メール付きのOAuth: `provider:<email>`（例えば`google-antigravity:user@gmail.com`）。
 
-Profiles live in `~/.openclaw/agents/<agentId>/agent/auth-profiles.json` under `profiles`.
+プロファイルは`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`の`profiles`内に保存されます。
 
-## Rotation order
+## ローテーション順序
 
-When a provider has multiple profiles, OpenClaw chooses an order like this:
+プロバイダーに複数のプロファイルがある場合、OpenClawは次のような順序を選択します。
 
-1. **Explicit config**: `auth.order[provider]` (if set).
-2. **Configured profiles**: `auth.profiles` filtered by provider.
-3. **Stored profiles**: entries in `auth-profiles.json` for the provider.
+1. **明示的な設定**: `auth.order[provider]`（設定されている場合）。
+2. **設定されたプロファイル**: プロバイダーによってフィルタリングされた`auth.profiles`。
+3. **保存されたプロファイル**: プロバイダーの`auth-profiles.json`内のエントリ。
 
-If no explicit order is configured, OpenClaw uses a round‑robin order:
+明示的な順序が設定されていない場合、OpenClawはラウンドロビン順序を使用します。
 
-* **Primary key:** profile type (**OAuth before API keys**).
-* **Secondary key:** `usageStats.lastUsed` (oldest first, within each type).
-* **Cooldown/disabled profiles** are moved to the end, ordered by soonest expiry.
+* **プライマリキー:** プロファイルタイプ（**APIキーの前にOAuth**）。
+* **セカンダリキー:** `usageStats.lastUsed`（各タイプ内で最も古いものから）。
+* **クールダウン/無効なプロファイル**は最後に移動し、最も早く期限切れになるものから順に並べられます。
 
-### Session stickiness (cache-friendly)
+### セッションの一貫性（キャッシュフレンドリー）
 
-OpenClaw **pins the chosen auth profile per session** to keep provider caches warm.
-It does **not** rotate on every request. The pinned profile is reused until:
+OpenClawは**セッションごとに選択された認証プロファイルを固定**して、プロバイダーのキャッシュを温かく保ちます。
+リクエストごとにローテーションは行いません。固定されたプロファイルは次の条件が満たされるまで再利用されます。
 
-* the session is reset (`/new` / `/reset`)
-* a compaction completes (compaction count increments)
-* the profile is in cooldown/disabled
+* セッションがリセットされる（`/new` / `/reset`）
+* コンパクションが完了する（コンパクションカウントが増加）
+* プロファイルがクールダウン/無効になる
 
-Manual selection via `/model …@<profileId>` sets a **user override** for that session
-and is not auto‑rotated until a new session starts.
+手動選択を`/model …@<profileId>`で行うと、そのセッションに対する**ユーザーオーバーライド**が設定され、自動ローテーションは新しいセッションが開始されるまで行われません。
 
-Auto‑pinned profiles (selected by the session router) are treated as a **preference**:
-they are tried first, but OpenClaw may rotate to another profile on rate limits/timeouts.
-User‑pinned profiles stay locked to that profile; if it fails and model fallbacks
-are configured, OpenClaw moves to the next model instead of switching profiles.
+自動固定されたプロファイル（セッションルーターによって選択されたもの）は**優先**として扱われます：
+最初に試されますが、OpenClawはレート制限やタイムアウトに応じて別のプロファイルにローテーションすることがあります。
+ユーザー固定のプロファイルはそのプロファイルにロックされます；もしそれが失敗し、モデルフォールバックが設定されている場合、OpenClawはプロファイルを切り替えるのではなく、次のモデルに移行します。
 
-### Why OAuth can “look lost”
+### なぜOAuthが「迷子に見える」か
 
-If you have both an OAuth profile and an API key profile for the same provider, round‑robin can switch between them across messages unless pinned. To force a single profile:
+同じプロバイダーに対してOAuthプロファイルとAPIキーのプロファイルの両方がある場合、ラウンドロビンはメッセージ間でそれらを切り替えることができますが、固定されていない限り。単一のプロファイルを強制するには：
 
-* Pin with `auth.order[provider] = ["provider:profileId"]`, or
-* Use a per-session override via `/model …` with a profile override (when supported by your UI/chat surface).
+* `auth.order[provider] = ["provider:profileId"]`で固定する、または
+* UI/チャットサーフェスがサポートしている場合、プロファイルオーバーライドを使用して`/model …`でセッションごとのオーバーライドを行います。
 
-## Cooldowns
+## クールダウン
 
-When a profile fails due to auth/rate‑limit errors (or a timeout that looks
-like rate limiting), OpenClaw marks it in cooldown and moves to the next profile.
-Format/invalid‑request errors (for example Cloud Code Assist tool call ID
-validation failures) are treated as failover‑worthy and use the same cooldowns.
+プロファイルが認証/レート制限エラー（またはレート制限のように見えるタイムアウト）により失敗した場合、OpenClawはそれをクールダウン中とマークし、次のプロファイルに移動します。
+フォーマット/無効リクエストエラー（例えばCloud Code Assistツールの呼び出しIDの検証失敗）はフォールオーバーに値すると見なされ、同じクールダウンを使用します。
 
-Cooldowns use exponential backoff:
+クールダウンは指数バックオフを使用します：
 
-* 1 minute
-* 5 minutes
-* 25 minutes
-* 1 hour (cap)
+* 1分
+* 5分
+* 25分
+* 1時間（上限）
 
-State is stored in `auth-profiles.json` under `usageStats`:
+状態は`auth-profiles.json`の`usageStats`に保存されます：
 
 ```json
 {
@@ -103,11 +99,11 @@ State is stored in `auth-profiles.json` under `usageStats`:
 }
 ```
 
-## Billing disables
+## 請求の無効化
 
-Billing/credit failures (for example “insufficient credits” / “credit balance too low”) are treated as failover‑worthy, but they’re usually not transient. Instead of a short cooldown, OpenClaw marks the profile as **disabled** (with a longer backoff) and rotates to the next profile/provider.
+請求/クレジットの失敗（例えば「クレジット不足」/「クレジット残高が低すぎる」）はフォールオーバーに値すると見なされますが、通常は一時的ではありません。短いクールダウンの代わりに、OpenClawはプロファイルを**無効**としてマークし（長いバックオフを伴う）、次のプロファイル/プロバイダーにローテーションします。
 
-State is stored in `auth-profiles.json`:
+状態は`auth-profiles.json`に保存されます：
 
 ```json
 {
@@ -120,28 +116,25 @@ State is stored in `auth-profiles.json`:
 }
 ```
 
-Defaults:
+デフォルト：
 
-* Billing backoff starts at **5 hours**, doubles per billing failure, and caps at **24 hours**.
-* Backoff counters reset if the profile hasn’t failed for **24 hours** (configurable).
+* 請求のバックオフは**5時間**から始まり、請求の失敗ごとに倍増し、**24時間**で上限に達します。
+* プロファイルが**24時間**失敗していない場合、バックオフカウンターはリセットされます（設定可能）。
 
-## Model fallback
+## モデルフォールバック
 
-If all profiles for a provider fail, OpenClaw moves to the next model in
-`agents.defaults.model.fallbacks`. This applies to auth failures, rate limits, and
-timeouts that exhausted profile rotation (other errors do not advance fallback).
+すべてのプロファイルが失敗した場合、OpenClawは`agents.defaults.model.fallbacks`内の次のモデルに移行します。これは認証の失敗、レート制限、およびプロファイルローテーションを消耗したタイムアウトに適用されます（他のエラーはフォールバックを進めません）。
 
-When a run starts with a model override (hooks or CLI), fallbacks still end at
-`agents.defaults.model.primary` after trying any configured fallbacks.
+モデルオーバーライド（フックまたはCLI）で実行が開始されると、フォールバックは設定されたフォールバックを試した後、`agents.defaults.model.primary`で終了します。
 
-## Related config
+## 関連設定
 
-See [Gateway configuration](/gateway/configuration) for:
+[Gateway configuration](/gateway/configuration)を参照してください：
 
 * `auth.profiles` / `auth.order`
 * `auth.cooldowns.billingBackoffHours` / `auth.cooldowns.billingBackoffHoursByProvider`
 * `auth.cooldowns.billingMaxHours` / `auth.cooldowns.failureWindowHours`
 * `agents.defaults.model.primary` / `agents.defaults.model.fallbacks`
-* `agents.defaults.imageModel` routing
+* `agents.defaults.imageModel`ルーティング
 
-See [Models](/concepts/models) for the broader model selection and fallback overview.
+[Models](/concepts/models)を参照して、より広範なモデル選択とフォールバックの概要を確認してください。

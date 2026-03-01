@@ -8,23 +8,23 @@ title: "メニューバーアイコン"
 
 Author: steipete · Updated: 2025-12-06 · Scope: macOS app (`apps/macos`)
 
-* **Idle:** Normal icon animation (blink, occasional wiggle).
-* **Paused:** Status item uses `appearsDisabled`; no motion.
-* **Voice trigger (big ears):** Voice wake detector calls `AppState.triggerVoiceEars(ttl: nil)` when the wake word is heard, keeping `earBoostActive=true` while the utterance is captured. Ears scale up (1.9x), get circular ear holes for readability, then drop via `stopVoiceEars()` after 1s of silence. Only fired from the in-app voice pipeline.
-* **Working (agent running):** `AppState.isWorking=true` drives a “tail/leg scurry” micro-motion: faster leg wiggle and slight offset while work is in-flight. Currently toggled around WebChat agent runs; add the same toggle around other long tasks when you wire them.
+* **アイドル:** 通常のアイコンアニメーション（点滅、時折の揺れ）。
+* **一時停止:** ステータスアイテムは `appearsDisabled` を使用; 動きなし。
+* **音声トリガー（大きな耳）:** 音声ウェイク検出器は、ウェイクワードが聞こえたときに `AppState.triggerVoiceEars(ttl: nil)` を呼び出し、発話がキャプチャされている間 `earBoostActive=true` を維持します。耳はスケールアップ（1.9倍）し、可読性のために円形の耳穴を持ち、1秒の静寂後に `stopVoiceEars()` を介して落ちます。これはアプリ内の音声パイプラインからのみ発火します。
+* **作業中（エージェントが実行中）:** `AppState.isWorking=true` が「尾/脚のスカリー」マイクロモーションを駆動します：作業が進行中の間、脚の揺れが速くなり、わずかなオフセットが発生します。現在、WebChatエージェントの実行周辺で切り替えられています; 他の長いタスクを接続するときに同じ切り替えを追加してください。
 
-Wiring points
+配線ポイント
 
-* Voice wake: runtime/tester call `AppState.triggerVoiceEars(ttl: nil)` on trigger and `stopVoiceEars()` after 1s of silence to match the capture window.
-* Agent activity: set `AppStateStore.shared.setWorking(true/false)` around work spans (already done in WebChat agent call). Keep spans short and reset in `defer` blocks to avoid stuck animations.
+* 音声ウェイク: ランタイム/テスターはトリガー時に `AppState.triggerVoiceEars(ttl: nil)` を呼び出し、キャプチャウィンドウに合わせて1秒の静寂後に `stopVoiceEars()` を呼び出します。
+* エージェントの活動: 作業スパンの周りで `AppStateStore.shared.setWorking(true/false)` を設定します（すでにWebChatエージェント呼び出しで行われています）。スパンを短く保ち、スタックしたアニメーションを避けるために `defer` ブロックでリセットしてください。
 
-Shapes & sizes
+形状とサイズ
 
-* Base icon drawn in `CritterIconRenderer.makeIcon(blink:legWiggle:earWiggle:earScale:earHoles:)`.
-* Ear scale defaults to `1.0`; voice boost sets `earScale=1.9` and toggles `earHoles=true` without changing overall frame (18×18 pt template image rendered into a 36×36 px Retina backing store).
-* Scurry uses leg wiggle up to \~1.0 with a small horizontal jiggle; it’s additive to any existing idle wiggle.
+* ベースアイコンは `CritterIconRenderer.makeIcon(blink:legWiggle:earWiggle:earScale:earHoles:)` で描画されます。
+* 耳のスケールはデフォルトで `1.0` です; 音声ブーストは `earScale=1.9` を設定し、全体のフレームを変更せずに `earHoles=true` を切り替えます（18×18 pt テンプレート画像が36×36 px Retina バッキングストアにレンダリングされます）。
+* スカリーは、\~1.0 までの脚の揺れと小さな水平方向の揺れを使用します; これは既存のアイドル揺れに加算されます。
 
-Behavioral notes
+行動ノート
 
-* No external CLI/broker toggle for ears/working; keep it internal to the app’s own signals to avoid accidental flapping.
-* Keep TTLs short (\<10s) so the icon returns to baseline quickly if a job hangs.
+* 耳/作業のための外部CLI/ブローカーの切り替えはなく、偶発的なフラッピングを避けるためにアプリの信号内に保持してください。
+* TTLは短く保ってください（\<10秒）ので、ジョブがハングした場合にアイコンがすぐにベースラインに戻ります。

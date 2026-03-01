@@ -6,8 +6,7 @@ title: "system"
 
 # `openclaw system`
 
-System-level helpers for the Gateway: enqueue system events, control heartbeats,
-and view presence.
+Gatewayのためのシステムレベルのヘルパー：システムイベントをキューに入れ、ハートビートを制御し、プレゼンスを表示します。
 
 ## よく使うコマンド
 
@@ -20,38 +19,35 @@ openclaw system presence
 
 ## `system event`
 
-Enqueue a system event on the **main** session. The next heartbeat will inject
-it as a `System:` line in the prompt. Use `--mode now` to trigger the heartbeat
-immediately; `next-heartbeat` waits for the next scheduled tick.
+**メイン**セッションにシステムイベントをキューに入れます。次のハートビートで、プロンプトに`System:`行として挿入されます。`--mode now`を使用すると、ハートビートを即座にトリガーできます；`next-heartbeat`は次のスケジュールされたティックを待ちます。
 
-Flags:
+フラグ：
 
-* `--text <text>`: required system event text.
-* `--mode <mode>`: `now` or `next-heartbeat` (default).
-* `--json`: machine-readable output.
+* `--text <text>`: 必須のシステムイベントテキスト。
+* `--mode <mode>`: `now`または`next-heartbeat`（デフォルト）。
+* `--json`: 機械可読の出力。
 
 ## `system heartbeat last|enable|disable`
 
-Heartbeat controls:
+ハートビートの制御：
 
-* `last`: show the last heartbeat event.
-* `enable`: turn heartbeats back on (use this if they were disabled).
-* `disable`: pause heartbeats.
+* `last`: 最後のハートビートイベントを表示します。
+* `enable`: ハートビートを再度オンにします（無効になっている場合はこれを使用してください）。
+* `disable`: ハートビートを一時停止します。
 
-Flags:
+フラグ：
 
-* `--json`: machine-readable output.
+* `--json`: 機械可読の出力。
 
 ## `system presence`
 
-List the current system presence entries the Gateway knows about (nodes,
-instances, and similar status lines).
+Gatewayが知っている現在のシステムプレゼンスエントリ（ノード、インスタンス、および類似のステータス行）をリストします。
 
-Flags:
+フラグ：
 
-* `--json`: machine-readable output.
+* `--json`: 機械可読の出力。
 
 ## 注意事項
 
-* Requires a running Gateway reachable by your current config (local or remote).
-* System events are ephemeral and not persisted across restarts.
+* 現在の設定（ローカルまたはリモート）で到達可能なGatewayが必要です。
+* システムイベントは一時的であり、再起動を跨いで保持されません。

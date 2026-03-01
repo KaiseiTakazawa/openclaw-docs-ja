@@ -6,15 +6,15 @@ title: "onboard"
 
 # `openclaw onboard`
 
-Interactive onboarding wizard (local or remote Gateway setup).
+インタラクティブなオンボーディングウィザード（ローカルまたはリモートのGateway設定）。
 
-## Related guides
+## 関連ガイド
 
-* CLI onboarding hub: [Onboarding Wizard (CLI)](/start/wizard)
-* Onboarding overview: [Onboarding Overview](/start/onboarding-overview)
-* CLI onboarding reference: [CLI Onboarding Reference](/start/wizard-cli-reference)
-* CLI automation: [CLI Automation](/start/wizard-cli-automation)
-* macOS onboarding: [Onboarding (macOS App)](/start/onboarding)
+* CLIオンボーディングハブ: [Onboarding Wizard (CLI)](/start/wizard)
+* オンボーディングの概要: [Onboarding Overview](/start/onboarding-overview)
+* CLIオンボーディングリファレンス: [CLI Onboarding Reference](/start/wizard-cli-reference)
+* CLI自動化: [CLI Automation](/start/wizard-cli-automation)
+* macOSオンボーディング: [Onboarding (macOS App)](/start/onboarding)
 
 ## 例
 
@@ -25,7 +25,7 @@ openclaw onboard --flow manual
 openclaw onboard --mode remote --remote-url ws://gateway-host:18789
 ```
 
-Non-interactive custom provider:
+非インタラクティブなカスタムプロバイダー:
 
 ```bash
 openclaw onboard --non-interactive \
@@ -37,9 +37,9 @@ openclaw onboard --non-interactive \
   --custom-compatibility openai
 ```
 
-`--custom-api-key` is optional in non-interactive mode. If omitted, onboarding checks `CUSTOM_API_KEY`.
+`--custom-api-key`は非インタラクティブモードではオプションです。省略した場合、オンボーディングは`CUSTOM_API_KEY`をチェックします。
 
-Store provider keys as refs instead of plaintext:
+プロバイダーキーをプレーンテキストではなくリファレンスとして保存:
 
 ```bash
 openclaw onboard --non-interactive \
@@ -48,42 +48,42 @@ openclaw onboard --non-interactive \
   --accept-risk
 ```
 
-With `--secret-input-mode ref`, onboarding writes env-backed refs instead of plaintext key values.
-For auth-profile backed providers this writes `keyRef` entries; for custom providers this writes `models.providers.<id>.apiKey` as an env ref (for example `{ source: "env", provider: "default", id: "CUSTOM_API_KEY" }`).
+`--secret-input-mode ref`を使用すると、オンボーディングはプレーンテキストのキー値の代わりに環境変数に基づくリファレンスを書き込みます。
+認証プロファイルに基づくプロバイダーの場合、`keyRef`エントリが書き込まれます。カスタムプロバイダーの場合、`models.providers.<id>.apiKey`が環境リファレンスとして書き込まれます（例えば`{ source: "env", provider: "default", id: "CUSTOM_API_KEY" }`）。
 
-Non-interactive `ref` mode contract:
+非インタラクティブな`ref`モード契約:
 
-* Set the provider env var in the onboarding process environment (for example `OPENAI_API_KEY`).
-* Do not pass inline key flags (for example `--openai-api-key`) unless that env var is also set.
-* If an inline key flag is passed without the required env var, onboarding fails fast with guidance.
+* オンボーディングプロセス環境でプロバイダー環境変数を設定します（例えば`OPENAI_API_KEY`）。
+* 環境変数が設定されていない限り、インラインキーフラグ（例えば`--openai-api-key`）を渡さないでください。
+* 必要な環境変数なしでインラインキーフラグが渡された場合、オンボーディングは迅速に失敗し、ガイダンスが表示されます。
 
-Interactive onboarding behavior with reference mode:
+リファレンスモードでのインタラクティブなオンボーディングの動作:
 
-* Choose **Use secret reference** when prompted.
-* Then choose either:
-  * Environment variable
-  * Configured secret provider (`file` or `exec`)
-* Onboarding performs a fast preflight validation before saving the ref.
-  * If validation fails, onboarding shows the error and lets you retry.
+* プロンプトが表示されたら**秘密のリファレンスを使用**を選択します。
+* 次に、次のいずれかを選択します:
+  * 環境変数
+  * 設定された秘密プロバイダー（`file`または`exec`）
+* オンボーディングはリファレンスを保存する前に迅速な事前検証を行います。
+  * 検証が失敗した場合、オンボーディングはエラーを表示し、再試行を促します。
 
-Non-interactive Z.AI endpoint choices:
+非インタラクティブなZ.AIエンドポイントの選択肢:
 
-Note: `--auth-choice zai-api-key` now auto-detects the best Z.AI endpoint for your key (prefers the general API with `zai/glm-5`).
-If you specifically want the GLM Coding Plan endpoints, pick `zai-coding-global` or `zai-coding-cn`.
+注意: `--auth-choice zai-api-key`は、あなたのキーに最適なZ.AIエンドポイントを自動検出します（一般APIの`zai/glm-5`を優先します）。
+GLMコーディングプランエンドポイントを特に希望する場合は、`zai-coding-global`または`zai-coding-cn`を選択してください。
 
 ```bash
-# Promptless endpoint selection
+# プロンプトなしのエンドポイント選択
 openclaw onboard --non-interactive \
   --auth-choice zai-coding-global \
   --zai-api-key "$ZAI_API_KEY"
 
-# Other Z.AI endpoint choices:
+# 他のZ.AIエンドポイントの選択肢:
 # --auth-choice zai-coding-cn
 # --auth-choice zai-global
 # --auth-choice zai-cn
 ```
 
-Non-interactive Mistral example:
+非インタラクティブなMistralの例:
 
 ```bash
 openclaw onboard --non-interactive \
@@ -91,22 +91,20 @@ openclaw onboard --non-interactive \
   --mistral-api-key "$MISTRAL_API_KEY"
 ```
 
-Flow notes:
+フローノート:
 
-* `quickstart`: minimal prompts, auto-generates a gateway token.
-* `manual`: full prompts for port/bind/auth (alias of `advanced`).
-* Local onboarding DM scope behavior: [CLI Onboarding Reference](/start/wizard-cli-reference#outputs-and-internals).
-* Fastest first chat: `openclaw dashboard` (Control UI, no channel setup).
-* Custom Provider: connect any OpenAI or Anthropic compatible endpoint,
-  including hosted providers not listed. Use Unknown to auto-detect.
+* `quickstart`: 最小限のプロンプト、自動生成されたGatewayトークン。
+* `manual`: ポート/バインド/認証のための完全なプロンプト（`advanced`のエイリアス）。
+* ローカルオンボーディングDMスコープの動作: [CLI Onboarding Reference](/start/wizard-cli-reference#outputs-and-internals)。
+* 最速の初回チャット: `openclaw dashboard`（コントロールUI、チャンネル設定なし）。
+* カスタムプロバイダー: 任意のOpenAIまたはAnthropic互換エンドポイントに接続、
+  リストにないホスティングプロバイダーも含む。Unknownを使用して自動検出。
 
-## Common follow-up commands
+## 一般的なフォローアップコマンド
 
 ```bash
 openclaw configure
 openclaw agents add <name>
 ```
 
-
-  `--json` does not imply non-interactive mode. Use `--non-interactive` for scripts.
-
+`--json`は非インタラクティブモードを意味しません。スクリプトには`--non-interactive`を使用してください。

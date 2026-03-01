@@ -6,7 +6,7 @@ title: "sessions"
 
 # `openclaw sessions`
 
-List stored conversation sessions.
+保存された会話セッションのリストを表示します。
 
 ```bash
 openclaw sessions
@@ -16,14 +16,14 @@ openclaw sessions --active 120
 openclaw sessions --json
 ```
 
-Scope selection:
+スコープの選択:
 
-* default: configured default agent store
-* `--agent <id>`: one configured agent store
-* `--all-agents`: aggregate all configured agent stores
-* `--store <path>`: explicit store path (cannot be combined with `--agent` or `--all-agents`)
+* default: 設定されたデフォルトエージェントストア
+* `--agent <id>`: 一つの設定されたエージェントストア
+* `--all-agents`: すべての設定されたエージェントストアを集約
+* `--store <path>`: 明示的なストアパス（`--agent`または`--all-agents`と組み合わせることはできません）
 
-JSON examples:
+JSONの例:
 
 `openclaw sessions --all-agents --json`:
 
@@ -44,9 +44,9 @@ JSON examples:
 }
 ```
 
-## Cleanup maintenance
+## クリーンアップメンテナンス
 
-Run maintenance now (instead of waiting for the next write cycle):
+次の書き込みサイクルを待つのではなく、今すぐメンテナンスを実行します:
 
 ```bash
 openclaw sessions cleanup --dry-run
@@ -57,24 +57,24 @@ openclaw sessions cleanup --enforce --active-key "agent:main:telegram:dm:123"
 openclaw sessions cleanup --json
 ```
 
-`openclaw sessions cleanup` uses `session.maintenance` settings from config:
+`openclaw sessions cleanup`は設定から`session.maintenance`の設定を使用します:
 
-* Scope note: `openclaw sessions cleanup` maintains session stores/transcripts only. It does not prune cron run logs (`cron/runs/<jobId>.jsonl`), which are managed by `cron.runLog.maxBytes` and `cron.runLog.keepLines` in [Cron configuration](/automation/cron-jobs#configuration) and explained in [Cron maintenance](/automation/cron-jobs#maintenance).
+* スコープの注意: `openclaw sessions cleanup`はセッションストア/トランスクリプトのみを維持します。`cron/runs/<jobId>.jsonl`のようなcron実行ログは管理されず、[Cron設定](/automation/cron-jobs#configuration)の`cron.runLog.maxBytes`と`cron.runLog.keepLines`によって管理され、[Cronメンテナンス](/automation/cron-jobs#maintenance)で説明されています。
 
-* `--dry-run`: preview how many entries would be pruned/capped without writing.
-  * In text mode, dry-run prints a per-session action table (`Action`, `Key`, `Age`, `Model`, `Flags`) so you can see what would be kept vs removed.
+* `--dry-run`: 書き込みなしでどれだけのエントリが削除/制限されるかをプレビューします。
+  * テキストモードでは、ドライランがセッションごとのアクションテーブル（`Action`, `Key`, `Age`, `Model`, `Flags`）を表示し、保持されるものと削除されるものを確認できます。
 
-* `--enforce`: apply maintenance even when `session.maintenance.mode` is `warn`.
+* `--enforce`: `session.maintenance.mode`が`warn`であってもメンテナンスを適用します。
 
-* `--active-key <key>`: protect a specific active key from disk-budget eviction.
+* `--active-key <key>`: 特定のアクティブキーをディスク予算から保護します。
 
-* `--agent <id>`: run cleanup for one configured agent store.
+* `--agent <id>`: 一つの設定されたエージェントストアのクリーンアップを実行します。
 
-* `--all-agents`: run cleanup for all configured agent stores.
+* `--all-agents`: すべての設定されたエージェントストアのクリーンアップを実行します。
 
-* `--store <path>`: run against a specific `sessions.json` file.
+* `--store <path>`: 特定の`sessions.json`ファイルに対して実行します。
 
-* `--json`: print a JSON summary. With `--all-agents`, output includes one summary per store.
+* `--json`: JSONサマリーを出力します。`--all-agents`を使用すると、各ストアごとに1つのサマリーが含まれます。
 
 `openclaw sessions cleanup --all-agents --dry-run --json`:
 
@@ -104,6 +104,6 @@ openclaw sessions cleanup --json
 }
 ```
 
-Related:
+関連情報:
 
-* Session config: [Configuration reference](/gateway/configuration-reference#session)
+* セッション設定: [設定リファレンス](/gateway/configuration-reference#session)

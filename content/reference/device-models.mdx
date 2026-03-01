@@ -6,25 +6,25 @@ title: "デバイスモデルデータベース"
 
 # Device model database (friendly names)
 
-The macOS companion app shows friendly Apple device model names in the **Instances** UI by mapping Apple model identifiers (e.g. `iPad16,6`, `Mac16,6`) to human-readable names.
+macOSのコンパニオンアプリは、Appleのモデル識別子（例: `iPad16,6`, `Mac16,6`）を人間が読みやすい名前にマッピングすることによって、**Instances** UIにフレンドリーなAppleデバイスモデル名を表示します。
 
-The mapping is vendored as JSON under:
+このマッピングは、以下の場所にJSONとしてベンダーされています:
 
 * `apps/macos/Sources/OpenClaw/Resources/DeviceModels/`
 
-## Data source
+## データソース
 
-We currently vendor the mapping from the MIT-licensed repository:
+現在、MITライセンスのリポジトリからマッピングをベンダーしています:
 
 * `kyle-seongwoo-jun/apple-device-identifiers`
 
-To keep builds deterministic, the JSON files are pinned to specific upstream commits (recorded in `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`).
+ビルドを決定的に保つために、JSONファイルは特定の上流コミットにピン留めされています（これは`apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`に記録されています）。
 
-## Updating the database
+## データベースの更新
 
-1. Pick the upstream commits you want to pin to (one for iOS, one for macOS).
-2. Update the commit hashes in `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`.
-3. Re-download the JSON files, pinned to those commits:
+1. ピン留めしたい上流コミットを選択します（iOS用とmacOS用の1つずつ）。
+2. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/NOTICE.md`のコミットハッシュを更新します。
+3. これらのコミットにピン留めされたJSONファイルを再ダウンロードします:
 
 ```bash
 IOS_COMMIT="<commit sha for ios-device-identifiers.json>"
@@ -37,8 +37,8 @@ curl -fsSL "https://raw.githubusercontent.com/kyle-seongwoo-jun/apple-device-ide
   -o apps/macos/Sources/OpenClaw/Resources/DeviceModels/mac-device-identifiers.json
 ```
 
-4. Ensure `apps/macos/Sources/OpenClaw/Resources/DeviceModels/LICENSE.apple-device-identifiers.txt` still matches upstream (replace it if the upstream license changes).
-5. Verify the macOS app builds cleanly (no warnings):
+4. `apps/macos/Sources/OpenClaw/Resources/DeviceModels/LICENSE.apple-device-identifiers.txt`がまだ上流と一致していることを確認します（上流のライセンスが変更された場合は置き換えます）。
+5. macOSアプリがクリーンにビルドされることを確認します（警告なし）:
 
 ```bash
 swift build --package-path apps/macos

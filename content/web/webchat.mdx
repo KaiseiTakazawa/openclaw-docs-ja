@@ -6,55 +6,53 @@ title: "WebChat"
 
 # WebChat (Gateway WebSocket UI)
 
-Status: the macOS/iOS SwiftUI chat UI talks directly to the Gateway WebSocket.
+ステータス: macOS/iOSのSwiftUIチャットUIは、Gateway WebSocketに直接接続します。
 
-## What it is
+## これは何か
 
-* A native chat UI for the gateway (no embedded browser and no local static server).
-* Uses the same sessions and routing rules as other channels.
-* Deterministic routing: replies always go back to WebChat.
+* ゲートウェイ用のネイティブチャットUI（埋め込みブラウザやローカル静的サーバーはなし）。
+* 他のチャネルと同じセッションとルーティングルールを使用。
+* 決定論的ルーティング: 返信は常にWebChatに戻ります。
 
 ## クイックスタート
 
-1. Start the gateway.
-2. Open the WebChat UI (macOS/iOS app) or the Control UI chat tab.
-3. Ensure gateway auth is configured (required by default, even on loopback).
+1. ゲートウェイを起動します。
+2. WebChat UI（macOS/iOSアプリ）またはControl UIチャットタブを開きます。
+3. ゲートウェイの認証が設定されていることを確認します（ループバックでもデフォルトで必要）。
 
-## How it works (behavior)
+## 動作方法（動作）
 
-* The UI connects to the Gateway WebSocket and uses `chat.history`, `chat.send`, and `chat.inject`.
-* `chat.history` is bounded for stability: Gateway may truncate long text fields, omit heavy metadata, and replace oversized entries with `[chat.history omitted: message too large]`.
-* `chat.inject` appends an assistant note directly to the transcript and broadcasts it to the UI (no agent run).
-* Aborted runs can keep partial assistant output visible in the UI.
-* Gateway persists aborted partial assistant text into transcript history when buffered output exists, and marks those entries with abort metadata.
-* History is always fetched from the gateway (no local file watching).
-* If the gateway is unreachable, WebChat is read-only.
+* UIはGateway WebSocketに接続し、`chat.history`、`chat.send`、および`chat.inject`を使用します。
+* `chat.history`は安定性のために制限されています: ゲートウェイは長いテキストフィールドを切り捨てたり、重いメタデータを省略したり、サイズオーバーのエントリを`[chat.history omitted: message too large]`で置き換えたりします。
+* `chat.inject`は、アシスタントノートをトランスクリプトに直接追加し、UIにブロードキャストします（エージェントの実行なし）。
+* 中断された実行は、UIに部分的なアシスタント出力を表示し続けることができます。
+* ゲートウェイは、中断された部分的なアシスタントテキストをバッファ出力が存在する場合にトランスクリプト履歴に永続化し、それらのエントリに中断メタデータをマークします。
+* 履歴は常にゲートウェイから取得されます（ローカルファイルの監視なし）。
+* ゲートウェイに接続できない場合、WebChatは読み取り専用です。
 
-## Control UI agents tools panel
+## Control UIエージェントツールパネル
 
-* The Control UI `/agents` Tools panel fetches a runtime catalog via `tools.catalog` and labels each
-  tool as `core` or `plugin:<id>` (plus `optional` for optional plugin tools).
-* If `tools.catalog` is unavailable, the panel falls back to a built-in static list.
-* The panel edits profile and override config, but effective runtime access still follows policy
-  precedence (`allow`/`deny`, per-agent and provider/channel overrides).
+* Control UIの`/agents`ツールパネルは、`tools.catalog`を介してランタイムカタログを取得し、各ツールを`core`または`plugin:<id>`（オプションプラグインツールには`optional`）としてラベル付けします。
+* `tools.catalog`が利用できない場合、パネルは組み込みの静的リストにフォールバックします。
+* パネルはプロファイルとオーバーライド設定を編集しますが、実効ランタイムアクセスはポリシーの優先順位（エージェントおよびプロバイダー/チャネルのオーバーライドに基づく`allow`/`deny`）に従います。
 
-## Remote use
+## リモート使用
 
-* Remote mode tunnels the gateway WebSocket over SSH/Tailscale.
-* You do not need to run a separate WebChat server.
+* リモートモードは、SSH/Tailscale経由でゲートウェイWebSocketをトンネリングします。
+* 別のWebChatサーバーを実行する必要はありません。
 
-## Configuration reference (WebChat)
+## 設定リファレンス（WebChat）
 
-Full configuration: [Configuration](/gateway/configuration)
+完全な設定: [Configuration](/gateway/configuration)
 
-Channel options:
+チャネルオプション:
 
-* No dedicated `webchat.*` block. WebChat uses the gateway endpoint + auth settings below.
+* 専用の`webchat.*`ブロックはありません。WebChatは以下のゲートウェイエンドポイントと認証設定を使用します。
 
-Related global options:
+関連するグローバルオプション:
 
-* `gateway.port`, `gateway.bind`: WebSocket host/port.
-* `gateway.auth.mode`, `gateway.auth.token`, `gateway.auth.password`: WebSocket auth (token/password).
-* `gateway.auth.mode: "trusted-proxy"`: reverse-proxy auth for browser clients (see [Trusted Proxy Auth](/gateway/trusted-proxy-auth)).
-* `gateway.remote.url`, `gateway.remote.token`, `gateway.remote.password`: remote gateway target.
-* `session.*`: session storage and main key defaults.
+* `gateway.port`, `gateway.bind`: WebSocketホスト/ポート。
+* `gateway.auth.mode`, `gateway.auth.token`, `gateway.auth.password`: WebSocket認証（トークン/パスワード）。
+* `gateway.auth.mode: "trusted-proxy"`: ブラウザクライアント用のリバースプロキシ認証（[Trusted Proxy Auth](/gateway/trusted-proxy-auth)を参照）。
+* `gateway.remote.url`, `gateway.remote.token`, `gateway.remote.password`: リモートゲートウェイターゲット。
+* `session.*`: セッションストレージおよびメインキーのデフォルト。

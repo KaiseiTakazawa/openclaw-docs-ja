@@ -4,18 +4,15 @@ title: "OpenRouter"
 
 # OpenRouter
 
-# OpenRouter
+OpenRouterは、単一のエンドポイントとAPIキーの背後にある多くのモデルにリクエストをルーティングする**統一API**を提供します。これはOpenAI互換であり、ほとんどのOpenAI SDKはベースURLを切り替えることで動作します。
 
-OpenRouter provides a **unified API** that routes requests to many models behind a single
-endpoint and API key. It is OpenAI-compatible, so most OpenAI SDKs work by switching the base URL.
-
-## CLI setup
+## CLIセットアップ
 
 ```bash
 openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPENROUTER_API_KEY"
 ```
 
-## Config snippet
+## 設定スニペット
 
 ```json5
 {
@@ -30,6 +27,6 @@ openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPEN
 
 ## 注意事項
 
-* Model refs are `openrouter/<provider>/<model>`.
-* For more model/provider options, see [/concepts/model-providers](/concepts/model-providers).
-* OpenRouter uses a Bearer token with your API key under the hood.
+* モデル参照は`openrouter/<provider>/<model>`です。
+* モデル/プロバイダーのオプションについては、[/concepts/model-providers](/concepts/model-providers)を参照してください。
+* OpenRouterは、内部であなたのAPIキーを使用したBearerトークンを利用します。

@@ -6,25 +6,24 @@ title: "Synthetic"
 
 # Synthetic
 
-Synthetic exposes Anthropic-compatible endpoints. OpenClaw registers it as the
-`synthetic` provider and uses the Anthropic Messages API.
+Syntheticは、Anthropic互換のエンドポイントを公開します。OpenClawはこれを`synthetic`プロバイダーとして登録し、Anthropic Messages APIを使用します。
 
 ## クイックセットアップ
 
-1. Set `SYNTHETIC_API_KEY` (or run the wizard below).
-2. Run onboarding:
+1. `SYNTHETIC_API_KEY`を設定します（または以下のウィザードを実行します）。
+2. オンボーディングを実行します：
 
 ```bash
 openclaw onboard --auth-choice synthetic-api-key
 ```
 
-The default model is set to:
+デフォルトのモデルは次のように設定されています：
 
 ```
 synthetic/hf:MiniMaxAI/MiniMax-M2.1
 ```
 
-## Config example
+## 設定例
 
 ```json5
 {
@@ -59,15 +58,13 @@ synthetic/hf:MiniMaxAI/MiniMax-M2.1
 }
 ```
 
-Note: OpenClaw's Anthropic client appends `/v1` to the base URL, so use
-`https://api.synthetic.new/anthropic` (not `/anthropic/v1`). If Synthetic changes
-its base URL, override `models.providers.synthetic.baseUrl`.
+注意：OpenClawのAnthropicクライアントは、ベースURLに`/v1`を追加するため、`https://api.synthetic.new/anthropic`を使用してください（`/anthropic/v1`ではありません）。SyntheticがベースURLを変更した場合は、`models.providers.synthetic.baseUrl`を上書きしてください。
 
-## Model catalog
+## モデルカタログ
 
-All models below use cost `0` (input/output/cache).
+以下のすべてのモデルはコスト`0`（入力/出力/キャッシュ）を使用します。
 
-| Model ID                                               | Context window | Max tokens | Reasoning | Input        |
+| モデルID                                               | コンテキストウィンドウ | 最大トークン | 推論 | 入力        |
 | ------------------------------------------------------ | -------------- | ---------- | --------- | ------------ |
 | `hf:MiniMaxAI/MiniMax-M2.1`                            | 192000         | 65536      | false     | text         |
 | `hf:moonshotai/Kimi-K2-Thinking`                       | 256000         | 8192       | true      | text         |
@@ -91,7 +88,6 @@ All models below use cost `0` (input/output/cache).
 
 ## 注意事項
 
-* Model refs use `synthetic/<modelId>`.
-* If you enable a model allowlist (`agents.defaults.models`), add every model you
-  plan to use.
-* See [Model providers](/concepts/model-providers) for provider rules.
+* モデル参照は`synthetic/<modelId>`を使用します。
+* モデルのホワイトリストを有効にする場合（`agents.defaults.models`）、使用する予定のすべてのモデルを追加してください。
+* プロバイダーのルールについては、[モデルプロバイダー](/concepts/model-providers)を参照してください。

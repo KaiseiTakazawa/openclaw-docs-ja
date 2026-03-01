@@ -6,117 +6,102 @@ title: "エージェントランタイム"
 
 # Agent Runtime 🤖
 
-OpenClaw runs a single embedded agent runtime derived from **pi-mono**.
+OpenClawは、**pi-mono**から派生した単一の組み込みエージェントランタイムを実行します。
 
-## Workspace (required)
+## ワークスペース (必須)
 
-OpenClaw uses a single agent workspace directory (`agents.defaults.workspace`) as the agent’s **only** working directory (`cwd`) for tools and context.
+OpenClawは、エージェントの**唯一の**作業ディレクトリ（`cwd`）として単一のエージェントワークスペースディレクトリ（`agents.defaults.workspace`）を使用します。
 
-Recommended: use `openclaw setup` to create `~/.openclaw/openclaw.json` if missing and initialize the workspace files.
+推奨: `openclaw setup`を使用して、存在しない場合は`~/.openclaw/openclaw.json`を作成し、ワークスペースファイルを初期化します。
 
-Full workspace layout + backup guide: [Agent workspace](/concepts/agent-workspace)
+完全なワークスペースレイアウト + バックアップガイド: [Agent workspace](/concepts/agent-workspace)
 
-If `agents.defaults.sandbox` is enabled, non-main sessions can override this with
-per-session workspaces under `agents.defaults.sandbox.workspaceRoot` (see
-[Gateway configuration](/gateway/configuration)).
+`agents.defaults.sandbox`が有効になっている場合、非メインセッションは`agents.defaults.sandbox.workspaceRoot`の下にあるセッションごとのワークスペースでこれを上書きできます（[Gateway configuration](/gateway/configuration)を参照）。
 
-## Bootstrap files (injected)
+## ブートストラップファイル (挿入)
 
-Inside `agents.defaults.workspace`, OpenClaw expects these user-editable files:
+`agents.defaults.workspace`内で、OpenClawはこれらのユーザー編集可能なファイルを期待します：
 
-* `AGENTS.md` — operating instructions + “memory”
-* `SOUL.md` — persona, boundaries, tone
-* `TOOLS.md` — user-maintained tool notes (e.g. `imsg`, `sag`, conventions)
-* `BOOTSTRAP.md` — one-time first-run ritual (deleted after completion)
-* `IDENTITY.md` — agent name/vibe/emoji
-* `USER.md` — user profile + preferred address
+* `AGENTS.md` — 操作指示 + “メモリー”
+* `SOUL.md` — ペルソナ、境界、トーン
+* `TOOLS.md` — ユーザー管理のツールノート（例: `imsg`, `sag`, 規約）
+* `BOOTSTRAP.md` — 一度きりの初回実行儀式（完了後に削除される）
+* `IDENTITY.md` — エージェント名/雰囲気/絵文字
+* `USER.md` — ユーザープロフィール + 希望のアドレス
 
-On the first turn of a new session, OpenClaw injects the contents of these files directly into the agent context.
+新しいセッションの最初のターンで、OpenClawはこれらのファイルの内容をエージェントコンテキストに直接挿入します。
 
-Blank files are skipped. Large files are trimmed and truncated with a marker so prompts stay lean (read the file for full content).
+空のファイルはスキップされます。大きなファイルは、プロンプトがスリムに保たれるようにマーカーでトリミングされます（完全な内容はファイルを読んでください）。
 
-If a file is missing, OpenClaw injects a single “missing file” marker line (and `openclaw setup` will create a safe default template).
+ファイルが欠けている場合、OpenClawは単一の「欠けているファイル」マーカー行を挿入します（`openclaw setup`は安全なデフォルトテンプレートを作成します）。
 
-`BOOTSTRAP.md` is only created for a **brand new workspace** (no other bootstrap files present). If you delete it after completing the ritual, it should not be recreated on later restarts.
+`BOOTSTRAP.md`は**完全に新しいワークスペース**のためだけに作成されます（他のブートストラップファイルが存在しない場合）。儀式を完了した後に削除すると、後の再起動時に再作成されるべきではありません。
 
-To disable bootstrap file creation entirely (for pre-seeded workspaces), set:
+ブートストラップファイルの作成を完全に無効にするには（事前にシードされたワークスペース用）、次のように設定します：
 
 ```json5
 { agent: { skipBootstrap: true } }
 ```
 
-## Built-in tools
+## 組み込みツール
 
-Core tools (read/exec/edit/write and related system tools) are always available,
-subject to tool policy. `apply_patch` is optional and gated by
-`tools.exec.applyPatch`. `TOOLS.md` does **not** control which tools exist; it’s
-guidance for how *you* want them used.
+コアツール（読み取り/実行/編集/書き込みおよび関連するシステムツール）は常に利用可能で、ツールポリシーに従います。`apply_patch`はオプションで、`tools.exec.applyPatch`によって制御されます。`TOOLS.md`は**どのツールが存在するか**を制御しません; それは*あなた*がそれらをどのように使用したいかのガイダンスです。
 
 ## スキル
 
-OpenClaw loads skills from three locations (workspace wins on name conflict):
+OpenClawは、スキルを3つの場所から読み込みます（名前の衝突の場合はワークスペースが勝ちます）：
 
-* Bundled (shipped with the install)
-* Managed/local: `~/.openclaw/skills`
-* Workspace: `<workspace>/skills`
+* バンドル（インストール時に同梱）
+* 管理/ローカル: `~/.openclaw/skills`
+* ワークスペース: `<workspace>/skills`
 
-Skills can be gated by config/env (see `skills` in [Gateway configuration](/gateway/configuration)).
+スキルは、設定/環境によって制御されることがあります（[Gateway configuration](/gateway/configuration)の`skills`を参照）。
 
-## pi-mono integration
+## pi-mono統合
 
-OpenClaw reuses pieces of the pi-mono codebase (models/tools), but **session management, discovery, and tool wiring are OpenClaw-owned**.
+OpenClawはpi-monoのコードベースの一部（モデル/ツール）を再利用しますが、**セッション管理、発見、およびツールの配線はOpenClaw所有です**。
 
-* No pi-coding agent runtime.
-* No `~/.pi/agent` or `<workspace>/.pi` settings are consulted.
+* pi-codingエージェントランタイムはありません。
+* `~/.pi/agent`や`<workspace>/.pi`の設定は参照されません。
 
 ## セッション
 
-Session transcripts are stored as JSONL at:
+セッションのトランスクリプトはJSONLとして保存されます：
 
 * `~/.openclaw/agents/<agentId>/sessions/<SessionId>.jsonl`
 
-The session ID is stable and chosen by OpenClaw.
-Legacy Pi/Tau session folders are **not** read.
+セッションIDは安定しており、OpenClawによって選択されます。
+レガシーPi/Tauセッションフォルダーは**読み取られません**。
 
-## Steering while streaming
+## ストリーミング中の操作
 
-When queue mode is `steer`, inbound messages are injected into the current run.
-The queue is checked **after each tool call**; if a queued message is present,
-remaining tool calls from the current assistant message are skipped (error tool
-results with "Skipped due to queued user message."), then the queued user
-message is injected before the next assistant response.
+キューモードが`steer`の場合、受信メッセージは現在の実行に挿入されます。
+キューは**各ツール呼び出しの後**にチェックされます; キューにメッセージが存在する場合、現在のアシスタントメッセージからの残りのツール呼び出しはスキップされます（エラーツール結果には「キューにあるユーザーメッセージのためにスキップされました。」と表示されます）、その後、次のアシスタントの応答の前にキューにあるユーザーメッセージが挿入されます。
 
-When queue mode is `followup` or `collect`, inbound messages are held until the
-current turn ends, then a new agent turn starts with the queued payloads. See
-[Queue](/concepts/queue) for mode + debounce/cap behavior.
+キューモードが`followup`または`collect`の場合、受信メッセージは現在のターンが終了するまで保持され、その後、キューにあるペイロードで新しいエージェントターンが開始されます。モード + デバウンス/キャップの動作については[Queue](/concepts/queue)を参照してください。
 
-Block streaming sends completed assistant blocks as soon as they finish; it is
-**off by default** (`agents.defaults.blockStreamingDefault: "off"`).
-Tune the boundary via `agents.defaults.blockStreamingBreak` (`text_end` vs `message_end`; defaults to text\_end).
-Control soft block chunking with `agents.defaults.blockStreamingChunk` (defaults to
-800–1200 chars; prefers paragraph breaks, then newlines; sentences last).
-Coalesce streamed chunks with `agents.defaults.blockStreamingCoalesce` to reduce
-single-line spam (idle-based merging before send). Non-Telegram channels require
-explicit `*.blockStreaming: true` to enable block replies.
-Verbose tool summaries are emitted at tool start (no debounce); Control UI
-streams tool output via agent events when available.
-More details: [Streaming + chunking](/concepts/streaming).
+ブロックストリーミングは、完了したアシスタントブロックをすぐに送信します; これは**デフォルトでオフ**です（`agents.defaults.blockStreamingDefault: "off"`）。
+境界は`agents.defaults.blockStreamingBreak`で調整します（`text_end`対`message_end`; デフォルトはtext_end）。
+ソフトブロックチャンクは`agents.defaults.blockStreamingChunk`で制御します（デフォルトは800–1200文字; 段落の区切りを優先し、その後改行; 文が最後になります）。
+ストリーミングされたチャンクを`agents.defaults.blockStreamingCoalesce`で統合して、単一行のスパムを減らします（送信前のアイドルベースのマージ）。非Telegramチャネルでは、ブロック返信を有効にするために明示的に`*.blockStreaming: true`が必要です。
+冗長なツールサマリーはツールの開始時に出力されます（デバウンスなし）；利用可能な場合、エージェントイベントを介してツール出力を制御UIストリームします。
+詳細については、[Streaming + chunking](/concepts/streaming)を参照してください。
 
-## Model refs
+## モデル参照
 
-Model refs in config (for example `agents.defaults.model` and `agents.defaults.models`) are parsed by splitting on the **first** `/`.
+設定内のモデル参照（例えば`agents.defaults.model`や`agents.defaults.models`）は、**最初の**`/`で分割して解析されます。
 
-* Use `provider/model` when configuring models.
-* If the model ID itself contains `/` (OpenRouter-style), include the provider prefix (example: `openrouter/moonshotai/kimi-k2`).
-* If you omit the provider, OpenClaw treats the input as an alias or a model for the **default provider** (only works when there is no `/` in the model ID).
+* モデルを設定する際は`provider/model`を使用します。
+* モデルID自体に`/`が含まれている場合（OpenRouterスタイル）、プロバイダプレフィックスを含めます（例: `openrouter/moonshotai/kimi-k2`）。
+* プロバイダを省略すると、OpenClawは入力を**デフォルトプロバイダ**のエイリアスまたはモデルとして扱います（モデルIDに`/`が含まれていない場合のみ機能します）。
 
-## Configuration (minimal)
+## 設定 (最小)
 
-At minimum, set:
+最低限、次を設定します：
 
 * `agents.defaults.workspace`
-* `channels.whatsapp.allowFrom` (strongly recommended)
+* `channels.whatsapp.allowFrom`（強く推奨）
 
 ***
 
-*Next: [Group Chats](/channels/group-messages)* 🦞
+*次: [Group Chats](/channels/group-messages)* 🦞

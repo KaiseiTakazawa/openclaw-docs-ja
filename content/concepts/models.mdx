@@ -6,73 +6,63 @@ title: "モデル CLI"
 
 # モデル CLI
 
-See [/concepts/model-failover](/concepts/model-failover) for auth profile
-rotation, cooldowns, and how that interacts with fallbacks.
-Quick provider overview + examples: [/concepts/model-providers](/concepts/model-providers).
+認証プロファイルのローテーション、クールダウン、およびフォールバックとの相互作用については、[/concepts/model-failover](/concepts/model-failover)を参照してください。プロバイダーの概要と例については、[/concepts/model-providers](/concepts/model-providers)をご覧ください。
 
-## How model selection works
+## モデル選択の仕組み
 
-OpenClaw selects models in this order:
+OpenClawは次の順序でモデルを選択します：
 
-1. **Primary** model (`agents.defaults.model.primary` or `agents.defaults.model`).
-2. **Fallbacks** in `agents.defaults.model.fallbacks` (in order).
-3. **Provider auth failover** happens inside a provider before moving to the
-   next model.
+1. **プライマリ**モデル（`agents.defaults.model.primary`または`agents.defaults.model`）。
+2. **フォールバック**（`agents.defaults.model.fallbacks`内、順番通り）。
+3. **プロバイダーの認証フォールバック**は、次のモデルに移る前にプロバイダー内で発生します。
 
-Related:
+関連情報：
 
-* `agents.defaults.models` is the allowlist/catalog of models OpenClaw can use (plus aliases).
-* `agents.defaults.imageModel` is used **only when** the primary model can’t accept images.
-* Per-agent defaults can override `agents.defaults.model` via `agents.list[].model` plus bindings (see [/concepts/multi-agent](/concepts/multi-agent)).
+* `agents.defaults.models`は、OpenClawが使用できるモデルの許可リスト/カタログ（エイリアスを含む）です。
+* `agents.defaults.imageModel`は、プライマリモデルが画像を受け付けない場合にのみ使用されます。
+* エージェントごとのデフォルトは、`agents.list[].model`およびバインディングを介して`agents.defaults.model`をオーバーライドできます（詳細は[/concepts/multi-agent](/concepts/multi-agent)を参照）。
 
-## Quick model picks (anecdotal)
+## クイックモデルピック（逸話）
 
-* **GLM**: a bit better for coding/tool calling.
-* **MiniMax**: better for writing and vibes.
+* **GLM**：コーディング/ツール呼び出しにやや優れています。
+* **MiniMax**：ライティングと雰囲気に優れています。
 
-## Setup wizard (recommended)
+## セットアップウィザード（推奨）
 
-If you don’t want to hand-edit config, run the onboarding wizard:
+設定を手動で編集したくない場合は、オンボーディングウィザードを実行してください：
 
 ```bash
 openclaw onboard
 ```
 
-It can set up model + auth for common providers, including **OpenAI Code (Codex)
-subscription** (OAuth) and **Anthropic** (API key recommended; `claude
-setup-token` also supported).
+これにより、一般的なプロバイダーのモデルと認証を設定できます。**OpenAI Code (Codex) サブスクリプション**（OAuth）および**Anthropic**（APIキー推奨；`claude setup-token`もサポート）を含みます。
 
-## Config keys (overview)
+## 設定キー（概要）
 
-* `agents.defaults.model.primary` and `agents.defaults.model.fallbacks`
-* `agents.defaults.imageModel.primary` and `agents.defaults.imageModel.fallbacks`
-* `agents.defaults.models` (allowlist + aliases + provider params)
-* `models.providers` (custom providers written into `models.json`)
+* `agents.defaults.model.primary`および`agents.defaults.model.fallbacks`
+* `agents.defaults.imageModel.primary`および`agents.defaults.imageModel.fallbacks`
+* `agents.defaults.models`（許可リスト + エイリアス + プロバイダーのパラメータ）
+* `models.providers`（`models.json`に書き込まれたカスタムプロバイダー）
 
-Model refs are normalized to lowercase. Provider aliases like `z.ai/*` normalize
-to `zai/*`.
+モデル参照は小文字に正規化されます。`z.ai/*`のようなプロバイダーエイリアスは`zai/*`に正規化されます。
 
-Provider configuration examples (including OpenCode Zen) live in
-[/gateway/configuration](/gateway/configuration#opencode-zen-multi-model-proxy).
+プロバイダー設定の例（OpenCode Zenを含む）は、[/gateway/configuration](/gateway/configuration#opencode-zen-multi-model-proxy)にあります。
 
-## “Model is not allowed” (and why replies stop)
+## “モデルが許可されていません”（および応答が停止する理由）
 
-If `agents.defaults.models` is set, it becomes the **allowlist** for `/model` and for
-session overrides. When a user selects a model that isn’t in that allowlist,
-OpenClaw returns:
+`agents.defaults.models`が設定されている場合、それは`/model`およびセッションオーバーライドの**許可リスト**になります。ユーザーがその許可リストにないモデルを選択すると、OpenClawは次のように返します：
 
 ```
 Model "provider/model" is not allowed. Use /model to list available models.
 ```
 
-This happens **before** a normal reply is generated, so the message can feel
-like it “didn’t respond.” The fix is to either:
+これは**通常の応答が生成される前**に発生するため、メッセージが「応答しなかった」と感じることがあります。修正方法は次のいずれかです：
 
-* Add the model to `agents.defaults.models`, or
-* Clear the allowlist (remove `agents.defaults.models`), or
-* Pick a model from `/model list`.
+* モデルを`agents.defaults.models`に追加する、または
+* 許可リストをクリアする（`agents.defaults.models`を削除）、または
+* `/model list`からモデルを選択する。
 
-Example allowlist config:
+許可リスト設定の例：
 
 ```json5
 {
@@ -86,9 +76,9 @@ Example allowlist config:
 }
 ```
 
-## Switching models in chat (`/model`)
+## チャット内でのモデル切り替え（`/model`）
 
-You can switch models for the current session without restarting:
+再起動せずに現在のセッションのモデルを切り替えることができます：
 
 ```
 /model
@@ -98,19 +88,19 @@ You can switch models for the current session without restarting:
 /model status
 ```
 
-Notes:
+注意：
 
-* `/model` (and `/model list`) is a compact, numbered picker (model family + available providers).
-* On Discord, `/model` and `/models` open an interactive picker with provider and model dropdowns plus a Submit step.
-* `/model <#>` selects from that picker.
-* `/model status` is the detailed view (auth candidates and, when configured, provider endpoint `baseUrl` + `api` mode).
-* Model refs are parsed by splitting on the **first** `/`. Use `provider/model` when typing `/model <ref>`.
-* If the model ID itself contains `/` (OpenRouter-style), you must include the provider prefix (example: `/model openrouter/moonshotai/kimi-k2`).
-* If you omit the provider, OpenClaw treats the input as an alias or a model for the **default provider** (only works when there is no `/` in the model ID).
+* `/model`（および`/model list`）は、コンパクトな番号付きピッカーです（モデルファミリー + 利用可能なプロバイダー）。
+* Discordでは、`/model`および`/models`がプロバイダーとモデルのドロップダウンを含むインタラクティブなピッカーを開き、送信ステップがあります。
+* `/model <#>`はそのピッカーから選択します。
+* `/model status`は詳細ビューです（認証候補と、設定されている場合、プロバイダーエンドポイントの`baseUrl` + `api`モード）。
+* モデル参照は**最初の**`/`で分割して解析されます。`/model <ref>`を入力する際は`provider/model`を使用してください。
+* モデルID自体に`/`が含まれている場合（OpenRouterスタイル）、プロバイダーのプレフィックスを含める必要があります（例：`/model openrouter/moonshotai/kimi-k2`）。
+* プロバイダーを省略すると、OpenClawは入力をエイリアスまたは**デフォルトプロバイダー**のモデルとして扱います（モデルIDに`/`がない場合のみ機能します）。
 
-Full command behavior/config: [Slash commands](/tools/slash-commands).
+完全なコマンドの動作/設定については、[Slash commands](/tools/slash-commands)を参照してください。
 
-## CLI commands
+## CLIコマンド
 
 ```bash
 openclaw models list
@@ -133,80 +123,67 @@ openclaw models image-fallbacks remove <provider/model>
 openclaw models image-fallbacks clear
 ```
 
-`openclaw models` (no subcommand) is a shortcut for `models status`.
+`openclaw models`（サブコマンドなし）は`models status`のショートカットです。
 
 ### `models list`
 
-Shows configured models by default. Useful flags:
+デフォルトで設定されたモデルを表示します。便利なフラグ：
 
-* `--all`: full catalog
-* `--local`: local providers only
-* `--provider <name>`: filter by provider
-* `--plain`: one model per line
-* `--json`: machine‑readable output
+* `--all`: 完全なカタログ
+* `--local`: ローカルプロバイダーのみ
+* `--provider <name>`: プロバイダーでフィルタリング
+* `--plain`: 1行に1モデル
+* `--json`: 機械可読な出力
 
 ### `models status`
 
-Shows the resolved primary model, fallbacks, image model, and an auth overview
-of configured providers. It also surfaces OAuth expiry status for profiles found
-in the auth store (warns within 24h by default). `--plain` prints only the
-resolved primary model.
-OAuth status is always shown (and included in `--json` output). If a configured
-provider has no credentials, `models status` prints a **Missing auth** section.
-JSON includes `auth.oauth` (warn window + profiles) and `auth.providers`
-(effective auth per provider).
-Use `--check` for automation (exit `1` when missing/expired, `2` when expiring).
+解決されたプライマリモデル、フォールバック、画像モデル、および設定されたプロバイダーの認証概要を表示します。また、認証ストア内のプロファイルに見つかったOAuthの有効期限ステータスも表示します（デフォルトで24時間以内に警告）。`--plain`は解決されたプライマリモデルのみを表示します。OAuthステータスは常に表示され（`--json`出力にも含まれます）、設定されたプロバイダーに資格情報がない場合、`models status`は**Missing auth**セクションを表示します。JSONには`auth.oauth`（警告ウィンドウ + プロファイル）および`auth.providers`（プロバイダーごとの有効な認証）が含まれます。自動化には`--check`を使用してください（欠落/期限切れの場合は終了コード`1`、期限切れの場合は`2`）。
 
-Preferred Anthropic auth is the Claude Code CLI setup-token (run anywhere; paste on the gateway host if needed):
+推奨されるAnthropicの認証はClaude Code CLIのsetup-tokenです（どこでも実行可能；必要に応じてゲートウェイホストにペーストしてください）：
 
 ```bash
 claude setup-token
 openclaw models status
 ```
 
-## Scanning (OpenRouter free models)
+## スキャン（OpenRouterの無料モデル）
 
-`openclaw models scan` inspects OpenRouter’s **free model catalog** and can
-optionally probe models for tool and image support.
+`openclaw models scan`はOpenRouterの**無料モデルカタログ**を検査し、オプションでツールと画像のサポートをプローブできます。
 
-Key flags:
+主なフラグ：
 
-* `--no-probe`: skip live probes (metadata only)
-* `--min-params <b>`: minimum parameter size (billions)
-* `--max-age-days <days>`: skip older models
-* `--provider <name>`: provider prefix filter
-* `--max-candidates <n>`: fallback list size
-* `--set-default`: set `agents.defaults.model.primary` to the first selection
-* `--set-image`: set `agents.defaults.imageModel.primary` to the first image selection
+* `--no-probe`: ライブプローブをスキップ（メタデータのみ）
+* `--min-params <b>`: 最小パラメータサイズ（十億）
+* `--max-age-days <days>`: 古いモデルをスキップ
+* `--provider <name>`: プロバイダープレフィックスフィルター
+* `--max-candidates <n>`: フォールバックリストのサイズ
+* `--set-default`: `agents.defaults.model.primary`を最初の選択に設定
+* `--set-image`: `agents.defaults.imageModel.primary`を最初の画像選択に設定
 
-Probing requires an OpenRouter API key (from auth profiles or
-`OPENROUTER_API_KEY`). Without a key, use `--no-probe` to list candidates only.
+プローブにはOpenRouter APIキーが必要です（認証プロファイルまたは`OPENROUTER_API_KEY`から）。キーがない場合は、候補のみをリストするために`--no-probe`を使用してください。
 
-Scan results are ranked by:
+スキャン結果は次の基準でランク付けされます：
 
-1. Image support
-2. Tool latency
-3. Context size
-4. Parameter count
+1. 画像サポート
+2. ツールの待機時間
+3. コンテキストサイズ
+4. パラメータ数
 
-Input
+入力
 
-* OpenRouter `/models` list (filter `:free`)
-* Requires OpenRouter API key from auth profiles or `OPENROUTER_API_KEY` (see [/environment](/help/environment))
-* Optional filters: `--max-age-days`, `--min-params`, `--provider`, `--max-candidates`
-* Probe controls: `--timeout`, `--concurrency`
+* OpenRouter `/models`リスト（フィルター`:free`）
+* 認証プロファイルまたは`OPENROUTER_API_KEY`からのOpenRouter APIキーが必要です（詳細は[/environment](/help/environment)を参照）
+* オプションのフィルター：`--max-age-days`、`--min-params`、`--provider`、`--max-candidates`
+* プローブ制御：`--timeout`、`--concurrency`
 
-When run in a TTY, you can select fallbacks interactively. In non‑interactive
-mode, pass `--yes` to accept defaults.
+TTYで実行すると、フォールバックをインタラクティブに選択できます。非インタラクティブモードでは、デフォルトを受け入れるために`--yes`を渡してください。
 
-## Models registry (`models.json`)
+## モデルレジストリ（`models.json`）
 
-Custom providers in `models.providers` are written into `models.json` under the
-agent directory (default `~/.openclaw/agents/<agentId>/models.json`). This file
-is merged by default unless `models.mode` is set to `replace`.
+`models.providers`のカスタムプロバイダーは、エージェントディレクトリ内の`models.json`に書き込まれます（デフォルトは`~/.openclaw/agents/<agentId>/models.json`）。このファイルはデフォルトでマージされますが、`models.mode`が`replace`に設定されている場合は除きます。
 
-Merge mode precedence for matching provider IDs:
+一致するプロバイダーIDのマージモードの優先順位：
 
-* Non-empty `apiKey`/`baseUrl` already present in the agent `models.json` win.
-* Empty or missing agent `apiKey`/`baseUrl` fall back to config `models.providers`.
-* Other provider fields are refreshed from config and normalized catalog data.
+* エージェントの`models.json`にすでに存在する非空の`apiKey`/`baseUrl`が勝ちます。
+* 空または欠落しているエージェントの`apiKey`/`baseUrl`は、設定された`models.providers`にフォールバックします。
+* 他のプロバイダーのフィールドは、設定および正規化されたカタログデータから更新されます。

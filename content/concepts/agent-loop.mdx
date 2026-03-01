@@ -6,142 +6,139 @@ title: "エージェントループ"
 
 # Agent Loop (OpenClaw)
 
-An agentic loop is the full “real” run of an agent: intake → context assembly → model inference →
-tool execution → streaming replies → persistence. It’s the authoritative path that turns a message
-into actions and a final reply, while keeping session state consistent.
+エージェントループは、エージェントの完全な「リアル」実行を示します：入力 → コンテキストの組み立て → モデル推論 →
+ツール実行 → ストリーミング応答 → 永続化。これは、メッセージをアクションと最終的な応答に変換し、セッション状態を一貫して保つための権威あるパスです。
 
-In OpenClaw, a loop is a single, serialized run per session that emits lifecycle and stream events
-as the model thinks, calls tools, and streams output. This doc explains how that authentic loop is
-wired end-to-end.
+OpenClawでは、ループはセッションごとに1回のシリアライズされた実行であり、モデルが思考し、ツールを呼び出し、出力をストリーミングする際にライフサイクルおよびストリームイベントを発信します。このドキュメントでは、その本物のループがエンドツーエンドでどのように接続されているかを説明します。
 
-## Entry points
+## エントリーポイント
 
-* Gateway RPC: `agent` and `agent.wait`.
-* CLI: `agent` command.
+* Gateway RPC: `agent` と `agent.wait`。
+* CLI: `agent` コマンド。
 
-## How it works (high-level)
+## 仕組み (高レベル)
 
-1. `agent` RPC validates params, resolves session (sessionKey/sessionId), persists session metadata, returns `{ runId, acceptedAt }` immediately.
-2. `agentCommand` runs the agent:
-   * resolves model + thinking/verbose defaults
-   * loads skills snapshot
-   * calls `runEmbeddedPiAgent` (pi-agent-core runtime)
-   * emits **lifecycle end/error** if the embedded loop does not emit one
-3. `runEmbeddedPiAgent`:
-   * serializes runs via per-session + global queues
-   * resolves model + auth profile and builds the pi session
-   * subscribes to pi events and streams assistant/tool deltas
-   * enforces timeout -> aborts run if exceeded
-   * returns payloads + usage metadata
-4. `subscribeEmbeddedPiSession` bridges pi-agent-core events to OpenClaw `agent` stream:
-   * tool events => `stream: "tool"`
-   * assistant deltas => `stream: "assistant"`
-   * lifecycle events => `stream: "lifecycle"` (`phase: "start" | "end" | "error"`)
-5. `agent.wait` uses `waitForAgentJob`:
-   * waits for **lifecycle end/error** for `runId`
-   * returns `{ status: ok|error|timeout, startedAt, endedAt, error? }`
+1. `agent` RPCはパラメータを検証し、セッションを解決（sessionKey/sessionId）、セッションメタデータを永続化し、すぐに `{ runId, acceptedAt }` を返します。
+2. `agentCommand` がエージェントを実行します：
+   * モデル + 思考/冗長デフォルトを解決
+   * スキルスナップショットをロード
+   * `runEmbeddedPiAgent`（pi-agent-coreランタイム）を呼び出す
+   * 埋め込まれたループがエンド/エラーを発信しない場合は **ライフサイクルエンド/エラー** を発信します
+3. `runEmbeddedPiAgent`：
+   * セッションごと + グローバルキューを介して実行をシリアライズ
+   * モデル + 認証プロファイルを解決し、piセッションを構築
+   * piイベントを購読し、アシスタント/ツールのデルタをストリーミング
+   * タイムアウトを強制し、超過した場合は実行を中止
+   * ペイロード + 使用メタデータを返す
+4. `subscribeEmbeddedPiSession` はpi-agent-coreイベントをOpenClaw `agent` ストリームに橋渡しします：
+   * ツールイベント => `stream: "tool"`
+   * アシスタントデルタ => `stream: "assistant"`
+   * ライフサイクルイベント => `stream: "lifecycle"` (`phase: "start" | "end" | "error"`)
+5. `agent.wait` は `waitForAgentJob` を使用します：
+   * `runId` の **ライフサイクルエンド/エラー** を待機
+   * `{ status: ok|error|timeout, startedAt, endedAt, error? }` を返します
 
-## Queueing + concurrency
+## キューイング + 同時実行
 
-* Runs are serialized per session key (session lane) and optionally through a global lane.
-* This prevents tool/session races and keeps session history consistent.
-* Messaging channels can choose queue modes (collect/steer/followup) that feed this lane system.
-  See [Command Queue](/concepts/queue).
+* 実行はセッションキー（セッションレーン）ごとにシリアライズされ、オプションでグローバルレーンを通じて行われます。
+* これにより、ツール/セッションの競合が防止され、セッション履歴が一貫して保たれます。
+* メッセージングチャネルは、このレーンシステムにフィードするキューモード（収集/誘導/フォローアップ）を選択できます。
+  [コマンドキュー](/concepts/queue)を参照してください。
 
-## Session + workspace preparation
+## セッション + ワークスペースの準備
 
-* Workspace is resolved and created; sandboxed runs may redirect to a sandbox workspace root.
-* Skills are loaded (or reused from a snapshot) and injected into env and prompt.
-* Bootstrap/context files are resolved and injected into the system prompt report.
-* A session write lock is acquired; `SessionManager` is opened and prepared before streaming.
+* ワークスペースが解決され、作成されます。サンドボックス実行はサンドボックスワークスペースのルートにリダイレクトされる場合があります。
+* スキルがロードされ（またはスナップショットから再利用され）、環境とプロンプトに注入されます。
+* ブートストラップ/コンテキストファイルが解決され、システムプロンプトレポートに注入されます。
+* セッション書き込みロックが取得され、ストリーミングの前に `SessionManager` が開かれ、準備されます。
 
-## Prompt assembly + system prompt
+## プロンプトの組み立て + システムプロンプト
 
-* System prompt is built from OpenClaw’s base prompt, skills prompt, bootstrap context, and per-run overrides.
-* Model-specific limits and compaction reserve tokens are enforced.
-* See [System prompt](/concepts/system-prompt) for what the model sees.
+* システムプロンプトは、OpenClawのベースプロンプト、スキルプロンプト、ブートストラップコンテキスト、および実行ごとのオーバーライドから構築されます。
+* モデル固有の制限と圧縮トークンが強制されます。
+* モデルが見るものについては、[システムプロンプト](/concepts/system-prompt)を参照してください。
 
-## Hook points (where you can intercept)
+## フックポイント (インターセプトできる場所)
 
-OpenClaw has two hook systems:
+OpenClawには2つのフックシステムがあります：
 
-* **Internal hooks** (Gateway hooks): event-driven scripts for commands and lifecycle events.
-* **Plugin hooks**: extension points inside the agent/tool lifecycle and gateway pipeline.
+* **内部フック**（Gatewayフック）：コマンドおよびライフサイクルイベントのためのイベント駆動型スクリプト。
+* **プラグインフック**：エージェント/ツールのライフサイクルおよびゲートウェイパイプライン内の拡張ポイント。
 
-### Internal hooks (Gateway hooks)
+### 内部フック (Gatewayフック)
 
-* **`agent:bootstrap`**: runs while building bootstrap files before the system prompt is finalized.
-  Use this to add/remove bootstrap context files.
-* **Command hooks**: `/new`, `/reset`, `/stop`, and other command events (see Hooks doc).
+* **`agent:bootstrap`**：システムプロンプトが確定される前にブートストラップファイルを構築している間に実行されます。
+  これを使用してブートストラップコンテキストファイルを追加/削除します。
+* **コマンドフック**：`/new`、`/reset`、`/stop`、および他のコマンドイベント（フックドキュメントを参照）。
 
-See [Hooks](/automation/hooks) for setup and examples.
+設定と例については、[フック](/automation/hooks)を参照してください。
 
-### Plugin hooks (agent + gateway lifecycle)
+### プラグインフック (エージェント + ゲートウェイライフサイクル)
 
-These run inside the agent loop or gateway pipeline:
+これらはエージェントループまたはゲートウェイパイプライン内で実行されます：
 
-* **`before_model_resolve`**: runs pre-session (no `messages`) to deterministically override provider/model before model resolution.
-* **`before_prompt_build`**: runs after session load (with `messages`) to inject `prependContext`/`systemPrompt` before prompt submission.
-* **`before_agent_start`**: legacy compatibility hook that may run in either phase; prefer the explicit hooks above.
-* **`agent_end`**: inspect the final message list and run metadata after completion.
-* **`before_compaction` / `after_compaction`**: observe or annotate compaction cycles.
-* **`before_tool_call` / `after_tool_call`**: intercept tool params/results.
-* **`tool_result_persist`**: synchronously transform tool results before they are written to the session transcript.
-* **`message_received` / `message_sending` / `message_sent`**: inbound + outbound message hooks.
-* **`session_start` / `session_end`**: session lifecycle boundaries.
-* **`gateway_start` / `gateway_stop`**: gateway lifecycle events.
+* **`before_model_resolve`**：セッション前に実行され（`messages`なし）、モデル解決前にプロバイダー/モデルを決定的にオーバーライドします。
+* **`before_prompt_build`**：セッションロード後に実行され（`messages`あり）、プロンプト提出前に `prependContext`/`systemPrompt` を注入します。
+* **`before_agent_start`**：レガシー互換フックで、いずれのフェーズでも実行される可能性があります；上記の明示的なフックを優先してください。
+* **`agent_end`**：完了後に最終メッセージリストと実行メタデータを検査します。
+* **`before_compaction` / `after_compaction`**：圧縮サイクルを観察または注釈します。
+* **`before_tool_call` / `after_tool_call`**：ツールのパラメータ/結果をインターセプトします。
+* **`tool_result_persist`**：ツール結果がセッショントランスクリプトに書き込まれる前に同期的に変換します。
+* **`message_received` / `message_sending` / `message_sent`**：受信および送信メッセージのフック。
+* **`session_start` / `session_end`**：セッションライフサイクルの境界。
+* **`gateway_start` / `gateway_stop`**：ゲートウェイライフサイクルイベント。
 
-See [Plugins](/tools/plugin#plugin-hooks) for the hook API and registration details.
+フックAPIと登録の詳細については、[プラグイン](/tools/plugin#plugin-hooks)を参照してください。
 
-## Streaming + partial replies
+## ストリーミング + 部分的な応答
 
-* Assistant deltas are streamed from pi-agent-core and emitted as `assistant` events.
-* Block streaming can emit partial replies either on `text_end` or `message_end`.
-* Reasoning streaming can be emitted as a separate stream or as block replies.
-* See [Streaming](/concepts/streaming) for chunking and block reply behavior.
+* アシスタントデルタはpi-agent-coreからストリーミングされ、`assistant`イベントとして発信されます。
+* ブロックストリーミングは、`text_end`または`message_end`で部分的な応答を発信できます。
+* 推論ストリーミングは、別のストリームまたはブロック応答として発信される場合があります。
+* チャンク化とブロック応答の動作については、[ストリーミング](/concepts/streaming)を参照してください。
 
-## Tool execution + messaging tools
+## ツール実行 + メッセージングツール
 
-* Tool start/update/end events are emitted on the `tool` stream.
-* Tool results are sanitized for size and image payloads before logging/emitting.
-* Messaging tool sends are tracked to suppress duplicate assistant confirmations.
+* ツールの開始/更新/終了イベントは、`tool`ストリームで発信されます。
+* ツール結果はサイズと画像ペイロードのためにサニタイズされ、ログ記録/発信されます。
+* メッセージングツールの送信は、重複したアシスタントの確認を抑制するために追跡されます。
 
-## Reply shaping + suppression
+## 応答の形成 + 抑制
 
-* Final payloads are assembled from:
-  * assistant text (and optional reasoning)
-  * inline tool summaries (when verbose + allowed)
-  * assistant error text when the model errors
-* `NO_REPLY` is treated as a silent token and filtered from outgoing payloads.
-* Messaging tool duplicates are removed from the final payload list.
-* If no renderable payloads remain and a tool errored, a fallback tool error reply is emitted
-  (unless a messaging tool already sent a user-visible reply).
+* 最終ペイロードは以下から構成されます：
+  * アシスタントテキスト（およびオプションの推論）
+  * インラインツールの要約（冗長かつ許可されている場合）
+  * モデルエラー時のアシスタントエラーテキスト
+* `NO_REPLY` はサイレントトークンとして扱われ、送信ペイロードからフィルタリングされます。
+* メッセージングツールの重複は最終ペイロードリストから削除されます。
+* レンダリング可能なペイロードが残っておらず、ツールがエラーを起こした場合、フォールバックツールエラー応答が発信されます
+  （メッセージングツールがすでにユーザーに表示される応答を送信していない限り）。
 
-## Compaction + retries
+## 圧縮 + リトライ
 
-* Auto-compaction emits `compaction` stream events and can trigger a retry.
-* On retry, in-memory buffers and tool summaries are reset to avoid duplicate output.
-* See [Compaction](/concepts/compaction) for the compaction pipeline.
+* 自動圧縮は `compaction` ストリームイベントを発信し、リトライをトリガーできます。
+* リトライ時には、メモリ内バッファとツールの要約がリセットされ、重複出力を避けます。
+* 圧縮パイプラインについては、[圧縮](/concepts/compaction)を参照してください。
 
-## Event streams (today)
+## イベントストリーム (今日)
 
-* `lifecycle`: emitted by `subscribeEmbeddedPiSession` (and as a fallback by `agentCommand`)
-* `assistant`: streamed deltas from pi-agent-core
-* `tool`: streamed tool events from pi-agent-core
+* `lifecycle`: `subscribeEmbeddedPiSession` によって発信され（およびフォールバックとして `agentCommand` によって）
+* `assistant`: pi-agent-coreからのストリーミングデルタ
+* `tool`: pi-agent-coreからのストリーミングツールイベント
 
-## Chat channel handling
+## チャットチャネルの処理
 
-* Assistant deltas are buffered into chat `delta` messages.
-* A chat `final` is emitted on **lifecycle end/error**.
+* アシスタントデルタはチャット `delta` メッセージにバッファリングされます。
+* チャット `final` は **ライフサイクルエンド/エラー** の際に発信されます。
 
-## Timeouts
+## タイムアウト
 
-* `agent.wait` default: 30s (just the wait). `timeoutMs` param overrides.
-* Agent runtime: `agents.defaults.timeoutSeconds` default 600s; enforced in `runEmbeddedPiAgent` abort timer.
+* `agent.wait` デフォルト: 30秒（待機のみ）。`timeoutMs` パラメータがオーバーライドします。
+* エージェントのランタイム: `agents.defaults.timeoutSeconds` デフォルト 600秒；`runEmbeddedPiAgent` の中止タイマーで強制されます。
 
-## Where things can end early
+## 早期に終了する可能性のある場所
 
-* Agent timeout (abort)
-* AbortSignal (cancel)
-* Gateway disconnect or RPC timeout
-* `agent.wait` timeout (wait-only, does not stop agent)
+* エージェントタイムアウト（中止）
+* AbortSignal（キャンセル）
+* Gatewayの切断またはRPCタイムアウト
+* `agent.wait` タイムアウト（待機のみ、エージェントを停止しません）

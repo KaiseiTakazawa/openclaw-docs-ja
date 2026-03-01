@@ -6,41 +6,41 @@ title: "macOS 署名"
 
 # mac signing (debug builds)
 
-This app is usually built from [`scripts/package-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/package-mac-app.sh), which now:
+このアプリは通常、[`scripts/package-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/package-mac-app.sh) からビルドされ、以下のことを行います：
 
-* sets a stable debug bundle identifier: `ai.openclaw.mac.debug`
-* writes the Info.plist with that bundle id (override via `BUNDLE_ID=...`)
-* calls [`scripts/codesign-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/codesign-mac-app.sh) to sign the main binary and app bundle so macOS treats each rebuild as the same signed bundle and keeps TCC permissions (notifications, accessibility, screen recording, mic, speech). For stable permissions, use a real signing identity; ad-hoc is opt-in and fragile (see [macOS permissions](/platforms/mac/permissions)).
-* uses `CODESIGN_TIMESTAMP=auto` by default; it enables trusted timestamps for Developer ID signatures. Set `CODESIGN_TIMESTAMP=off` to skip timestamping (offline debug builds).
-* inject build metadata into Info.plist: `OpenClawBuildTimestamp` (UTC) and `OpenClawGitCommit` (short hash) so the About pane can show build, git, and debug/release channel.
-* **Packaging requires Node 22+**: the script runs TS builds and the Control UI build.
-* reads `SIGN_IDENTITY` from the environment. Add `export SIGN_IDENTITY="Apple Development: Your Name (TEAMID)"` (or your Developer ID Application cert) to your shell rc to always sign with your cert. Ad-hoc signing requires explicit opt-in via `ALLOW_ADHOC_SIGNING=1` or `SIGN_IDENTITY="-"` (not recommended for permission testing).
-* runs a Team ID audit after signing and fails if any Mach-O inside the app bundle is signed by a different Team ID. Set `SKIP_TEAM_ID_CHECK=1` to bypass.
+* 安定したデバッグバンドル識別子を設定します: `ai.openclaw.mac.debug`
+* そのバンドルIDで Info.plist を記述します（`BUNDLE_ID=...` で上書き可能）
+* [`scripts/codesign-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/codesign-mac-app.sh) を呼び出して、メインバイナリとアプリバンドルに署名します。これにより、macOS は各リビルドを同じ署名バンドルとして扱い、TCC 権限（通知、アクセシビリティ、画面録画、マイク、音声）を保持します。安定した権限を得るためには、実際の署名アイデンティティを使用してください。アドホック署名はオプトインで脆弱です（[macOS permissions](/platforms/mac/permissions) を参照）。
+* デフォルトで `CODESIGN_TIMESTAMP=auto` を使用します。これにより、Developer ID 署名のための信頼されたタイムスタンプが有効になります。タイムスタンプをスキップするには `CODESIGN_TIMESTAMP=off` を設定します（オフラインデバッグビルド）。
+* Info.plist にビルドメタデータを注入します: `OpenClawBuildTimestamp`（UTC）と `OpenClawGitCommit`（短いハッシュ）により、About ペインでビルド、git、デバッグ/リリースチャンネルを表示できます。
+* **パッケージングには Node 22+ が必要です**: スクリプトは TS ビルドと Control UI ビルドを実行します。
+* 環境から `SIGN_IDENTITY` を読み取ります。常に自分の証明書で署名するには、シェルの rc に `export SIGN_IDENTITY="Apple Development: Your Name (TEAMID)"`（または Developer ID Application 証明書）を追加してください。アドホック署名は `ALLOW_ADHOC_SIGNING=1` または `SIGN_IDENTITY="-"` を介して明示的にオプトインする必要があります（権限テストには推奨されません）。
+* 署名後に Team ID 監査を実行し、アプリバンドル内の Mach-O が異なる Team ID で署名されている場合は失敗します。バイパスするには `SKIP_TEAM_ID_CHECK=1` を設定してください。
 
 ## 使い方
 
 ```bash
-# from repo root
-scripts/package-mac-app.sh               # auto-selects identity; errors if none found
-SIGN_IDENTITY="Developer ID Application: Your Name" scripts/package-mac-app.sh   # real cert
-ALLOW_ADHOC_SIGNING=1 scripts/package-mac-app.sh    # ad-hoc (permissions will not stick)
-SIGN_IDENTITY="-" scripts/package-mac-app.sh        # explicit ad-hoc (same caveat)
-DISABLE_LIBRARY_VALIDATION=1 scripts/package-mac-app.sh   # dev-only Sparkle Team ID mismatch workaround
+# リポジトリのルートから
+scripts/package-mac-app.sh               # アイデンティティを自動選択; 見つからない場合はエラー
+SIGN_IDENTITY="Developer ID Application: Your Name" scripts/package-mac-app.sh   # 実際の証明書
+ALLOW_ADHOC_SIGNING=1 scripts/package-mac-app.sh    # アドホック（権限は保持されません）
+SIGN_IDENTITY="-" scripts/package-mac-app.sh        # 明示的アドホック（同じ注意点）
+DISABLE_LIBRARY_VALIDATION=1 scripts/package-mac-app.sh   # 開発専用 Sparkle Team ID 不一致のワークアラウンド
 ```
 
 ### Ad-hoc Signing Note
 
-When signing with `SIGN_IDENTITY="-"` (ad-hoc), the script automatically disables the **Hardened Runtime** (`--options runtime`). This is necessary to prevent crashes when the app attempts to load embedded frameworks (like Sparkle) that do not share the same Team ID. Ad-hoc signatures also break TCC permission persistence; see [macOS permissions](/platforms/mac/permissions) for recovery steps.
+`SIGN_IDENTITY="-"`（アドホック）で署名する際、スクリプトは自動的に **Hardened Runtime** (`--options runtime`) を無効にします。これは、アプリが同じ Team ID を共有しない埋め込まれたフレームワーク（Sparkle など）を読み込もうとした際のクラッシュを防ぐために必要です。アドホック署名は TCC 権限の持続性も破壊します; 回復手順については [macOS permissions](/platforms/mac/permissions) を参照してください。
 
 ## Build metadata for About
 
-`package-mac-app.sh` stamps the bundle with:
+`package-mac-app.sh` はバンドルに以下をスタンプします：
 
-* `OpenClawBuildTimestamp`: ISO8601 UTC at package time
-* `OpenClawGitCommit`: short git hash (or `unknown` if unavailable)
+* `OpenClawBuildTimestamp`: パッケージ作成時の ISO8601 UTC
+* `OpenClawGitCommit`: 短い git ハッシュ（または利用できない場合は `unknown`）
 
-The About tab reads these keys to show version, build date, git commit, and whether it’s a debug build (via `#if DEBUG`). Run the packager to refresh these values after code changes.
+About タブはこれらのキーを読み取り、バージョン、ビルド日、git コミット、およびデバッグビルドであるかどうかを表示します（`#if DEBUG` を介して）。コード変更後にこれらの値を更新するには、パッケージャーを実行してください。
 
 ## Why
 
-TCC permissions are tied to the bundle identifier *and* code signature. Unsigned debug builds with changing UUIDs were causing macOS to forget grants after each rebuild. Signing the binaries (ad‑hoc by default) and keeping a fixed bundle id/path (`dist/OpenClaw.app`) preserves the grants between builds, matching the VibeTunnel approach.
+TCC 権限はバンドル識別子 *と* コード署名に結びついています。UUID が変更される未署名のデバッグビルドは、各リビルド後に macOS が権限を忘れる原因となっていました。バイナリに署名し（デフォルトではアドホック）、固定のバンドル ID/パス（`dist/OpenClaw.app`）を保持することで、ビルド間での権限を保持し、VibeTunnel アプローチに一致させます。

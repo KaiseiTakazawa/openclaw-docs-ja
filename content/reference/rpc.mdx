@@ -4,38 +4,38 @@ title: "RPC アダプター"
 
 # RPC アダプター
 
-# RPC adapters
+# RPC アダプター
 
-OpenClaw integrates external CLIs via JSON-RPC. Two patterns are used today.
+OpenClaw は JSON-RPC を介して外部 CLI を統合します。現在、2つのパターンが使用されています。
 
-## Pattern A: HTTP daemon (signal-cli)
+## パターン A: HTTP デーモン (signal-cli)
 
-* `signal-cli` runs as a daemon with JSON-RPC over HTTP.
-* Event stream is SSE (`/api/v1/events`).
-* Health probe: `/api/v1/check`.
-* OpenClaw owns lifecycle when `channels.signal.autoStart=true`.
+* `signal-cli` は HTTP 上で JSON-RPC を使用してデーモンとして実行されます。
+* イベントストリームは SSE (`/api/v1/events`) です。
+* ヘルスプローブ: `/api/v1/check`。
+* `channels.signal.autoStart=true` の場合、OpenClaw がライフサイクルを管理します。
 
-See [Signal](/channels/signal) for setup and endpoints.
+設定とエンドポイントについては [Signal](/channels/signal) を参照してください。
 
-## Pattern B: stdio child process (legacy: imsg)
+## パターン B: stdio 子プロセス (レガシー: imsg)
 
-> **Note:** For new iMessage setups, use [BlueBubbles](/channels/bluebubbles) instead.
+> **注意:** 新しい iMessage の設定には、代わりに [BlueBubbles](/channels/bluebubbles) を使用してください。
 
-* OpenClaw spawns `imsg rpc` as a child process (legacy iMessage integration).
-* JSON-RPC is line-delimited over stdin/stdout (one JSON object per line).
-* No TCP port, no daemon required.
+* OpenClaw は `imsg rpc` を子プロセスとして生成します（レガシー iMessage 統合）。
+* JSON-RPC は stdin/stdout 上で行ごとに区切られた形式で（1行につき1つの JSON オブジェクト）使用されます。
+* TCP ポートは不要で、デーモンも必要ありません。
 
-Core methods used:
+使用されるコアメソッド:
 
-* `watch.subscribe` → notifications (`method: "message"`)
+* `watch.subscribe` → 通知 (`method: "message"`)
 * `watch.unsubscribe`
 * `send`
-* `chats.list` (probe/diagnostics)
+* `chats.list` (プローブ/診断)
 
-See [iMessage](/channels/imessage) for legacy setup and addressing (`chat_id` preferred).
+レガシー設定とアドレッシングについては [iMessage](/channels/imessage) を参照してください（`chat_id` が推奨されます）。
 
-## Adapter guidelines
+## アダプターガイドライン
 
-* Gateway owns the process (start/stop tied to provider lifecycle).
-* Keep RPC clients resilient: timeouts, restart on exit.
-* Prefer stable IDs (e.g., `chat_id`) over display strings.
+* Gateway がプロセスを管理します（プロバイダーのライフサイクルに関連付けられた開始/停止）。
+* RPC クライアントを堅牢に保つ: タイムアウト、終了時の再起動。
+* 表示文字列よりも安定した ID（例: `chat_id`）を優先してください。

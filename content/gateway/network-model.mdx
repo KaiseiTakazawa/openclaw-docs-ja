@@ -4,16 +4,15 @@ title: "ネットワークモデル"
 
 # ネットワークモデル
 
-Most operations flow through the Gateway (`openclaw gateway`), a single long-running
-process that owns channel connections and the WebSocket control plane.
+ほとんどの操作は、チャネル接続とWebSocket制御プレーンを所有する単一の長時間実行プロセスであるGateway（`openclaw gateway`）を通過します。
 
-## Core rules
+## コアルール
 
-* One Gateway per host is recommended. It is the only process allowed to own the WhatsApp Web session. For rescue bots or strict isolation, run multiple gateways with isolated profiles and ports. See [Multiple gateways](/gateway/multiple-gateways).
-* Loopback first: the Gateway WS defaults to `ws://127.0.0.1:18789`. The wizard generates a gateway token by default, even for loopback. For tailnet access, run `openclaw gateway --bind tailnet --token ...` because tokens are required for non-loopback binds.
-* Nodes connect to the Gateway WS over LAN, tailnet, or SSH as needed. The legacy TCP bridge is deprecated.
-* Canvas host is served by the Gateway HTTP server on the **same port** as the Gateway (default `18789`):
+* ホストごとに1つのGatewayを推奨します。これはWhatsApp Webセッションを所有する唯一のプロセスです。救助ボットや厳格な分離のためには、隔離されたプロファイルとポートで複数のGatewayを実行してください。詳細は[複数のGateway](/gateway/multiple-gateways)を参照してください。
+* ループバックを最初に: Gateway WSはデフォルトで`ws://127.0.0.1:18789`です。ウィザードはデフォルトでGatewayトークンを生成します。ループバックの場合でも同様です。tailnetアクセスのためには、`openclaw gateway --bind tailnet --token ...`を実行してください。トークンは非ループバックバインドに必要です。
+* ノードは必要に応じてLAN、tailnet、またはSSH経由でGateway WSに接続します。レガシーTCPブリッジは非推奨です。
+* CanvasホストはGateway HTTPサーバーによって、Gatewayと**同じポート**（デフォルトは`18789`）で提供されます:
   * `/__openclaw__/canvas/`
   * `/__openclaw__/a2ui/`
-    When `gateway.auth` is configured and the Gateway binds beyond loopback, these routes are protected by Gateway auth. Node clients use node-scoped capability URLs tied to their active WS session. See [Gateway configuration](/gateway/configuration) (`canvasHost`, `gateway`).
-* Remote use is typically SSH tunnel or tailnet VPN. See [Remote access](/gateway/remote) and [Discovery](/gateway/discovery).
+    `gateway.auth`が設定され、Gatewayがループバックを超えてバインドされると、これらのルートはGateway認証によって保護されます。ノードクライアントは、アクティブなWSセッションに結びついたノードスコープの能力URLを使用します。詳細は[Gateway設定](/gateway/configuration)を参照してください（`canvasHost`、`gateway`）。
+* リモート使用は通常SSHトンネルまたはtailnet VPNです。詳細は[リモートアクセス](/gateway/remote)および[発見](/gateway/discovery)を参照してください。

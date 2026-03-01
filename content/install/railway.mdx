@@ -1,101 +1,100 @@
 ---
-title: "Deploy on Railway"
+title: "Railwayへのデプロイ"
 ---
 
-# Deploy on Railway
+# Railwayへのデプロイ
 
-Deploy OpenClaw on Railway with a one-click template and finish setup in your browser.
-This is the easiest “no terminal on the server” path: Railway runs the Gateway for you,
-and you configure everything via the `/setup` web wizard.
+OpenClawをRailwayにワンクリックテンプレートでデプロイし、ブラウザで設定を完了します。  
+これは「サーバー上でターミナルを使用しない」最も簡単な方法です：RailwayがGatewayを実行し、すべてを`/setup`ウェブウィザードを通じて設定します。
 
-## Quick checklist (new users)
+## クイックチェックリスト（新規ユーザー向け）
 
-1. Click **Deploy on Railway** (below).
-2. Add a **Volume** mounted at `/data`.
-3. Set the required **Variables** (at least `SETUP_PASSWORD`).
-4. Enable **HTTP Proxy** on port `8080`.
-5. Open `https://<your-railway-domain>/setup` and finish the wizard.
+1. **Railwayにデプロイ**をクリックします（下記）。
+2. `/data`にマウントされた**ボリューム**を追加します。
+3. 必要な**変数**を設定します（少なくとも`SETUP_PASSWORD`）。
+4. ポート`8080`で**HTTPプロキシ**を有効にします。
+5. `https://<your-railway-domain>/setup`を開き、ウィザードを完了します。
 
-## One-click deploy
+## ワンクリックデプロイ
 
 <a href="https://railway.com/deploy/clawdbot-railway-template" target="_blank" rel="noreferrer">
-  Deploy on Railway
+  Railwayにデプロイ
 </a>
 
-After deploy, find your public URL in **Railway → your service → Settings → Domains**.
+デプロイ後、**Railway → あなたのサービス → 設定 → ドメイン**で公開URLを見つけます。
 
-Railway will either:
+Railwayは次のいずれかを行います：
 
-* give you a generated domain (often `https://<something>.up.railway.app`), or
-* use your custom domain if you attached one.
+* 生成されたドメインを提供します（通常は`https://<something>.up.railway.app`）、または
+* 付けたカスタムドメインを使用します。
 
-Then open:
+次を開きます：
 
-* `https://<your-railway-domain>/setup` — setup wizard (password protected)
-* `https://<your-railway-domain>/openclaw` — Control UI
+* `https://<your-railway-domain>/setup` — セットアップウィザード（パスワード保護あり）
+* `https://<your-railway-domain>/openclaw` — コントロールUI
 
-## What you get
+## 取得できるもの
 
-* Hosted OpenClaw Gateway + Control UI
-* Web setup wizard at `/setup` (no terminal commands)
-* Persistent storage via Railway Volume (`/data`) so config/credentials/workspace survive redeploys
-* Backup export at `/setup/export` to migrate off Railway later
+* ホスティングされたOpenClaw Gateway + コントロールUI
+* `/setup`でのウェブセットアップウィザード（ターミナルコマンド不要）
+* Railwayボリューム（`/data`）を介した永続ストレージにより、設定/認証情報/ワークスペースが再デプロイ後も生き残ります
+* 後でRailwayから移行するためのバックアップエクスポートが`/setup/export`にあります
 
-## Required Railway settings
+## 必要なRailway設定
 
-### Public Networking
+### 公開ネットワーキング
 
-Enable **HTTP Proxy** for the service.
+サービスのために**HTTPプロキシ**を有効にします。
 
-* Port: `8080`
+* ポート: `8080`
 
-### Volume (required)
+### ボリューム（必須）
 
-Attach a volume mounted at:
+次のようにマウントされたボリュームを添付します：
 
 * `/data`
 
-### Variables
+### 変数
 
-Set these variables on the service:
+サービスにこれらの変数を設定します：
 
-* `SETUP_PASSWORD` (required)
-* `PORT=8080` (required — must match the port in Public Networking)
-* `OPENCLAW_STATE_DIR=/data/.openclaw` (recommended)
-* `OPENCLAW_WORKSPACE_DIR=/data/workspace` (recommended)
-* `OPENCLAW_GATEWAY_TOKEN` (recommended; treat as an admin secret)
+* `SETUP_PASSWORD`（必須）
+* `PORT=8080`（必須 — 公開ネットワーキングのポートと一致する必要があります）
+* `OPENCLAW_STATE_DIR=/data/.openclaw`（推奨）
+* `OPENCLAW_WORKSPACE_DIR=/data/workspace`（推奨）
+* `OPENCLAW_GATEWAY_TOKEN`（推奨；管理者の秘密として扱う）
 
-## Setup flow
+## セットアップフロー
 
-1. Visit `https://<your-railway-domain>/setup` and enter your `SETUP_PASSWORD`.
-2. Choose a model/auth provider and paste your key.
-3. (Optional) Add Telegram/Discord/Slack tokens.
-4. Click **Run setup**.
+1. `https://<your-railway-domain>/setup`にアクセスし、`SETUP_PASSWORD`を入力します。
+2. モデル/認証プロバイダーを選択し、キーを貼り付けます。
+3. （オプション）Telegram/Discord/Slackトークンを追加します。
+4. **セットアップを実行**をクリックします。
 
-If Telegram DMs are set to pairing, the setup wizard can approve the pairing code.
+TelegramのDMがペアリングに設定されている場合、セットアップウィザードはペアリングコードを承認できます。
 
-## Getting chat tokens
+## チャットトークンの取得
 
-### Telegram bot token
+### Telegramボットトークン
 
-1. Message `@BotFather` in Telegram
-2. Run `/newbot`
-3. Copy the token (looks like `123456789:AA...`)
-4. Paste it into `/setup`
+1. Telegramで`@BotFather`にメッセージを送信します。
+2. `/newbot`を実行します。
+3. トークンをコピーします（`123456789:AA...`のように見えます）。
+4. `/setup`に貼り付けます。
 
-### Discord bot token
+### Discordボットトークン
 
-1. Go to [https://discord.com/developers/applications](https://discord.com/developers/applications)
-2. **New Application** → choose a name
-3. **Bot** → **Add Bot**
-4. **Enable MESSAGE CONTENT INTENT** under Bot → Privileged Gateway Intents (required or the bot will crash on startup)
-5. Copy the **Bot Token** and paste into `/setup`
-6. Invite the bot to your server (OAuth2 URL Generator; scopes: `bot`, `applications.commands`)
+1. [https://discord.com/developers/applications](https://discord.com/developers/applications)にアクセスします。
+2. **新しいアプリケーション** → 名前を選択します。
+3. **ボット** → **ボットを追加**を選択します。
+4. ボット → 特権ゲートウェイインテントの下で**MESSAGE CONTENT INTENTを有効にします**（必須、さもなくばボットは起動時にクラッシュします）。
+5. **ボットトークン**をコピーし、`/setup`に貼り付けます。
+6. ボットをサーバーに招待します（OAuth2 URLジェネレーター；スコープ：`bot`、`applications.commands`）。
 
-## Backups & migration
+## バックアップと移行
 
-Download a backup at:
+バックアップをダウンロードします：
 
 * `https://<your-railway-domain>/setup/export`
 
-This exports your OpenClaw state + workspace so you can migrate to another host without losing config or memory.
+これにより、OpenClawの状態とワークスペースがエクスポートされ、設定やメモリを失うことなく別のホストに移行できます。

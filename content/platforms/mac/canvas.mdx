@@ -4,50 +4,47 @@ title: "Canvas"
 
 # Canvas
 
-# Canvas (macOS app)
+# Canvas (macOSアプリ)
 
-The macOS app embeds an agent‑controlled **Canvas panel** using `WKWebView`. It
-is a lightweight visual workspace for HTML/CSS/JS, A2UI, and small interactive
-UI surfaces.
+macOSアプリは、`WKWebView`を使用してエージェント制御の**Canvasパネル**を埋め込んでいます。これは、HTML/CSS/JS、A2UI、および小さなインタラクティブUIサーフェスのための軽量なビジュアルワークスペースです。
 
-## Where Canvas lives
+## Canvasの保存場所
 
-Canvas state is stored under Application Support:
+Canvasの状態は、Application Supportに保存されます：
 
 * `~/Library/Application Support/OpenClaw/canvas/<session>/...`
 
-The Canvas panel serves those files via a **custom URL scheme**:
+Canvasパネルは、これらのファイルを**カスタムURLスキーム**を介して提供します：
 
 * `openclaw-canvas://<session>/<path>`
 
-Examples:
+例：
 
 * `openclaw-canvas://main/` → `<canvasRoot>/main/index.html`
 * `openclaw-canvas://main/assets/app.css` → `<canvasRoot>/main/assets/app.css`
 * `openclaw-canvas://main/widgets/todo/` → `<canvasRoot>/main/widgets/todo/index.html`
 
-If no `index.html` exists at the root, the app shows a **built‑in scaffold page**.
+ルートに`index.html`が存在しない場合、アプリは**組み込みのスカフォールドページ**を表示します。
 
-## Panel behavior
+## パネルの動作
 
-* Borderless, resizable panel anchored near the menu bar (or mouse cursor).
-* Remembers size/position per session.
-* Auto‑reloads when local canvas files change.
-* Only one Canvas panel is visible at a time (session is switched as needed).
+* メニューバー（またはマウスカーソル）の近くに固定された、ボーダーレスでリサイズ可能なパネル。
+* セッションごとにサイズ/位置を記憶します。
+* ローカルのCanvasファイルが変更されると自動的にリロードされます。
+* 一度に表示されるCanvasパネルは1つのみ（必要に応じてセッションが切り替わります）。
 
-Canvas can be disabled from Settings → **Allow Canvas**. When disabled, canvas
-node commands return `CANVAS_DISABLED`.
+Canvasは設定から無効にすることができます → **Allow Canvas**。無効にすると、canvasノードコマンドは`CANVAS_DISABLED`を返します。
 
-## Agent API surface
+## エージェントAPIの表面
 
-Canvas is exposed via the **Gateway WebSocket**, so the agent can:
+Canvasは**Gateway WebSocket**を介して公開されているため、エージェントは以下の操作が可能です：
 
-* show/hide the panel
-* navigate to a path or URL
-* evaluate JavaScript
-* capture a snapshot image
+* パネルの表示/非表示
+* パスまたはURLへのナビゲート
+* JavaScriptの評価
+* スナップショット画像のキャプチャ
 
-CLI examples:
+CLIの例：
 
 ```bash
 openclaw nodes canvas present --node <id>
@@ -56,35 +53,33 @@ openclaw nodes canvas eval --node <id> --js "document.title"
 openclaw nodes canvas snapshot --node <id>
 ```
 
-Notes:
+注意：
 
-* `canvas.navigate` accepts **local canvas paths**, `http(s)` URLs, and `file://` URLs.
-* If you pass `"/"`, the Canvas shows the local scaffold or `index.html`.
+* `canvas.navigate`は**ローカルCanvasパス**、`http(s)` URL、`file://` URLを受け入れます。
+* `"/"`を渡すと、Canvasはローカルスカフォールドまたは`index.html`を表示します。
 
-## A2UI in Canvas
+## Canvas内のA2UI
 
-A2UI is hosted by the Gateway canvas host and rendered inside the Canvas panel.
-When the Gateway advertises a Canvas host, the macOS app auto‑navigates to the
-A2UI host page on first open.
+A2UIはGatewayのCanvasホストによってホストされ、Canvasパネル内でレンダリングされます。GatewayがCanvasホストを広告すると、macOSアプリは初回起動時にA2UIホストページに自動的にナビゲートします。
 
-Default A2UI host URL:
+デフォルトのA2UIホストURL：
 
 ```
 http://<gateway-host>:18789/__openclaw__/a2ui/
 ```
 
-### A2UI commands (v0.8)
+### A2UIコマンド (v0.8)
 
-Canvas currently accepts **A2UI v0.8** server→client messages:
+Canvasは現在、**A2UI v0.8**のサーバー→クライアントメッセージを受け入れます：
 
 * `beginRendering`
 * `surfaceUpdate`
 * `dataModelUpdate`
 * `deleteSurface`
 
-`createSurface` (v0.9) is not supported.
+`createSurface` (v0.9) はサポートされていません。
 
-CLI example:
+CLIの例：
 
 ```bash
 cat > /tmp/a2ui-v0.8.jsonl <<'EOFA2'
@@ -95,28 +90,28 @@ EOFA2
 openclaw nodes canvas a2ui push --jsonl /tmp/a2ui-v0.8.jsonl --node <id>
 ```
 
-Quick smoke:
+クイックスモーク：
 
 ```bash
 openclaw nodes canvas a2ui push --node <id> --text "Hello from A2UI"
 ```
 
-## Triggering agent runs from Canvas
+## Canvasからエージェントの実行をトリガーする
 
-Canvas can trigger new agent runs via deep links:
+Canvasはディープリンクを介して新しいエージェントの実行をトリガーできます：
 
 * `openclaw://agent?...`
 
-Example (in JS):
+例（JSで）：
 
 ```js
 window.location.href = "openclaw://agent?message=Review%20this%20design";
 ```
 
-The app prompts for confirmation unless a valid key is provided.
+アプリは有効なキーが提供されない限り、確認を促します。
 
-## Security notes
+## セキュリティノート
 
-* Canvas scheme blocks directory traversal; files must live under the session root.
-* Local Canvas content uses a custom scheme (no loopback server required).
-* External `http(s)` URLs are allowed only when explicitly navigated.
+* Canvasスキームはディレクトリトラバーサルをブロックします; ファイルはセッションルートの下に存在する必要があります。
+* ローカルCanvasコンテンツはカスタムスキームを使用します（ループバックサーバーは必要ありません）。
+* 外部の`http(s)` URLは明示的にナビゲートされた場合のみ許可されます。

@@ -6,13 +6,12 @@ title: "memory"
 
 # `openclaw memory`
 
-Manage semantic memory indexing and search.
-Provided by the active memory plugin (default: `memory-core`; set `plugins.slots.memory = "none"` to disable).
+セマンティックメモリのインデックス作成と検索を管理します。アクティブメモリプラグイン（デフォルト: `memory-core`）によって提供されます。無効にするには `plugins.slots.memory = "none"` を設定してください。
 
-Related:
+関連情報:
 
-* Memory concept: [Memory](/concepts/memory)
-* Plugins: [Plugins](/tools/plugin)
+* メモリの概念: [Memory](/concepts/memory)
+* プラグイン: [Plugins](/tools/plugin)
 
 ## 例
 
@@ -31,20 +30,20 @@ openclaw memory index --agent main --verbose
 
 ## オプション
 
-Common:
+共通:
 
-* `--agent <id>`: scope to a single agent (default: all configured agents).
-* `--verbose`: emit detailed logs during probes and indexing.
+* `--agent <id>`: 単一のエージェントにスコープを絞る（デフォルト: 設定されたすべてのエージェント）。
+* `--verbose`: プローブとインデックス作成中に詳細なログを出力します。
 
 `memory search`:
 
-* Query input: pass either positional `[query]` or `--query <text>`.
-* If both are provided, `--query` wins.
-* If neither is provided, the command exits with an error.
+* クエリ入力: 位置引数 `[query]` または `--query <text>` のいずれかを渡します。
+* 両方が提供された場合、`--query` が優先されます。
+* どちらも提供されない場合、コマンドはエラーで終了します。
 
-Notes:
+注意:
 
-* `memory status --deep` probes vector + embedding availability.
-* `memory status --deep --index` runs a reindex if the store is dirty.
-* `memory index --verbose` prints per-phase details (provider, model, sources, batch activity).
-* `memory status` includes any extra paths configured via `memorySearch.extraPaths`.
+* `memory status --deep` はベクトル + 埋め込みの可用性をプローブします。
+* `memory status --deep --index` はストアが汚れている場合に再インデックスを実行します。
+* `memory index --verbose` はフェーズごとの詳細（プロバイダー、モデル、ソース、バッチアクティビティ）を出力します。
+* `memory status` は `memorySearch.extraPaths` を介して設定された追加パスを含みます。

@@ -6,97 +6,81 @@ title: "トークン使用量とコスト"
 
 # Token use & costs
 
-OpenClaw tracks **tokens**, not characters. Tokens are model-specific, but most
-OpenAI-style models average \~4 characters per token for English text.
+OpenClawは**トークン**を追跡しますが、文字数ではありません。トークンはモデル固有ですが、ほとんどのOpenAIスタイルのモデルは英語のテキストで約4文字を1トークンとして平均しています。
 
-## How the system prompt is built
+## システムプロンプトの構築方法
 
-OpenClaw assembles its own system prompt on every run. It includes:
+OpenClawは毎回独自のシステムプロンプトを組み立てます。これには以下が含まれます：
 
-* Tool list + short descriptions
-* Skills list (only metadata; instructions are loaded on demand with `read`)
-* Self-update instructions
-* Workspace + bootstrap files (`AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`, `BOOTSTRAP.md` when new, plus `MEMORY.md` and/or `memory.md` when present). Large files are truncated by `agents.defaults.bootstrapMaxChars` (default: 20000), and total bootstrap injection is capped by `agents.defaults.bootstrapTotalMaxChars` (default: 150000). `memory/*.md` files are on-demand via memory tools and are not auto-injected.
-* Time (UTC + user timezone)
-* Reply tags + heartbeat behavior
-* Runtime metadata (host/OS/model/thinking)
+* ツールリスト + 短い説明
+* スキルリスト（メタデータのみ；指示は`read`で必要に応じて読み込まれます）
+* 自己更新指示
+* ワークスペース + ブートストラップファイル（新しい場合は`AGENTS.md`、`SOUL.md`、`TOOLS.md`、`IDENTITY.md`、`USER.md`、`HEARTBEAT.md`、`BOOTSTRAP.md`、さらに存在する場合は`MEMORY.md`および/または`memory.md`）。大きなファイルは`agents.defaults.bootstrapMaxChars`（デフォルト：20000）によって切り捨てられ、総ブートストラップ注入は`agents.defaults.bootstrapTotalMaxChars`（デフォルト：150000）で制限されます。`memory/*.md`ファイルはメモリツールを介して必要に応じて使用され、自動的には注入されません。
+* 時間（UTC + ユーザーのタイムゾーン）
+* 応答タグ + ハートビートの動作
+* ランタイムメタデータ（ホスト/OS/モデル/思考）
 
-See the full breakdown in [System Prompt](/concepts/system-prompt).
+完全な内訳は[システムプロンプト](/concepts/system-prompt)を参照してください。
 
-## What counts in the context window
+## コンテキストウィンドウでカウントされるもの
 
-Everything the model receives counts toward the context limit:
+モデルが受け取るすべてのものがコンテキスト制限にカウントされます：
 
-* System prompt (all sections listed above)
-* Conversation history (user + assistant messages)
-* Tool calls and tool results
-* Attachments/transcripts (images, audio, files)
-* Compaction summaries and pruning artifacts
-* Provider wrappers or safety headers (not visible, but still counted)
+* システムプロンプト（上記のすべてのセクション）
+* 会話履歴（ユーザー + アシスタントメッセージ）
+* ツール呼び出しとツール結果
+* 添付ファイル/トランスクリプト（画像、音声、ファイル）
+* 圧縮要約とプルーニングアーティファクト
+* プロバイダラッパーまたは安全ヘッダー（見えませんが、カウントされます）
 
-For images, OpenClaw downscales transcript/tool image payloads before provider calls.
-Use `agents.defaults.imageMaxDimensionPx` (default: `1200`) to tune this:
+画像については、OpenClawはプロバイダ呼び出しの前にトランスクリプト/ツール画像ペイロードをダウンサイジングします。これを調整するには`agents.defaults.imageMaxDimensionPx`（デフォルト：`1200`）を使用します：
 
-* Lower values usually reduce vision-token usage and payload size.
-* Higher values preserve more visual detail for OCR/UI-heavy screenshots.
+* 低い値は通常、ビジョントークンの使用量とペイロードサイズを減少させます。
+* 高い値はOCR/UI重視のスクリーンショットの視覚的詳細をより多く保持します。
 
-For a practical breakdown (per injected file, tools, skills, and system prompt size), use `/context list` or `/context detail`. See [Context](/concepts/context).
+実際の内訳（注入されたファイル、ツール、スキル、システムプロンプトのサイズごと）を確認するには、`/context list`または`/context detail`を使用します。詳細は[コンテキスト](/concepts/context)を参照してください。
 
-## How to see current token usage
+## 現在のトークン使用量を確認する方法
 
-Use these in chat:
+チャットでこれを使用します：
 
-* `/status` → **emoji‑rich status card** with the session model, context usage,
-  last response input/output tokens, and **estimated cost** (API key only).
-* `/usage off|tokens|full` → appends a **per-response usage footer** to every reply.
-  * Persists per session (stored as `responseUsage`).
-  * OAuth auth **hides cost** (tokens only).
-* `/usage cost` → shows a local cost summary from OpenClaw session logs.
+* `/status` → **絵文字が豊富なステータスカード**がセッションモデル、コンテキスト使用量、最後の応答の入力/出力トークン、そして**推定コスト**（APIキーのみ）を表示します。
+* `/usage off|tokens|full` → 各応答に**応答ごとの使用量フッター**を追加します。
+  * セッションごとに持続します（`responseUsage`として保存されます）。
+  * OAuth認証は**コストを隠します**（トークンのみ）。
+* `/usage cost` → OpenClawセッションログからのローカルコストの概要を表示します。
 
-Other surfaces:
+他のインターフェース：
 
-* **TUI/Web TUI:** `/status` + `/usage` are supported.
-* **CLI:** `openclaw status --usage` and `openclaw channels list` show
-  provider quota windows (not per-response costs).
+* **TUI/Web TUI:** `/status` + `/usage`がサポートされています。
+* **CLI:** `openclaw status --usage`および`openclaw channels list`はプロバイダのクォータウィンドウを表示します（応答ごとのコストではありません）。
 
-## Cost estimation (when shown)
+## コスト推定（表示される場合）
 
-Costs are estimated from your model pricing config:
+コストはモデルの価格設定構成から推定されます：
 
 ```
 models.providers.<provider>.models[].cost
 ```
 
-These are **USD per 1M tokens** for `input`, `output`, `cacheRead`, and
-`cacheWrite`. If pricing is missing, OpenClaw shows tokens only. OAuth tokens
-never show dollar cost.
+これらは`input`、`output`、`cacheRead`、および`cacheWrite`の**1MトークンあたりのUSD**です。価格設定が欠けている場合、OpenClawはトークンのみを表示します。OAuthトークンは決してドルコストを表示しません。
 
-## Cache TTL and pruning impact
+## キャッシュTTLとプルーニングの影響
 
-Provider prompt caching only applies within the cache TTL window. OpenClaw can
-optionally run **cache-ttl pruning**: it prunes the session once the cache TTL
-has expired, then resets the cache window so subsequent requests can re-use the
-freshly cached context instead of re-caching the full history. This keeps cache
-write costs lower when a session goes idle past the TTL.
+プロバイダプロンプトのキャッシングはキャッシュTTLウィンドウ内でのみ適用されます。OpenClawはオプションで**キャッシュTTLプルーニング**を実行できます：キャッシュTTLが期限切れになった後、セッションをプルーニングし、その後キャッシュウィンドウをリセットして、次のリクエストが新しくキャッシュされたコンテキストを再利用できるようにします。これにより、セッションがTTLを超えてアイドル状態になるときのキャッシュ書き込みコストが低く抑えられます。
 
-Configure it in [Gateway configuration](/gateway/configuration) and see the
-behavior details in [Session pruning](/concepts/session-pruning).
+これを[ゲートウェイ設定](/gateway/configuration)で構成し、[セッションプルーニング](/concepts/session-pruning)で動作の詳細を確認してください。
 
-Heartbeat can keep the cache **warm** across idle gaps. If your model cache TTL
-is `1h`, setting the heartbeat interval just under that (e.g., `55m`) can avoid
-re-caching the full prompt, reducing cache write costs.
+ハートビートはアイドルギャップを越えてキャッシュを**温かく**保つことができます。モデルのキャッシュTTLが`1h`の場合、その直下にハートビート間隔を設定する（例：`55m`）ことで、フルプロンプトの再キャッシュを避け、キャッシュ書き込みコストを削減できます。
 
-In multi-agent setups, you can keep one shared model config and tune cache behavior
-per agent with `agents.list[].params.cacheRetention`.
+マルチエージェントセットアップでは、1つの共有モデル設定を維持し、`agents.list[].params.cacheRetention`でエージェントごとにキャッシュ動作を調整できます。
 
-For a full knob-by-knob guide, see [Prompt Caching](/reference/prompt-caching).
+詳細なノブごとのガイドについては、[プロンプトキャッシング](/reference/prompt-caching)を参照してください。
 
-For Anthropic API pricing, cache reads are significantly cheaper than input
-tokens, while cache writes are billed at a higher multiplier. See Anthropic’s
-prompt caching pricing for the latest rates and TTL multipliers:
+Anthropic APIの価格設定では、キャッシュ読み取りは入力トークンよりも大幅に安価であり、キャッシュ書き込みは高い倍率で請求されます。最新の料金とTTL倍率については、Anthropicのプロンプトキャッシング価格を参照してください：
 [https://docs.anthropic.com/docs/build-with-claude/prompt-caching](https://docs.anthropic.com/docs/build-with-claude/prompt-caching)
 
-### Example: keep 1h cache warm with heartbeat
+### 例：ハートビートで1時間キャッシュを温かく保つ
 
 ```yaml
 agents:
@@ -111,7 +95,7 @@ agents:
       every: "55m"
 ```
 
-### Example: mixed traffic with per-agent cache strategy
+### 例：エージェントごとのキャッシュ戦略を持つ混合トラフィック
 
 ```yaml
 agents:
@@ -121,25 +105,22 @@ agents:
     models:
       "anthropic/claude-opus-4-6":
         params:
-          cacheRetention: "long" # default baseline for most agents
+          cacheRetention: "long" # ほとんどのエージェントのデフォルトベースライン
   list:
     - id: "research"
       default: true
       heartbeat:
-        every: "55m" # keep long cache warm for deep sessions
+        every: "55m" # 深いセッションのために長いキャッシュを温かく保つ
     - id: "alerts"
       params:
-        cacheRetention: "none" # avoid cache writes for bursty notifications
+        cacheRetention: "none" # 突発的な通知のためにキャッシュ書き込みを避ける
 ```
 
-`agents.list[].params` merges on top of the selected model's `params`, so you can
-override only `cacheRetention` and inherit other model defaults unchanged.
+`agents.list[].params`は選択されたモデルの`params`の上にマージされるため、`cacheRetention`のみをオーバーライドし、他のモデルのデフォルトを変更せずに継承できます。
 
-### Example: enable Anthropic 1M context beta header
+### 例：Anthropic 1Mコンテキストベータヘッダーを有効にする
 
-Anthropic's 1M context window is currently beta-gated. OpenClaw can inject the
-required `anthropic-beta` value when you enable `context1m` on supported Opus
-or Sonnet models.
+Anthropicの1Mコンテキストウィンドウは現在ベータ版です。OpenClawは、サポートされているOpusまたはSonnetモデルで`context1m`を有効にすると、必要な`anthropic-beta`値を注入できます。
 
 ```yaml
 agents:
@@ -150,18 +131,16 @@ agents:
           context1m: true
 ```
 
-This maps to Anthropic's `context-1m-2025-08-07` beta header.
+これはAnthropicの`context-1m-2025-08-07`ベータヘッダーにマッピングされます。
 
-If you authenticate Anthropic with OAuth/subscription tokens (`sk-ant-oat-*`),
-OpenClaw skips the `context-1m-*` beta header because Anthropic currently
-rejects that combination with HTTP 401.
+AnthropicをOAuth/サブスクリプショントークン（`sk-ant-oat-*`）で認証すると、OpenClawは`context-1m-*`ベータヘッダーをスキップします。なぜなら、Anthropicは現在その組み合わせをHTTP 401で拒否しているからです。
 
-## Tips for reducing token pressure
+## トークン圧力を減らすためのヒント
 
-* Use `/compact` to summarize long sessions.
-* Trim large tool outputs in your workflows.
-* Lower `agents.defaults.imageMaxDimensionPx` for screenshot-heavy sessions.
-* Keep skill descriptions short (skill list is injected into the prompt).
-* Prefer smaller models for verbose, exploratory work.
+* `/compact`を使用して長いセッションを要約します。
+* ワークフロー内で大きなツール出力を削減します。
+* スクリーンショットが多いセッションでは`agents.defaults.imageMaxDimensionPx`を低く設定します。
+* スキルの説明を短く保ちます（スキルリストはプロンプトに注入されます）。
+* 冗長で探索的な作業には小さなモデルを好みます。
 
-See [Skills](/tools/skills) for the exact skill list overhead formula.
+正確なスキルリストのオーバーヘッドの公式については[スキル](/tools/skills)を参照してください。

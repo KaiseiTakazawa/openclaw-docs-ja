@@ -6,34 +6,34 @@ title: "null"
 
 # LiteLLM
 
-[LiteLLM](https://litellm.ai) is an open-source LLM gateway that provides a unified API to 100+ model providers. Route OpenClaw through LiteLLM to get centralized cost tracking, logging, and the flexibility to switch backends without changing your OpenClaw config.
+[LiteLLM](https://litellm.ai) は、100以上のモデルプロバイダーに統一されたAPIを提供するオープンソースのLLM Gatewayです。OpenClawをLiteLLM経由でルーティングすることで、コストの集中管理、ログ記録、バックエンドの切り替えをOpenClawの設定を変更することなく実現できます。
 
-## Why use LiteLLM with OpenClaw?
+## なぜOpenClawとLiteLLMを使用するのか？
 
-* **Cost tracking** — See exactly what OpenClaw spends across all models
-* **Model routing** — Switch between Claude, GPT-4, Gemini, Bedrock without config changes
-* **Virtual keys** — Create keys with spend limits for OpenClaw
-* **Logging** — Full request/response logs for debugging
-* **Fallbacks** — Automatic failover if your primary provider is down
+* **コスト追跡** — OpenClawがすべてのモデルでどれだけ支出しているかを正確に確認できます
+* **モデルルーティング** — Claude、GPT-4、Gemini、Bedrockの間で設定変更なしに切り替え可能
+* **バーチャルキー** — OpenClaw用に支出制限付きのキーを作成
+* **ログ記録** — デバッグ用のリクエスト/レスポンスの完全なログ
+* **フォールバック** — プライマリプロバイダーがダウンした場合の自動フェイルオーバー
 
 ## クイックスタート
 
-### Via onboarding
+### オンボーディング経由
 
 ```bash
 openclaw onboard --auth-choice litellm-api-key
 ```
 
-### Manual setup
+### 手動セットアップ
 
-1. Start LiteLLM Proxy:
+1. LiteLLM Proxyを起動します:
 
 ```bash
 pip install 'litellm[proxy]'
 litellm --model claude-opus-4-6
 ```
 
-2. Point OpenClaw to LiteLLM:
+2. OpenClawをLiteLLMにポイントします:
 
 ```bash
 export LITELLM_API_KEY="your-litellm-key"
@@ -41,17 +41,17 @@ export LITELLM_API_KEY="your-litellm-key"
 openclaw
 ```
 
-That's it. OpenClaw now routes through LiteLLM.
+これで完了です。OpenClawはLiteLLMを経由してルーティングされます。
 
 ## 設定
 
-### Environment variables
+### 環境変数
 
 ```bash
 export LITELLM_API_KEY="sk-litellm-key"
 ```
 
-### Config file
+### 設定ファイル
 
 ```json5
 {
@@ -90,9 +90,9 @@ export LITELLM_API_KEY="sk-litellm-key"
 }
 ```
 
-## Virtual keys
+## バーチャルキー
 
-Create a dedicated key for OpenClaw with spend limits:
+支出制限付きのOpenClaw専用キーを作成します:
 
 ```bash
 curl -X POST "http://localhost:4000/key/generate" \
@@ -105,11 +105,11 @@ curl -X POST "http://localhost:4000/key/generate" \
   }'
 ```
 
-Use the generated key as `LITELLM_API_KEY`.
+生成されたキーを`LITELLM_API_KEY`として使用します。
 
-## Model routing
+## モデルルーティング
 
-LiteLLM can route model requests to different backends. Configure in your LiteLLM `config.yaml`:
+LiteLLMはモデルリクエストを異なるバックエンドにルーティングできます。LiteLLMの`config.yaml`で設定します:
 
 ```yaml
 model_list:
@@ -124,27 +124,27 @@ model_list:
       api_key: os.environ/OPENAI_API_KEY
 ```
 
-OpenClaw keeps requesting `claude-opus-4-6` — LiteLLM handles the routing.
+OpenClawは`claude-opus-4-6`をリクエストし続けます — LiteLLMがルーティングを処理します。
 
-## Viewing usage
+## 使用状況の確認
 
-Check LiteLLM's dashboard or API:
+LiteLLMのダッシュボードまたはAPIをチェックします:
 
 ```bash
-# Key info
+# キー情報
 curl "http://localhost:4000/key/info" \
   -H "Authorization: Bearer sk-litellm-key"
 
-# Spend logs
+# 支出ログ
 curl "http://localhost:4000/spend/logs" \
   -H "Authorization: Bearer $LITELLM_MASTER_KEY"
 ```
 
 ## 注意事項
 
-* LiteLLM runs on `http://localhost:4000` by default
-* OpenClaw connects via the OpenAI-compatible `/v1/chat/completions` endpoint
-* All OpenClaw features work through LiteLLM — no limitations
+* LiteLLMはデフォルトで`http://localhost:4000`で実行されます
+* OpenClawはOpenAI互換の`/v1/chat/completions`エンドポイントを介して接続します
+* OpenClawのすべての機能はLiteLLMを通じて動作します — 制限はありません
 
 ## 関連項目
 

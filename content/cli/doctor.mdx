@@ -6,12 +6,12 @@ title: "doctor"
 
 # `openclaw doctor`
 
-Health checks + quick fixes for the gateway and channels.
+ゲートウェイとチャネルのヘルスチェック + クイックフィックス。
 
-Related:
+関連情報:
 
-* Troubleshooting: [Troubleshooting](/gateway/troubleshooting)
-* Security audit: [Security](/gateway/security)
+* トラブルシューティング: [Troubleshooting](/gateway/troubleshooting)
+* セキュリティ監査: [Security](/gateway/security)
 
 ## 例
 
@@ -21,17 +21,17 @@ openclaw doctor --repair
 openclaw doctor --deep
 ```
 
-Notes:
+注意事項:
 
-* Interactive prompts (like keychain/OAuth fixes) only run when stdin is a TTY and `--non-interactive` is **not** set. Headless runs (cron, Telegram, no terminal) will skip prompts.
-* `--fix` (alias for `--repair`) writes a backup to `~/.openclaw/openclaw.json.bak` and drops unknown config keys, listing each removal.
-* State integrity checks now detect orphan transcript files in the sessions directory and can archive them as `.deleted.<timestamp>` to reclaim space safely.
-* Doctor includes a memory-search readiness check and can recommend `openclaw configure --section model` when embedding credentials are missing.
-* If sandbox mode is enabled but Docker is unavailable, doctor reports a high-signal warning with remediation (`install Docker` or `openclaw config set agents.defaults.sandbox.mode off`).
+* インタラクティブプロンプト（キーチェーン/OAuthの修正など）は、stdinがTTYであり、`--non-interactive`が**設定されていない**場合にのみ実行されます。ヘッドレス実行（cron、Telegram、ターミナルなし）はプロンプトをスキップします。
+* `--fix`（`--repair`のエイリアス）は、`~/.openclaw/openclaw.json.bak`にバックアップを書き込み、未知の設定キーを削除し、各削除をリストします。
+* 状態の整合性チェックは、セッションディレクトリ内の孤立したトランスクリプトファイルを検出し、それらを`.deleted.<timestamp>`としてアーカイブして安全にスペースを回収できます。
+* Doctorはメモリ検索の準備チェックを含み、埋め込み資格情報が欠落している場合は`openclaw configure --section model`を推奨できます。
+* サンドボックスモードが有効でDockerが利用できない場合、doctorは修正を伴う高信号の警告を報告します（`install Docker`または`openclaw config set agents.defaults.sandbox.mode off`）。
 
-## macOS: `launchctl` env overrides
+## macOS: `launchctl` 環境オーバーライド
 
-If you previously ran `launchctl setenv OPENCLAW_GATEWAY_TOKEN ...` (or `...PASSWORD`), that value overrides your config file and can cause persistent “unauthorized” errors.
+以前に`launchctl setenv OPENCLAW_GATEWAY_TOKEN ...`（または`...PASSWORD`）を実行した場合、その値は設定ファイルをオーバーライドし、持続的な「未認証」エラーを引き起こす可能性があります。
 
 ```bash
 launchctl getenv OPENCLAW_GATEWAY_TOKEN

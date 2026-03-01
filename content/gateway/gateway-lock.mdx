@@ -8,25 +8,25 @@ title: "ゲートウェイロック"
 
 Last updated: 2025-12-11
 
-## Why
+## なぜ
 
-* Ensure only one gateway instance runs per base port on the same host; additional gateways must use isolated profiles and unique ports.
-* Survive crashes/SIGKILL without leaving stale lock files.
-* Fail fast with a clear error when the control port is already occupied.
+* 同じホスト上でベースポートごとに1つのゲートウェイインスタンスのみが実行されることを保証します。追加のゲートウェイは、孤立したプロファイルとユニークなポートを使用する必要があります。
+* クラッシュやSIGKILLから生き残り、古いロックファイルを残さないようにします。
+* 制御ポートがすでに占有されている場合は、明確なエラーで早期に失敗します。
 
-## Mechanism
+## メカニズム
 
-* The gateway binds the WebSocket listener (default `ws://127.0.0.1:18789`) immediately on startup using an exclusive TCP listener.
-* If the bind fails with `EADDRINUSE`, startup throws `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`.
-* The OS releases the listener automatically on any process exit, including crashes and SIGKILL—no separate lock file or cleanup step is needed.
-* On shutdown the gateway closes the WebSocket server and underlying HTTP server to free the port promptly.
+* ゲートウェイは、起動時に排他的なTCPリスナーを使用して、すぐにWebSocketリスナー（デフォルトは`ws://127.0.0.1:18789`）をバインドします。
+* バインドが`EADDRINUSE`で失敗した場合、起動時に`GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`がスローされます。
+* OSは、クラッシュやSIGKILLを含むプロセスの終了時にリスナーを自動的に解放します。別途ロックファイルやクリーンアップステップは必要ありません。
+* シャットダウン時に、ゲートウェイはWebSocketサーバーと基盤となるHTTPサーバーを閉じて、ポートを迅速に解放します。
 
-## Error surface
+## エラーの発生
 
-* If another process holds the port, startup throws `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`.
-* Other bind failures surface as `GatewayLockError("failed to bind gateway socket on ws://127.0.0.1:<port>: …")`.
+* 別のプロセスがポートを保持している場合、起動時に`GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`がスローされます。
+* その他のバインド失敗は、`GatewayLockError("failed to bind gateway socket on ws://127.0.0.1:<port>: …")`として表示されます。
 
-## Operational notes
+## 操作上の注意
 
-* If the port is occupied by *another* process, the error is the same; free the port or choose another with `openclaw gateway --port <port>`.
-* The macOS app still maintains its own lightweight PID guard before spawning the gateway; the runtime lock is enforced by the WebSocket bind.
+* ポートが*別の*プロセスによって占有されている場合、エラーは同じです。ポートを解放するか、`openclaw gateway --port <port>`で別のポートを選択してください。
+* macOSアプリは、ゲートウェイを起動する前に独自の軽量PIDガードを維持します。ランタイムロックはWebSocketバインドによって強制されます。

@@ -6,16 +6,16 @@ title: "ストリーミングとチャンキング"
 
 # Streaming + chunking
 
-OpenClaw has two separate streaming layers:
+OpenClaw には二つの異なるストリーミングレイヤーがあります：
 
-* **Block streaming (channels):** emit completed **blocks** as the assistant writes. These are normal channel messages (not token deltas).
-* **Preview streaming (Telegram/Discord/Slack):** update a temporary **preview message** while generating.
+* **ブロックストリーミング（チャネル）:** アシスタントが書き込む際に完成した **ブロック** を発信します。これは通常のチャネルメッセージです（トークンデルタではありません）。
+* **プレビューストリーミング（Telegram/Discord/Slack）:** 生成中に一時的な **プレビューメッセージ** を更新します。
 
-There is **no true token-delta streaming** to channel messages today. Preview streaming is message-based (send + edits/appends).
+現在、チャネルメッセージへの **真のトークンデルタストリーミング** はありません。プレビューストリーミングはメッセージベースです（送信 + 編集/追加）。
 
-## Block streaming (channel messages)
+## ブロックストリーミング（チャネルメッセージ）
 
-Block streaming sends assistant output in coarse chunks as it becomes available.
+ブロックストリーミングは、アシスタントの出力を粗いチャンクで送信します。
 
 ```
 Model output
@@ -27,126 +27,117 @@ Model output
                    └─ channel send (block replies)
 ```
 
-Legend:
+凡例：
 
-* `text_delta/events`: model stream events (may be sparse for non-streaming models).
-* `chunker`: `EmbeddedBlockChunker` applying min/max bounds + break preference.
-* `channel send`: actual outbound messages (block replies).
+* `text_delta/events`: モデルストリームイベント（非ストリーミングモデルの場合はまばらなことがあります）。
+* `chunker`: 最小/最大境界とブレークの優先度を適用する `EmbeddedBlockChunker`。
+* `channel send`: 実際の送信メッセージ（ブロック返信）。
 
-**Controls:**
+**コントロール:**
 
-* `agents.defaults.blockStreamingDefault`: `"on"`/`"off"` (default off).
-* Channel overrides: `*.blockStreaming` (and per-account variants) to force `"on"`/`"off"` per channel.
-* `agents.defaults.blockStreamingBreak`: `"text_end"` or `"message_end"`.
-* `agents.defaults.blockStreamingChunk`: `{ minChars, maxChars, breakPreference? }`.
-* `agents.defaults.blockStreamingCoalesce`: `{ minChars?, maxChars?, idleMs? }` (merge streamed blocks before send).
-* Channel hard cap: `*.textChunkLimit` (e.g., `channels.whatsapp.textChunkLimit`).
-* Channel chunk mode: `*.chunkMode` (`length` default, `newline` splits on blank lines (paragraph boundaries) before length chunking).
-* Discord soft cap: `channels.discord.maxLinesPerMessage` (default 17) splits tall replies to avoid UI clipping.
+* `agents.defaults.blockStreamingDefault`: `"on"`/`"off"`（デフォルトはオフ）。
+* チャネルオーバーライド: `*.blockStreaming`（およびアカウントごとのバリアント）でチャネルごとに `"on"`/`"off"` を強制。
+* `agents.defaults.blockStreamingBreak`: `"text_end"` または `"message_end"`。
+* `agents.defaults.blockStreamingChunk`: `{ minChars, maxChars, breakPreference? }`。
+* `agents.defaults.blockStreamingCoalesce`: `{ minChars?, maxChars?, idleMs? }`（送信前にストリーミングブロックをマージ）。
+* チャネルのハードキャップ: `*.textChunkLimit`（例: `channels.whatsapp.textChunkLimit`）。
+* チャネルのチャンクモード: `*.chunkMode`（`length` がデフォルト、`newline` は長さチャンクの前に空白行（段落境界）で分割）。
+* Discord ソフトキャップ: `channels.discord.maxLinesPerMessage`（デフォルト 17）は、UIのクリッピングを避けるために高い返信を分割します。
 
-**Boundary semantics:**
+**境界セマンティクス:**
 
-* `text_end`: stream blocks as soon as chunker emits; flush on each `text_end`.
-* `message_end`: wait until assistant message finishes, then flush buffered output.
+* `text_end`: チャンクが出力されるとすぐにストリームブロックを発信；各 `text_end` でフラッシュ。
+* `message_end`: アシスタントメッセージが終了するまで待機し、その後バッファされた出力をフラッシュ。
 
-`message_end` still uses the chunker if the buffered text exceeds `maxChars`, so it can emit multiple chunks at the end.
+`message_end` は、バッファされたテキストが `maxChars` を超える場合でもチャンクを使用するため、最後に複数のチャンクを発信できます。
 
-## Chunking algorithm (low/high bounds)
+## チャンキングアルゴリズム（下限/上限）
 
-Block chunking is implemented by `EmbeddedBlockChunker`:
+ブロックチャンキングは `EmbeddedBlockChunker` によって実装されています：
 
-* **Low bound:** don’t emit until buffer >= `minChars` (unless forced).
-* **High bound:** prefer splits before `maxChars`; if forced, split at `maxChars`.
-* **Break preference:** `paragraph` → `newline` → `sentence` → `whitespace` → hard break.
-* **Code fences:** never split inside fences; when forced at `maxChars`, close + reopen the fence to keep Markdown valid.
+* **下限:** バッファが `minChars` 以上になるまで出力しない（強制されない限り）。
+* **上限:** `maxChars` の前で分割を優先；強制される場合は `maxChars` で分割。
+* **ブレークの優先度:** `paragraph` → `newline` → `sentence` → `whitespace` → ハードブレーク。
+* **コードフェンス:** フェンス内で分割しない；`maxChars` で強制された場合は、Markdown を有効に保つためにフェンスを閉じて再オープンします。
 
-`maxChars` is clamped to the channel `textChunkLimit`, so you can’t exceed per-channel caps.
+`maxChars` はチャネルの `textChunkLimit` に制限されるため、チャネルごとのキャップを超えることはできません。
 
-## Coalescing (merge streamed blocks)
+## コアレッシング（ストリーミングブロックのマージ）
 
-When block streaming is enabled, OpenClaw can **merge consecutive block chunks**
-before sending them out. This reduces “single-line spam” while still providing
-progressive output.
+ブロックストリーミングが有効な場合、OpenClaw は **連続するブロックチャンクをマージ** して送信できます。これにより、「単一行のスパム」を減らしつつ、進行中の出力を提供します。
 
-* Coalescing waits for **idle gaps** (`idleMs`) before flushing.
-* Buffers are capped by `maxChars` and will flush if they exceed it.
-* `minChars` prevents tiny fragments from sending until enough text accumulates
-  (final flush always sends remaining text).
-* Joiner is derived from `blockStreamingChunk.breakPreference`
-  (`paragraph` → `\n\n`, `newline` → `\n`, `sentence` → space).
-* Channel overrides are available via `*.blockStreamingCoalesce` (including per-account configs).
-* Default coalesce `minChars` is bumped to 1500 for Signal/Slack/Discord unless overridden.
+* コアレッシングは、フラッシュする前に **アイドルギャップ** (`idleMs`) を待ちます。
+* バッファは `maxChars` によって制限され、それを超えるとフラッシュします。
+* `minChars` は、十分なテキストが蓄積されるまで小さなフラグメントの送信を防ぎます（最終フラッシュは常に残りのテキストを送信します）。
+* ジョイナーは `blockStreamingChunk.breakPreference` から導出されます（`paragraph` → `\n\n`、`newline` → `\n`、`sentence` → スペース）。
+* チャネルオーバーライドは `*.blockStreamingCoalesce` を介して利用可能です（アカウントごとの設定を含む）。
+* デフォルトのコアレッス `minChars` は、Signal/Slack/Discord のために 1500 に引き上げられます（オーバーライドされない限り）。
 
-## Human-like pacing between blocks
+## ブロック間の人間のようなペース
 
-When block streaming is enabled, you can add a **randomized pause** between
-block replies (after the first block). This makes multi-bubble responses feel
-more natural.
+ブロックストリーミングが有効な場合、最初のブロックの後に **ランダム化されたポーズ** を追加できます。これにより、マルチバブルの応答がより自然に感じられます。
 
-* Config: `agents.defaults.humanDelay` (override per agent via `agents.list[].humanDelay`).
-* Modes: `off` (default), `natural` (800–2500ms), `custom` (`minMs`/`maxMs`).
-* Applies only to **block replies**, not final replies or tool summaries.
+* 設定: `agents.defaults.humanDelay`（`agents.list[].humanDelay` を介してエージェントごとにオーバーライド）。
+* モード: `off`（デフォルト）、`natural`（800–2500ms）、`custom`（`minMs`/`maxMs`）。
+* **ブロック返信** のみ適用され、最終返信やツールの要約には適用されません。
 
-## “Stream chunks or everything”
+## “ストリームチャンクまたはすべて”
 
-This maps to:
+これは次のようにマッピングされます：
 
-* **Stream chunks:** `blockStreamingDefault: "on"` + `blockStreamingBreak: "text_end"` (emit as you go). Non-Telegram channels also need `*.blockStreaming: true`.
-* **Stream everything at end:** `blockStreamingBreak: "message_end"` (flush once, possibly multiple chunks if very long).
-* **No block streaming:** `blockStreamingDefault: "off"` (only final reply).
+* **ストリームチャンク:** `blockStreamingDefault: "on"` + `blockStreamingBreak: "text_end"`（進行中に発信）。非Telegramチャネルも `*.blockStreaming: true` が必要です。
+* **すべてを最後にストリーム:** `blockStreamingBreak: "message_end"`（一度フラッシュし、非常に長い場合は複数のチャンクを発信する可能性があります）。
+* **ブロックストリーミングなし:** `blockStreamingDefault: "off"`（最終返信のみ）。
 
-**Channel note:** Block streaming is **off unless**
-`*.blockStreaming` is explicitly set to `true`. Channels can stream a live preview
-(`channels.<channel>.streaming`) without block replies.
+**チャネルノート:** ブロックストリーミングは **オフ** です、`*.blockStreaming` が明示的に `true` に設定されていない限り。チャネルはブロック返信なしでライブプレビューをストリームできます（`channels.<channel>.streaming`）。
 
-Config location reminder: the `blockStreaming*` defaults live under
-`agents.defaults`, not the root config.
+設定場所のリマインダー: `blockStreaming*` のデフォルトは `agents.defaults` に存在し、ルート設定ではありません。
 
-## Preview streaming modes
+## プレビューストリーミングモード
 
-Canonical key: `channels.<channel>.streaming`
+標準キー: `channels.<channel>.streaming`
 
-Modes:
+モード：
 
-* `off`: disable preview streaming.
-* `partial`: single preview that is replaced with latest text.
-* `block`: preview updates in chunked/appended steps.
-* `progress`: progress/status preview during generation, final answer at completion.
+* `off`: プレビューストリーミングを無効にします。
+* `partial`: 最新のテキストで置き換えられる単一のプレビュー。
+* `block`: チャンク化/追加ステップでプレビューを更新します。
+* `progress`: 生成中の進行状況/ステータスプレビュー、完了時に最終回答。
 
-### Channel mapping
+### チャネルマッピング
 
-| Channel  | `off` | `partial` | `block` | `progress`        |
+| チャネル  | `off` | `partial` | `block` | `progress`        |
 | -------- | ----- | --------- | ------- | ----------------- |
-| Telegram | ✅     | ✅         | ✅       | maps to `partial` |
-| Discord  | ✅     | ✅         | ✅       | maps to `partial` |
+| Telegram | ✅     | ✅         | ✅       | `partial` にマップ |
+| Discord  | ✅     | ✅         | ✅       | `partial` にマップ |
 | Slack    | ✅     | ✅         | ✅       | ✅                 |
 
-Slack-only:
+Slack専用：
 
-* `channels.slack.nativeStreaming` toggles Slack native streaming API calls when `streaming=partial` (default: `true`).
+* `channels.slack.nativeStreaming` は、`streaming=partial` の場合に Slack ネイティブストリーミング API コールを切り替えます（デフォルト: `true`）。
 
-Legacy key migration:
+レガシーキーのマイグレーション：
 
-* Telegram: `streamMode` + boolean `streaming` auto-migrate to `streaming` enum.
-* Discord: `streamMode` + boolean `streaming` auto-migrate to `streaming` enum.
-* Slack: `streamMode` auto-migrates to `streaming` enum; boolean `streaming` auto-migrates to `nativeStreaming`.
+* Telegram: `streamMode` + ブール値 `streaming` は自動的に `streaming` 列挙型にマイグレーションされます。
+* Discord: `streamMode` + ブール値 `streaming` は自動的に `streaming` 列挙型にマイグレーションされます。
+* Slack: `streamMode` は `streaming` 列挙型に自動的にマイグレーションされます；ブール値 `streaming` は `nativeStreaming` に自動的にマイグレーションされます。
 
-### Runtime behavior
+### ランタイムの動作
 
 Telegram:
 
-* Uses Bot API `sendMessage` + `editMessageText`.
-* Preview streaming is skipped when Telegram block streaming is explicitly enabled (to avoid double-streaming).
-* `/reasoning stream` can write reasoning to preview.
+* Bot API `sendMessage` + `editMessageText` を使用します。
+* Telegram のブロックストリーミングが明示的に有効な場合、プレビューストリーミングはスキップされます（ダブルストリーミングを避けるため）。
+* `/reasoning stream` はプレビューに理由を記述できます。
 
 Discord:
 
-* Uses send + edit preview messages.
-* `block` mode uses draft chunking (`draftChunk`).
-* Preview streaming is skipped when Discord block streaming is explicitly enabled.
+* 送信 + 編集プレビューメッセージを使用します。
+* `block` モードはドラフトチャンク (`draftChunk`) を使用します。
+* Discord のブロックストリーミングが明示的に有効な場合、プレビューストリーミングはスキップされます。
 
 Slack:
 
-* `partial` can use Slack native streaming (`chat.startStream`/`append`/`stop`) when available.
-* `block` uses append-style draft previews.
-* `progress` uses status preview text, then final answer.
+* `partial` は、利用可能な場合に Slack ネイティブストリーミング（`chat.startStream`/`append`/`stop`）を使用できます。
+* `block` は追加スタイルのドラフトプレビューを使用します。
+* `progress` はステータスプレビューテキストを使用し、その後最終回答を提供します。

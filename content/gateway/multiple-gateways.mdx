@@ -6,21 +6,21 @@ title: "マルチゲートウェイ"
 
 # Multiple Gateways (same host)
 
-Most setups should use one Gateway because a single Gateway can handle multiple messaging connections and agents. If you need stronger isolation or redundancy (e.g., a rescue bot), run separate Gateways with isolated profiles/ports.
+ほとんどのセットアップでは、1つのGatewayを使用するべきです。なぜなら、単一のGatewayが複数のメッセージング接続とエージェントを処理できるからです。より強い隔離や冗長性（例：救助ボット）が必要な場合は、隔離されたプロファイル/ポートを持つ別々のGatewaysを実行してください。
 
 ## Isolation checklist (required)
 
-* `OPENCLAW_CONFIG_PATH` — per-instance config file
-* `OPENCLAW_STATE_DIR` — per-instance sessions, creds, caches
-* `agents.defaults.workspace` — per-instance workspace root
-* `gateway.port` (or `--port`) — unique per instance
-* Derived ports (browser/canvas) must not overlap
+* `OPENCLAW_CONFIG_PATH` — インスタンスごとの設定ファイル
+* `OPENCLAW_STATE_DIR` — インスタンスごとのセッション、クレデンシャル、キャッシュ
+* `agents.defaults.workspace` — インスタンスごとのワークスペースルート
+* `gateway.port` (または `--port`) — インスタンスごとにユニーク
+* 派生ポート（ブラウザ/キャンバス）は重複してはいけません
 
-If these are shared, you will hit config races and port conflicts.
+これらが共有されると、設定競合やポートの衝突が発生します。
 
 ## Recommended: profiles (`--profile`)
 
-Profiles auto-scope `OPENCLAW_STATE_DIR` + `OPENCLAW_CONFIG_PATH` and suffix service names.
+プロファイルは `OPENCLAW_STATE_DIR` と `OPENCLAW_CONFIG_PATH` を自動的にスコープし、サービス名にサフィックスを付けます。
 
 ```bash
 # main
@@ -32,7 +32,7 @@ openclaw --profile rescue setup
 openclaw --profile rescue gateway --port 19001
 ```
 
-Per-profile services:
+プロファイルごとのサービス:
 
 ```bash
 openclaw --profile main gateway install
@@ -41,53 +41,53 @@ openclaw --profile rescue gateway install
 
 ## Rescue-bot guide
 
-Run a second Gateway on the same host with its own:
+同じホスト上で、独自の以下を持つ第二のGatewayを実行します：
 
-* profile/config
-* state dir
-* workspace
-* base port (plus derived ports)
+* プロファイル/設定
+* ステートディレクトリ
+* ワークスペース
+* ベースポート（および派生ポート）
 
-This keeps the rescue bot isolated from the main bot so it can debug or apply config changes if the primary bot is down.
+これにより、救助ボットはメインボットから隔離され、プライマリボットがダウンしている場合にデバッグや設定変更を適用できます。
 
-Port spacing: leave at least 20 ports between base ports so the derived browser/canvas/CDP ports never collide.
+ポートの間隔：ベースポートの間に少なくとも20ポートを空けて、派生ブラウザ/キャンバス/CDPポートが衝突しないようにします。
 
 ### How to install (rescue bot)
 
 ```bash
-# Main bot (existing or fresh, without --profile param)
-# Runs on port 18789 + Chrome CDC/Canvas/... Ports
+# Main bot (既存または新規、--profileパラメータなし)
+# ポート18789 + Chrome CDC/Canvas/... ポートで実行
 openclaw onboard
 openclaw gateway install
 
-# Rescue bot (isolated profile + ports)
+# Rescue bot (隔離されたプロファイル + ポート)
 openclaw --profile rescue onboard
-# Notes:
-# - workspace name will be postfixed with -rescue per default
-# - Port should be at least 18789 + 20 Ports,
-#   better choose completely different base port, like 19789,
-# - rest of the onboarding is the same as normal
+# 注意：
+# - ワークスペース名はデフォルトで -rescue が付加されます
+# - ポートは少なくとも18789 + 20ポートである必要があります、
+#   完全に異なるベースポート（例：19789）を選択する方が良いです、
+# - 残りのオンボーディングは通常と同じです
 
-# To install the service (if not happened automatically during onboarding)
+# サービスをインストールするために（オンボーディング中に自動的に行われなかった場合）
 openclaw --profile rescue gateway install
 ```
 
 ## Port mapping (derived)
 
-Base port = `gateway.port` (or `OPENCLAW_GATEWAY_PORT` / `--port`).
+ベースポート = `gateway.port`（または `OPENCLAW_GATEWAY_PORT` / `--port`）。
 
-* browser control service port = base + 2 (loopback only)
-* canvas host is served on the Gateway HTTP server (same port as `gateway.port`)
-* Browser profile CDP ports auto-allocate from `browser.controlPort + 9 .. + 108`
+* ブラウザ制御サービスポート = ベース + 2（ループバック専用）
+* キャンバスホストはGateway HTTPサーバー上で提供されます（`gateway.port`と同じポート）
+* ブラウザプロファイルCDPポートは `browser.controlPort + 9 .. + 108` から自動割り当てされます
 
-If you override any of these in config or env, you must keep them unique per instance.
+これらのいずれかを設定または環境変数で上書きする場合、インスタンスごとにユニークである必要があります。
 
 ## Browser/CDP notes (common footgun)
 
-* Do **not** pin `browser.cdpUrl` to the same values on multiple instances.
-* Each instance needs its own browser control port and CDP range (derived from its gateway port).
-* If you need explicit CDP ports, set `browser.profiles.<name>.cdpPort` per instance.
-* Remote Chrome: use `browser.profiles.<name>.cdpUrl` (per profile, per instance).
+* 複数のインスタンスで `browser.cdpUrl` を同じ値に固定しないでください。
+* 各インスタンスには独自のブラウザ制御ポートとCDP範囲が必要です（そのGatewayポートから派生）。
+* 明示的なCDPポートが必要な場合は、インスタンスごとに `browser.profiles.<name>.cdpPort` を設定してください。
+* リモートChrome：`browser.profiles.<name>.cdpUrl` を使用します（プロファイルごと、インスタンスごと）。
 
 ## Manual env example
 

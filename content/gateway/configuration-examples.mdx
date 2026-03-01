@@ -6,7 +6,7 @@ title: "設定例"
 
 # 設定例
 
-Examples below are aligned with the current config schema. For the exhaustive reference and per-field notes, see [Configuration](/gateway/configuration).
+以下の例は、現在の設定スキーマに沿っています。詳細なリファレンスや各フィールドのノートについては、[Configuration](/gateway/configuration)を参照してください。
 
 ## クイックスタート
 
@@ -19,7 +19,7 @@ Examples below are aligned with the current config schema. For the exhaustive re
 }
 ```
 
-Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
+`~/.openclaw/openclaw.json`に保存すると、その番号からボットにDMを送信できます。
 
 ### Recommended starter
 
@@ -45,11 +45,11 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
 
 ## Expanded example (major options)
 
-> JSON5 lets you use comments and trailing commas. Regular JSON works too.
+> JSON5ではコメントや末尾のカンマを使用できます。通常のJSONも動作します。
 
 ```json5
 {
-  // Environment + shell
+  // 環境 + シェル
   env: {
     OPENROUTER_API_KEY: "sk-or-...",
     vars: {
@@ -61,7 +61,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Auth profile metadata (secrets live in auth-profiles.json)
+  // 認証プロファイルメタデータ（シークレットはauth-profiles.jsonに保存）
   auth: {
     profiles: {
       "anthropic:me@example.com": {
@@ -80,14 +80,14 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Identity
+  // アイデンティティ
   identity: {
     name: "Samantha",
     theme: "helpful sloth",
     emoji: "🦥",
   },
 
-  // Logging
+  // ロギング
   logging: {
     level: "info",
     file: "/tmp/openclaw/openclaw.log",
@@ -96,7 +96,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     redactSensitive: "tools",
   },
 
-  // Message formatting
+  // メッセージフォーマット
   messages: {
     messagePrefix: "[openclaw]",
     responsePrefix: ">",
@@ -104,7 +104,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     ackReactionScope: "group-mentions",
   },
 
-  // Routing + queue
+  // ルーティング + キュー
   routing: {
     groupChat: {
       mentionPatterns: ["@openclaw", "openclaw"],
@@ -127,7 +127,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Tooling
+  // ツール
   tools: {
     media: {
       audio: {
@@ -135,7 +135,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
         maxBytes: 20971520,
         models: [
           { provider: "openai", model: "gpt-4o-mini-transcribe" },
-          // Optional CLI fallback (Whisper binary):
+          // オプションのCLIフォールバック（Whisperバイナリ）:
           // { type: "cli", command: "whisper", args: ["--model", "base", "{{MediaPath}}"] }
         ],
         timeoutSeconds: 120,
@@ -148,7 +148,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Session behavior
+  // セッションの動作
   session: {
     scope: "per-sender",
     reset: {
@@ -166,9 +166,9 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
       pruneAfter: "30d",
       maxEntries: 500,
       rotateBytes: "10mb",
-      resetArchiveRetention: "30d", // duration or false
-      maxDiskBytes: "500mb", // optional
-      highWaterBytes: "400mb", // optional (defaults to 80% of maxDiskBytes)
+      resetArchiveRetention: "30d", // 期間またはfalse
+      maxDiskBytes: "500mb", // オプション
+      highWaterBytes: "400mb", // オプション（デフォルトはmaxDiskBytesの80%）
     },
     typingIntervalSeconds: 5,
     sendPolicy: {
@@ -177,7 +177,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Channels
+  // チャンネル
   channels: {
     whatsapp: {
       dmPolicy: "pairing",
@@ -229,7 +229,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Agent runtime
+  // エージェントの実行時
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -270,7 +270,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
         every: "30m",
         model: "anthropic/claude-sonnet-4-5",
         target: "last",
-        directPolicy: "allow", // allow (default) | block
+        directPolicy: "allow", // allow (デフォルト) | block
         to: "+15555550123",
         prompt: "HEARTBEAT",
         ackMaxChars: 300,
@@ -324,7 +324,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Custom model providers
+  // カスタムモデルプロバイダー
   models: {
     mode: "merge",
     providers: {
@@ -350,7 +350,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Cron jobs
+  // Cronジョブ
   cron: {
     enabled: true,
     store: "~/.openclaw/cron/cron.json",
@@ -362,7 +362,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Webhooks
+  // Webhook
   hooks: {
     enabled: true,
     path: "/hooks",
@@ -405,7 +405,7 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
     },
   },
 
-  // Gateway + networking
+  // Gateway + ネットワーキング
   gateway: {
     mode: "local",
     port: 18789,
@@ -467,21 +467,21 @@ Save to `~/.openclaw/openclaw.json` and you can DM the bot from that number.
 
 ### Secure DM mode (shared inbox / multi-user DMs)
 
-If more than one person can DM your bot (multiple entries in `allowFrom`, pairing approvals for multiple people, or `dmPolicy: "open"`), enable **secure DM mode** so DMs from different senders don’t share one context by default:
+複数の人がボットにDMを送信できる場合（`allowFrom`に複数のエントリ、複数の人のペアリング承認、または`dmPolicy: "open"`）、異なる送信者からのDMがデフォルトで1つのコンテキストを共有しないように**セキュアDMモード**を有効にします。
 
 ```json5
 {
-  // Secure DM mode (recommended for multi-user or sensitive DM agents)
+  // セキュアDMモード（複数ユーザーまたは敏感なDMエージェントに推奨）
   session: { dmScope: "per-channel-peer" },
 
   channels: {
-    // Example: WhatsApp multi-user inbox
+    // 例：WhatsAppの複数ユーザー受信トレイ
     whatsapp: {
       dmPolicy: "allowlist",
       allowFrom: ["+15555550123", "+15555550124"],
     },
 
-    // Example: Discord multi-user inbox
+    // 例：Discordの複数ユーザー受信トレイ
     discord: {
       enabled: true,
       token: "YOUR_DISCORD_BOT_TOKEN",
@@ -491,8 +491,8 @@ If more than one person can DM your bot (multiple entries in `allowFrom`, pairin
 }
 ```
 
-For Discord/Slack/Google Chat/MS Teams/Mattermost/IRC, sender authorization is ID-first by default.
-Only enable direct mutable name/email/nick matching with each channel's `dangerouslyAllowNameMatching: true` if you explicitly accept that risk.
+Discord/Slack/Google Chat/MS Teams/Mattermost/IRCでは、送信者の認証はデフォルトでID優先です。
+各チャンネルの`dangerouslyAllowNameMatching: true`を使用して直接の可変名/メール/ニックマッチングを有効にするのは、そのリスクを明示的に受け入れる場合のみ行ってください。
 
 ### OAuth with API key failover
 
@@ -622,7 +622,7 @@ Only enable direct mutable name/email/nick matching with each channel's `dangero
 
 ## Tips
 
-* If you set `dmPolicy: "open"`, the matching `allowFrom` list must include `"*"`.
-* Provider IDs differ (phone numbers, user IDs, channel IDs). Use the provider docs to confirm the format.
-* Optional sections to add later: `web`, `browser`, `ui`, `discovery`, `canvasHost`, `talk`, `signal`, `imessage`.
-* See [Providers](/providers) and [Troubleshooting](/gateway/troubleshooting) for deeper setup notes.
+* `dmPolicy: "open"`を設定する場合、対応する`allowFrom`リストには`"*"`を含める必要があります。
+* プロバイダーIDは異なります（電話番号、ユーザーID、チャンネルID）。形式を確認するにはプロバイダーのドキュメントを使用してください。
+* 後で追加するオプションのセクション：`web`、`browser`、`ui`、`discovery`、`canvasHost`、`talk`、`signal`、`imessage`。
+* 詳細な設定ノートについては、[Providers](/providers)および[Troubleshooting](/gateway/troubleshooting)を参照してください。

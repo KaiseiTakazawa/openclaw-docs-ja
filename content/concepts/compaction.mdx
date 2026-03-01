@@ -4,69 +4,65 @@ title: "コンパクション"
 
 # コンパクション
 
-# Context Window & Compaction
+# コンテキストウィンドウとコンパクション
 
-Every model has a **context window** (max tokens it can see). Long-running chats accumulate messages and tool results; once the window is tight, OpenClaw **compacts** older history to stay within limits.
+すべてのモデルには**コンテキストウィンドウ**（モデルが見ることができる最大トークン数）があります。長時間のチャットではメッセージやツールの結果が蓄積され、ウィンドウが狭くなると、OpenClawは**コンパクト**にするために古い履歴を圧縮します。
 
-## What compaction is
+## コンパクションとは
 
-Compaction **summarizes older conversation** into a compact summary entry and keeps recent messages intact. The summary is stored in the session history, so future requests use:
+コンパクションは**古い会話を要約**し、コンパクトな要約エントリを作成し、最近のメッセージはそのまま保持します。要約はセッションの履歴に保存されるため、将来のリクエストでは以下を使用します：
 
-* The compaction summary
-* Recent messages after the compaction point
+* コンパクション要約
+* コンパクションポイント以降の最近のメッセージ
 
-Compaction **persists** in the session’s JSONL history.
+コンパクションはセッションのJSONL履歴に**永続化**されます。
 
 ## 設定
 
-Use the `agents.defaults.compaction` setting in your `openclaw.json` to configure compaction behavior (mode, target tokens, etc.).
-Compaction summarization preserves opaque identifiers by default (`identifierPolicy: "strict"`). You can override this with `identifierPolicy: "off"` or provide custom text with `identifierPolicy: "custom"` and `identifierInstructions`.
+`openclaw.json`の`agents.defaults.compaction`設定を使用して、コンパクションの動作（モード、ターゲットトークンなど）を構成します。
+コンパクションの要約はデフォルトで不透明な識別子を保持します（`identifierPolicy: "strict"`）。これを`identifierPolicy: "off"`でオーバーライドするか、`identifierPolicy: "custom"`と`identifierInstructions`を使用してカスタムテキストを提供できます。
 
-## Auto-compaction (default on)
+## 自動コンパクション（デフォルトオン）
 
-When a session nears or exceeds the model’s context window, OpenClaw triggers auto-compaction and may retry the original request using the compacted context.
+セッションがモデルのコンテキストウィンドウに近づくか、超過すると、OpenClawは自動コンパクションをトリガーし、圧縮されたコンテキストを使用して元のリクエストを再試行することがあります。
 
-You’ll see:
+以下が表示されます：
 
-* `🧹 Auto-compaction complete` in verbose mode
-* `/status` showing `🧹 Compactions: <count>`
+* 詳細モードで`🧹 自動コンパクション完了`
+* `/status`で`🧹 コンパクション: <count>`
 
-Before compaction, OpenClaw can run a **silent memory flush** turn to store
-durable notes to disk. See [Memory](/concepts/memory) for details and config.
+コンパクションの前に、OpenClawは**サイレントメモリフラッシュ**ターンを実行して、耐久性のあるノートをディスクに保存できます。詳細と設定については[Memory](/concepts/memory)を参照してください。
 
-## Manual compaction
+## 手動コンパクション
 
-Use `/compact` (optionally with instructions) to force a compaction pass:
+`/compact`（オプションで指示付き）を使用して、コンパクションパスを強制します：
 
 ```
-/compact Focus on decisions and open questions
+/compact 決定事項と未解決の質問に焦点を当てる
 ```
 
-## Context window source
+## コンテキストウィンドウのソース
 
-Context window is model-specific. OpenClaw uses the model definition from the configured provider catalog to determine limits.
+コンテキストウィンドウはモデル固有です。OpenClawは、構成されたプロバイダカタログからモデル定義を使用して制限を決定します。
 
-## Compaction vs pruning
+## コンパクションとプルーニングの違い
 
-* **Compaction**: summarises and **persists** in JSONL.
-* **Session pruning**: trims old **tool results** only, **in-memory**, per request.
+* **コンパクション**: 要約し、JSONLに**永続化**します。
+* **セッションプルーニング**: 古い**ツール結果**のみを**メモリ内**でリクエストごとにトリムします。
 
-See [/concepts/session-pruning](/concepts/session-pruning) for pruning details.
+プルーニングの詳細については[/concepts/session-pruning](/concepts/session-pruning)を参照してください。
 
-## OpenAI server-side compaction
+## OpenAIサーバーサイドコンパクション
 
-OpenClaw also supports OpenAI Responses server-side compaction hints for
-compatible direct OpenAI models. This is separate from local OpenClaw
-compaction and can run alongside it.
+OpenClawは、互換性のある直接OpenAIモデルのためのOpenAI Responsesサーバーサイドコンパクションヒントもサポートしています。これはローカルのOpenClawコンパクションとは別で、同時に実行できます。
 
-* Local compaction: OpenClaw summarizes and persists into session JSONL.
-* Server-side compaction: OpenAI compacts context on the provider side when
-  `store` + `context_management` are enabled.
+* ローカルコンパクション: OpenClawが要約し、セッションJSONLに永続化します。
+* サーバーサイドコンパクション: OpenAIがプロバイダ側でコンテキストを圧縮します（`store` + `context_management`が有効な場合）。
 
-See [OpenAI provider](/providers/openai) for model params and overrides.
+モデルパラメータとオーバーライドについては[OpenAI provider](/providers/openai)を参照してください。
 
-## Tips
+## ヒント
 
-* Use `/compact` when sessions feel stale or context is bloated.
-* Large tool outputs are already truncated; pruning can further reduce tool-result buildup.
-* If you need a fresh slate, `/new` or `/reset` starts a new session id.
+* セッションが古く感じたり、コンテキストが膨らんでいる場合は`/compact`を使用してください。
+* 大きなツール出力はすでに切り捨てられています。プルーニングはツール結果の蓄積をさらに減少させることができます。
+* 新しいスレートが必要な場合は、`/new`または`/reset`で新しいセッションIDを開始します。

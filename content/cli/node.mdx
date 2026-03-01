@@ -6,30 +6,25 @@ title: "node"
 
 # `openclaw node`
 
-Run a **headless node host** that connects to the Gateway WebSocket and exposes
-`system.run` / `system.which` on this machine.
+**ヘッドレスノードホスト**を実行し、Gateway WebSocketに接続して、このマシン上で`system.run` / `system.which`を公開します。
 
-## Why use a node host?
+## なぜノードホストを使用するのか？
 
-Use a node host when you want agents to **run commands on other machines** in your
-network without installing a full macOS companion app there.
+ノードホストは、エージェントが**ネットワーク内の他のマシンでコマンドを実行する**必要がある場合に使用します。フルmacOSコンパニオンアプリをそこにインストールすることなく実行できます。
 
-Common use cases:
+一般的な使用例：
 
-* Run commands on remote Linux/Windows boxes (build servers, lab machines, NAS).
-* Keep exec **sandboxed** on the gateway, but delegate approved runs to other hosts.
-* Provide a lightweight, headless execution target for automation or CI nodes.
+* リモートのLinux/Windowsボックス（ビルドサーバー、ラボマシン、NAS）でコマンドを実行する。
+* execを**サンドボックス化**してGateway上に保持し、承認された実行を他のホストに委任する。
+* 自動化やCIノードのための軽量でヘッドレスな実行ターゲットを提供する。
 
-Execution is still guarded by **exec approvals** and per‑agent allowlists on the
-node host, so you can keep command access scoped and explicit.
+実行は依然として**exec承認**とノードホスト上のエージェントごとの許可リストによって保護されているため、コマンドアクセスをスコープ化し、明示的に保つことができます。
 
-## Browser proxy (zero-config)
+## ブラウザプロキシ（ゼロコンフィグ）
 
-Node hosts automatically advertise a browser proxy if `browser.enabled` is not
-disabled on the node. This lets the agent use browser automation on that node
-without extra configuration.
+ノードホストは、`browser.enabled`がノードで無効になっていない場合、自動的にブラウザプロキシを広告します。これにより、エージェントは追加の設定なしでそのノード上でブラウザ自動化を使用できます。
 
-Disable it on the node if needed:
+必要に応じてノードで無効にします：
 
 ```json5
 {
@@ -41,41 +36,41 @@ Disable it on the node if needed:
 }
 ```
 
-## Run (foreground)
+## 実行（フォアグラウンド）
 
 ```bash
 openclaw node run --host <gateway-host> --port 18789
 ```
 
-Options:
+オプション：
 
-* `--host <host>`: Gateway WebSocket host (default: `127.0.0.1`)
-* `--port <port>`: Gateway WebSocket port (default: `18789`)
-* `--tls`: Use TLS for the gateway connection
-* `--tls-fingerprint <sha256>`: Expected TLS certificate fingerprint (sha256)
-* `--node-id <id>`: Override node id (clears pairing token)
-* `--display-name <name>`: Override the node display name
+* `--host <host>`: Gateway WebSocketホスト（デフォルト: `127.0.0.1`）
+* `--port <port>`: Gateway WebSocketポート（デフォルト: `18789`）
+* `--tls`: Gateway接続にTLSを使用
+* `--tls-fingerprint <sha256>`: 期待されるTLS証明書フィンガープリント（sha256）
+* `--node-id <id>`: ノードIDをオーバーライド（ペアリングトークンをクリア）
+* `--display-name <name>`: ノード表示名をオーバーライド
 
-## Service (background)
+## サービス（バックグラウンド）
 
-Install a headless node host as a user service.
+ユーザーサービスとしてヘッドレスノードホストをインストールします。
 
 ```bash
 openclaw node install --host <gateway-host> --port 18789
 ```
 
-Options:
+オプション：
 
-* `--host <host>`: Gateway WebSocket host (default: `127.0.0.1`)
-* `--port <port>`: Gateway WebSocket port (default: `18789`)
-* `--tls`: Use TLS for the gateway connection
-* `--tls-fingerprint <sha256>`: Expected TLS certificate fingerprint (sha256)
-* `--node-id <id>`: Override node id (clears pairing token)
-* `--display-name <name>`: Override the node display name
-* `--runtime <runtime>`: Service runtime (`node` or `bun`)
-* `--force`: Reinstall/overwrite if already installed
+* `--host <host>`: Gateway WebSocketホスト（デフォルト: `127.0.0.1`）
+* `--port <port>`: Gateway WebSocketポート（デフォルト: `18789`）
+* `--tls`: Gateway接続にTLSを使用
+* `--tls-fingerprint <sha256>`: 期待されるTLS証明書フィンガープリント（sha256）
+* `--node-id <id>`: ノードIDをオーバーライド（ペアリングトークンをクリア）
+* `--display-name <name>`: ノード表示名をオーバーライド
+* `--runtime <runtime>`: サービスランタイム（`node`または`bun`）
+* `--force`: 既にインストールされている場合は再インストール/上書き
 
-Manage the service:
+サービスを管理します：
 
 ```bash
 openclaw node status
@@ -84,27 +79,25 @@ openclaw node restart
 openclaw node uninstall
 ```
 
-Use `openclaw node run` for a foreground node host (no service).
+フォアグラウンドノードホスト（サービスなし）には`openclaw node run`を使用します。
 
-Service commands accept `--json` for machine-readable output.
+サービスコマンドは、機械可読出力のために`--json`を受け入れます。
 
 ## ペアリング
 
-The first connection creates a pending node pair request on the Gateway.
-Approve it via:
+最初の接続は、Gateway上に保留中のノードペアリクエストを作成します。次のコマンドで承認します：
 
 ```bash
 openclaw nodes pending
 openclaw nodes approve <requestId>
 ```
 
-The node host stores its node id, token, display name, and gateway connection info in
-`~/.openclaw/node.json`.
+ノードホストは、ノードID、トークン、表示名、およびGateway接続情報を`~/.openclaw/node.json`に保存します。
 
-## Exec approvals
+## Exec承認
 
-`system.run` is gated by local exec approvals:
+`system.run`はローカルのexec承認によって制限されています：
 
 * `~/.openclaw/exec-approvals.json`
-* [Exec approvals](/tools/exec-approvals)
-* `openclaw approvals --node <id|name|ip>` (edit from the Gateway)
+* [Exec承認](/tools/exec-approvals)
+* `openclaw approvals --node <id|name|ip>`（Gatewayから編集）

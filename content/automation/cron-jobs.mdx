@@ -4,23 +4,21 @@ title: "Cron ジョブ"
 
 # Cron ジョブ
 # Cron jobs (Gateway scheduler)
-> \*\*Cron vs Heartbeat?\*\* See [Cron vs Heartbeat](/automation/cron-vs-heartbeat) for guidance on when to use each.
-Cron is the Gateway’s built-in scheduler. It persists jobs, wakes the agent at
-the right time, and can optionally deliver output back to a chat.
-If you want \*“run this every morning”\* or \*“poke the agent in 20 minutes”\*,
-cron is the mechanism.
-Troubleshooting: [/automation/troubleshooting](/automation/troubleshooting)
+> **Cron vs Heartbeat?** 詳細については [Cron vs Heartbeat](/automation/cron-vs-heartbeat) を参照してください。
+CronはGatewayに組み込まれたスケジューラです。ジョブを永続化し、適切な時間にエージェントを起動し、オプションでチャットに出力を返すことができます。
+「毎朝これを実行する」や「20分後にエージェントを起こす」といった場合、cronがそのメカニズムです。
+トラブルシューティング: [/automation/troubleshooting](/automation/troubleshooting)
 ## TL;DR
-\* Cron runs \*\*inside the Gateway\*\* (not inside the model).
-\* Jobs persist under `~/.openclaw/cron/` so restarts don’t lose schedules.
-\* Two execution styles:
-\* \*\*Main session\*\*: enqueue a system event, then run on the next heartbeat.
-\* \*\*Isolated\*\*: run a dedicated agent turn in `cron:`, with delivery (announce by default or none).
-\* Wakeups are first-class: a job can request “wake now” vs “next heartbeat”.
-\* Webhook posting is per job via `delivery.mode = "webhook"` + `delivery.to = ""`.
-\* Legacy fallback remains for stored jobs with `notify: true` when `cron.webhook` is set, migrate those jobs to webhook delivery mode.
-## Quick start (actionable)
-Create a one-shot reminder, verify it exists, and run it immediately:
+* Cronは**Gateway内**で実行されます（モデル内ではありません）。
+* ジョブは`~/.openclaw/cron/`に永続化されるため、再起動してもスケジュールが失われません。
+* 実行スタイルは2つあります：
+  * **メインセッション**：システムイベントをキューに入れ、次のハートビートで実行します。
+  * **アイソレート**：`cron:`内で専用のエージェントターンを実行し、配信（デフォルトでは発表またはなし）します。
+* ウェイクアップはファーストクラス：ジョブは「今起こす」と「次のハートビート」のリクエストができます。
+* Webhookの投稿はジョブごとに`delivery.mode = "webhook"` + `delivery.to = ""`で行われます。
+* `cron.webhook`が設定されている場合、`notify: true`の保存されたジョブにはレガシーフォールバックが残ります。これらのジョブをWebhook配信モードに移行してください。
+## クイックスタート（実行可能）
+一度限りのリマインダーを作成し、存在を確認してすぐに実行します：
 ```bash
 openclaw cron add \
 --name "Reminder" \
@@ -33,162 +31,143 @@ openclaw cron list
 openclaw cron run 
 openclaw cron runs --id 
 ```
-Schedule a recurring isolated job with delivery:
+配信付きの定期的なアイソレートジョブをスケジュールします：
 ```bash
 openclaw cron add \
 --name "Morning brief" \
---cron "0 7 \* \* \*" \
---tz "America/Los\_Angeles" \
+--cron "0 7 * * *" \
+--tz "America/Los_Angeles" \
 --session isolated \
 --message "Summarize overnight updates." \
 --announce \
 --channel slack \
 --to "channel:C1234567890"
 ```
-## Tool-call equivalents (Gateway cron tool)
-For the canonical JSON shapes and examples, see [JSON schema for tool calls](/automation/cron-jobs#json-schema-for-tool-calls).
-## Where cron jobs are stored
-Cron jobs are persisted on the Gateway host at `~/.openclaw/cron/jobs.json` by default.
-The Gateway loads the file into memory and writes it back on changes, so manual edits
-are only safe when the Gateway is stopped. Prefer `openclaw cron add/edit` or the cron
-tool call API for changes.
-## Beginner-friendly overview
-Think of a cron job as: \*\*when\*\* to run + \*\*what\*\* to do.
-1. \*\*Choose a schedule\*\*
-\* One-shot reminder → `schedule.kind = "at"` (CLI: `--at`)
-\* Repeating job → `schedule.kind = "every"` or `schedule.kind = "cron"`
-\* If your ISO timestamp omits a timezone, it is treated as \*\*UTC\*\*.
-2. \*\*Choose where it runs\*\*
-\* `sessionTarget: "main"` → run during the next heartbeat with main context.
-\* `sessionTarget: "isolated"` → run a dedicated agent turn in `cron:`.
-3. \*\*Choose the payload\*\*
-\* Main session → `payload.kind = "systemEvent"`
-\* Isolated session → `payload.kind = "agentTurn"`
-Optional: one-shot jobs (`schedule.kind = "at"`) delete after success by default. Set
-`deleteAfterRun: false` to keep them (they will disable after success).
-## Concepts
-### Jobs
-A cron job is a stored record with:
-\* a \*\*schedule\*\* (when it should run),
-\* a \*\*payload\*\* (what it should do),
-\* optional \*\*delivery mode\*\* (`announce`, `webhook`, or `none`).
-\* optional \*\*agent binding\*\* (`agentId`): run the job under a specific agent; if
-missing or unknown, the gateway falls back to the default agent.
-Jobs are identified by a stable `jobId` (used by CLI/Gateway APIs).
-In agent tool calls, `jobId` is canonical; legacy `id` is accepted for compatibility.
-One-shot jobs auto-delete after success by default; set `deleteAfterRun: false` to keep them.
-### Schedules
-Cron supports three schedule kinds:
-\* `at`: one-shot timestamp via `schedule.at` (ISO 8601).
-\* `every`: fixed interval (ms).
-\* `cron`: 5-field cron expression (or 6-field with seconds) with optional IANA timezone.
-Cron expressions use `croner`. If a timezone is omitted, the Gateway host’s
-local timezone is used.
-To reduce top-of-hour load spikes across many gateways, OpenClaw applies a
-deterministic per-job stagger window of up to 5 minutes for recurring
-top-of-hour expressions (for example `0 \* \* \* \*`, `0 \*/2 \* \* \*`). Fixed-hour
-expressions such as `0 7 \* \* \*` remain exact.
-For any cron schedule, you can set an explicit stagger window with `schedule.staggerMs`
-(`0` keeps exact timing). CLI shortcuts:
-\* `--stagger 30s` (or `1m`, `5m`) to set an explicit stagger window.
-\* `--exact` to force `staggerMs = 0`.
-### Main vs isolated execution
-#### Main session jobs (system events)
-Main jobs enqueue a system event and optionally wake the heartbeat runner.
-They must use `payload.kind = "systemEvent"`.
-\* `wakeMode: "now"` (default): event triggers an immediate heartbeat run.
-\* `wakeMode: "next-heartbeat"`: event waits for the next scheduled heartbeat.
-This is the best fit when you want the normal heartbeat prompt + main-session context.
-See [Heartbeat](/gateway/heartbeat).
-#### Isolated jobs (dedicated cron sessions)
-Isolated jobs run a dedicated agent turn in session `cron:`.
-Key behaviors:
-\* Prompt is prefixed with `[cron:]` for traceability.
-\* Each run starts a \*\*fresh session id\*\* (no prior conversation carry-over).
-\* Default behavior: if `delivery` is omitted, isolated jobs announce a summary (`delivery.mode = "announce"`).
-\* `delivery.mode` chooses what happens:
-\* `announce`: deliver a summary to the target channel and post a brief summary to the main session.
-\* `webhook`: POST the finished event payload to `delivery.to` when the finished event includes a summary.
-\* `none`: internal only (no delivery, no main-session summary).
-\* `wakeMode` controls when the main-session summary posts:
-\* `now`: immediate heartbeat.
-\* `next-heartbeat`: waits for the next scheduled heartbeat.
-Use isolated jobs for noisy, frequent, or "background chores" that shouldn't spam
-your main chat history.
-### Payload shapes (what runs)
-Two payload kinds are supported:
-\* `systemEvent`: main-session only, routed through the heartbeat prompt.
-\* `agentTurn`: isolated-session only, runs a dedicated agent turn.
-Common `agentTurn` fields:
-\* `message`: required text prompt.
-\* `model` / `thinking`: optional overrides (see below).
-\* `timeoutSeconds`: optional timeout override.
-Delivery config:
-\* `delivery.mode`: `none` | `announce` | `webhook`.
-\* `delivery.channel`: `last` or a specific channel.
-\* `delivery.to`: channel-specific target (announce) or webhook URL (webhook mode).
-\* `delivery.bestEffort`: avoid failing the job if announce delivery fails.
-Announce delivery suppresses messaging tool sends for the run; use `delivery.channel`/`delivery.to`
-to target the chat instead. When `delivery.mode = "none"`, no summary is posted to the main session.
-If `delivery` is omitted for isolated jobs, OpenClaw defaults to `announce`.
-#### Announce delivery flow
-When `delivery.mode = "announce"`, cron delivers directly via the outbound channel adapters.
-The main agent is not spun up to craft or forward the message.
-Behavior details:
-\* Content: delivery uses the isolated run's outbound payloads (text/media) with normal chunking and
-channel formatting.
-\* Heartbeat-only responses (`HEARTBEAT\_OK` with no real content) are not delivered.
-\* If the isolated run already sent a message to the same target via the message tool, delivery is
-skipped to avoid duplicates.
-\* Missing or invalid delivery targets fail the job unless `delivery.bestEffort = true`.
-\* A short summary is posted to the main session only when `delivery.mode = "announce"`.
-\* The main-session summary respects `wakeMode`: `now` triggers an immediate heartbeat and
-`next-heartbeat` waits for the next scheduled heartbeat.
-#### Webhook delivery flow
-When `delivery.mode = "webhook"`, cron posts the finished event payload to `delivery.to` when the finished event includes a summary.
-Behavior details:
-\* The endpoint must be a valid HTTP(S) URL.
-\* No channel delivery is attempted in webhook mode.
-\* No main-session summary is posted in webhook mode.
-\* If `cron.webhookToken` is set, auth header is `Authorization: Bearer `.
-\* Deprecated fallback: stored legacy jobs with `notify: true` still post to `cron.webhook` (if configured), with a warning so you can migrate to `delivery.mode = "webhook"`.
-### Model and thinking overrides
-Isolated jobs (`agentTurn`) can override the model and thinking level:
-\* `model`: Provider/model string (e.g., `anthropic/claude-sonnet-4-20250514`) or alias (e.g., `opus`)
-\* `thinking`: Thinking level (`off`, `minimal`, `low`, `medium`, `high`, `xhigh`; GPT-5.2 + Codex models only)
-Note: You can set `model` on main-session jobs too, but it changes the shared main
-session model. We recommend model overrides only for isolated jobs to avoid
-unexpected context shifts.
-Resolution priority:
-1. Job payload override (highest)
-2. Hook-specific defaults (e.g., `hooks.gmail.model`)
-3. Agent config default
-### Delivery (channel + target)
-Isolated jobs can deliver output to a channel via the top-level `delivery` config:
-\* `delivery.mode`: `announce` (channel delivery), `webhook` (HTTP POST), or `none`.
-\* `delivery.channel`: `whatsapp` / `telegram` / `discord` / `slack` / `mattermost` (plugin) / `signal` / `imessage` / `last`.
-\* `delivery.to`: channel-specific recipient target.
-`announce` delivery is only valid for isolated jobs (`sessionTarget: "isolated"`).
-`webhook` delivery is valid for both main and isolated jobs.
-If `delivery.channel` or `delivery.to` is omitted, cron can fall back to the main session’s
-“last route” (the last place the agent replied).
-Target format reminders:
-\* Slack/Discord/Mattermost (plugin) targets should use explicit prefixes (e.g. `channel:`, `user:`) to avoid ambiguity.
-\* Telegram topics should use the `:topic:` form (see below).
-#### Telegram delivery targets (topics / forum threads)
-Telegram supports forum topics via `message\_thread\_id`. For cron delivery, you can encode
-the topic/thread into the `to` field:
-\* `-1001234567890` (chat id only)
-\* `-1001234567890:topic:123` (preferred: explicit topic marker)
-\* `-1001234567890:123` (shorthand: numeric suffix)
-Prefixed targets like `telegram:...` / `telegram:group:...` are also accepted:
-\* `telegram:group:-1001234567890:topic:123`
-## JSON schema for tool calls
-Use these shapes when calling Gateway `cron.\*` tools directly (agent tool calls or RPC).
-CLI flags accept human durations like `20m`, but tool calls should use an ISO 8601 string
-for `schedule.at` and milliseconds for `schedule.everyMs`.
-### cron.add params
-One-shot, main session job (system event):
+## ツールコールの同等物（Gateway cronツール）
+標準的なJSONの形状と例については、[ツールコールのためのJSONスキーマ](/automation/cron-jobs#json-schema-for-tool-calls)を参照してください。
+## Cronジョブの保存場所
+CronジョブはデフォルトでGatewayホストの`~/.openclaw/cron/jobs.json`に永続化されます。
+Gatewayはファイルをメモリに読み込み、変更時に書き戻しますので、手動編集はGatewayが停止しているときのみ安全です。変更には`openclaw cron add/edit`またはcronツールコールAPIを使用することをお勧めします。
+## 初心者向けの概要
+Cronジョブを次のように考えてください：**いつ**実行するか + **何を**するか。
+1. **スケジュールを選択**
+   * 一度限りのリマインダー → `schedule.kind = "at"` (CLI: `--at`)
+   * 繰り返しジョブ → `schedule.kind = "every"` または `schedule.kind = "cron"`
+   * ISOタイムスタンプにタイムゾーンが省略されている場合、**UTC**として扱われます。
+2. **実行場所を選択**
+   * `sessionTarget: "main"` → 次のハートビートでメインコンテキストで実行します。
+   * `sessionTarget: "isolated"` → `cron:`内で専用のエージェントターンを実行します。
+3. **ペイロードを選択**
+   * メインセッション → `payload.kind = "systemEvent"`
+   * アイソレートセッション → `payload.kind = "agentTurn"`
+オプション：一度限りのジョブ（`schedule.kind = "at"`）は成功後にデフォルトで削除されます。保持するには`deleteAfterRun: false`を設定します（成功後に無効になります）。
+## 概念
+### ジョブ
+Cronジョブは次の情報を持つ保存されたレコードです：
+* **スケジュール**（いつ実行するか）
+* **ペイロード**（何をするか）
+* オプションの**配信モード**（`announce`、`webhook`、または`none`）
+* オプションの**エージェントバインディング**（`agentId`）：特定のエージェントの下でジョブを実行します。欠落または不明な場合、Gatewayはデフォルトのエージェントにフォールバックします。
+ジョブは安定した`jobId`によって識別されます（CLI/Gateway APIで使用されます）。
+エージェントツールコールでは、`jobId`が標準です。レガシーの`id`は互換性のために受け入れられます。
+一度限りのジョブは成功後に自動的に削除されます。保持するには`deleteAfterRun: false`を設定します。
+### スケジュール
+Cronは3つのスケジュールの種類をサポートしています：
+* `at`：一度限りのタイムスタンプ（`schedule.at`経由、ISO 8601）
+* `every`：固定間隔（ms）
+* `cron`：5フィールドのcron式（または秒を含む6フィールド）で、オプションのIANAタイムゾーンを指定できます。
+Cron式は`croner`を使用します。タイムゾーンが省略されている場合、Gatewayホストのローカルタイムゾーンが使用されます。
+多くのGatewayでの時間の最初の負荷スパイクを減らすために、OpenClawは定期的な時間の最初の表現（例えば`0 * * * *`、`0 */2 * * *`）に対して最大5分の決定論的なジョブごとのスタッガーウィンドウを適用します。固定時間の表現（例えば`0 7 * * *`）は正確なままです。
+任意のcronスケジュールに対して、`schedule.staggerMs`を使用して明示的なスタッガーウィンドウを設定できます（`0`は正確なタイミングを維持します）。CLIショートカット：
+* `--stagger 30s`（または`1m`、`5m`）で明示的なスタッガーウィンドウを設定します。
+* `--exact`で`staggerMs = 0`を強制します。
+### メインとアイソレートの実行
+#### メインセッションジョブ（システムイベント）
+メインジョブはシステムイベントをキューに入れ、オプションでハートビートランナーを起動します。
+これらは`payload.kind = "systemEvent"`を使用する必要があります。
+* `wakeMode: "now"`（デフォルト）：イベントが即座にハートビートの実行をトリガーします。
+* `wakeMode: "next-heartbeat"`：イベントが次の予定されたハートビートを待ちます。
+これは通常のハートビートプロンプトとメインセッションコンテキストを希望する場合に最適です。
+詳細は [Heartbeat](/gateway/heartbeat) を参照してください。
+#### アイソレートジョブ（専用のcronセッション）
+アイソレートジョブはセッション`cron:`内で専用のエージェントターンを実行します。
+主な挙動：
+* プロンプトはトレース可能性のために`[cron:]`で接頭辞が付けられます。
+* 各実行は**新しいセッションID**で開始されます（以前の会話の持ち越しはありません）。
+* デフォルトの挙動：`delivery`が省略されている場合、アイソレートジョブは要約を発表します（`delivery.mode = "announce"`）。
+* `delivery.mode`は何が起こるかを選択します：
+  * `announce`：ターゲットチャネルに要約を配信し、メインセッションに簡単な要約を投稿します。
+  * `webhook`：完了したイベントペイロードを`delivery.to`にPOSTします。完了したイベントに要約が含まれている場合。
+  * `none`：内部専用（配信なし、メインセッションの要約なし）。
+* `wakeMode`はメインセッションの要約が投稿されるタイミングを制御します：
+  * `now`：即座のハートビート。
+  * `next-heartbeat`：次の予定されたハートビートを待ちます。
+アイソレートジョブは、メインチャット履歴をスパムしないようにするための騒がしい、頻繁な、または「バックグラウンド作業」に使用します。
+### ペイロードの形状（何が実行されるか）
+2つのペイロードの種類がサポートされています：
+* `systemEvent`：メインセッション専用、ハートビートプロンプトを通じてルーティングされます。
+* `agentTurn`：アイソレートセッション専用、専用のエージェントターンを実行します。
+一般的な`agentTurn`フィールド：
+* `message`：必須のテキストプロンプト。
+* `model` / `thinking`：オプションのオーバーライド（以下を参照）。
+* `timeoutSeconds`：オプションのタイムアウトオーバーライド。
+配信設定：
+* `delivery.mode`：`none` | `announce` | `webhook`。
+* `delivery.channel`：`last`または特定のチャネル。
+* `delivery.to`：チャネル特有のターゲット（発表）またはWebhook URL（Webhookモード）。
+* `delivery.bestEffort`：発表配信が失敗した場合でもジョブが失敗しないようにします。
+発表配信は実行のためのメッセージングツールの送信を抑制します。代わりに`delivery.channel`/`delivery.to`を使用してチャットをターゲットにします。`delivery.mode = "none"`の場合、メインセッションに要約は投稿されません。
+アイソレートジョブの`delivery`が省略されている場合、OpenClawはデフォルトで`announce`に設定します。
+#### 発表配信フロー
+`delivery.mode = "announce"`の場合、cronはアウトバウンドチャネルアダプタを介して直接配信します。
+メインエージェントはメッセージを作成または転送するために起動されません。
+挙動の詳細：
+* コンテンツ：配信はアイソレート実行のアウトバウンドペイロード（テキスト/メディア）を通常のチャンク化とチャネルフォーマットで使用します。
+* ハートビート専用の応答（実際のコンテンツがない`HEARTBEAT_OK`）は配信されません。
+* アイソレート実行がすでに同じターゲットにメッセージを送信している場合、配信は重複を避けるためにスキップされます。
+* 配信ターゲットが欠落または無効な場合、`delivery.bestEffort = true`でない限りジョブは失敗します。
+* `delivery.mode = "announce"`の場合のみ、メインセッションに短い要約が投稿されます。
+* メインセッションの要約は`wakeMode`を尊重します：`now`は即座のハートビートをトリガーし、`next-heartbeat`は次の予定されたハートビートを待ちます。
+#### Webhook配信フロー
+`delivery.mode = "webhook"`の場合、cronは完了したイベントペイロードを`delivery.to`に投稿します。完了したイベントに要約が含まれている場合。
+挙動の詳細：
+* エンドポイントは有効なHTTP(S) URLでなければなりません。
+* Webhookモードではチャネル配信は試みられません。
+* Webhookモードではメインセッションの要約は投稿されません。
+* `cron.webhookToken`が設定されている場合、認証ヘッダーは`Authorization: Bearer `です。
+* 非推奨のフォールバック：`notify: true`の保存されたレガシージョブは、設定されている場合、`cron.webhook`に投稿されます。警告が表示され、`delivery.mode = "webhook"`に移行できます。
+### モデルと思考のオーバーライド
+アイソレートジョブ（`agentTurn`）はモデルと思考レベルをオーバーライドできます：
+* `model`：プロバイダー/モデル文字列（例：`anthropic/claude-sonnet-4-20250514`）またはエイリアス（例：`opus`）
+* `thinking`：思考レベル（`off`、`minimal`、`low`、`medium`、`high`、`xhigh`；GPT-5.2 + Codexモデルのみ）
+注意：メインセッションジョブでも`model`を設定できますが、共有メインセッションモデルが変更されます。予期しないコンテキストのシフトを避けるために、アイソレートジョブのみにモデルオーバーライドを推奨します。
+解決優先度：
+1. ジョペイロードオーバーライド（最優先）
+2. フック固有のデフォルト（例：`hooks.gmail.model`）
+3. エージェント設定のデフォルト
+### 配信（チャネル + ターゲット）
+アイソレートジョブは、トップレベルの`delivery`設定を介してチャネルに出力を配信できます：
+* `delivery.mode`：`announce`（チャネル配信）、`webhook`（HTTP POST）、または`none`。
+* `delivery.channel`：`whatsapp` / `telegram` / `discord` / `slack` / `mattermost`（プラグイン） / `signal` / `imessage` / `last`。
+* `delivery.to`：チャネル特有の受取人ターゲット。
+`announce`配信はアイソレートジョブ（`sessionTarget: "isolated"`）のみに有効です。
+`webhook`配信はメインジョブとアイソレートジョブの両方に有効です。
+`delivery.channel`または`delivery.to`が省略されている場合、cronはメインセッションの「最後のルート」（エージェントが最後に応答した場所）にフォールバックできます。
+ターゲット形式のリマインダー：
+* Slack/Discord/Mattermost（プラグイン）ターゲットは、曖昧さを避けるために明示的な接頭辞（例：`channel:`、`user:`）を使用する必要があります。
+* Telegramのトピックは、`:topic:`形式を使用する必要があります（以下を参照）。
+#### Telegram配信ターゲット（トピック / フォーラムスレッド）
+Telegramは`message_thread_id`を介してフォーラムトピックをサポートしています。cron配信の場合、トピック/スレッドを`to`フィールドにエンコードできます：
+* `-1001234567890`（チャットIDのみ）
+* `-1001234567890:topic:123`（推奨：明示的なトピックマーカー）
+* `-1001234567890:123`（省略形：数値サフィックス）
+接頭辞付きターゲット（例えば`telegram:...` / `telegram:group:...`）も受け入れられます：
+* `telegram:group:-1001234567890:topic:123`
+## ツールコールのためのJSONスキーマ
+Gateway `cron.*`ツールを直接呼び出す際にこれらの形状を使用します（エージェントツールコールまたはRPC）。
+CLIフラグは`20m`のような人間の期間を受け入れますが、ツールコールは`schedule.at`にISO 8601文字列を、`schedule.everyMs`にミリ秒を使用する必要があります。
+### cron.addパラメータ
+一度限りのメインセッションジョブ（システムイベント）：
 ```json
 {
 "name": "Reminder",
@@ -199,11 +178,11 @@ One-shot, main session job (system event):
 "deleteAfterRun": true
 }
 ```
-Recurring, isolated job with delivery:
+定期的なアイソレートジョブで配信あり：
 ```json
 {
 "name": "Morning brief",
-"schedule": { "kind": "cron", "expr": "0 7 \* \* \*", "tz": "America/Los\_Angeles" },
+"schedule": { "kind": "cron", "expr": "0 7 * * *", "tz": "America/Los_Angeles" },
 "sessionTarget": "isolated",
 "wakeMode": "next-heartbeat",
 "payload": {
@@ -218,15 +197,14 @@ Recurring, isolated job with delivery:
 }
 }
 ```
-Notes:
-\* `schedule.kind`: `at` (`at`), `every` (`everyMs`), or `cron` (`expr`, optional `tz`).
-\* `schedule.at` accepts ISO 8601 (timezone optional; treated as UTC when omitted).
-\* `everyMs` is milliseconds.
-\* `sessionTarget` must be `"main"` or `"isolated"` and must match `payload.kind`.
-\* Optional fields: `agentId`, `description`, `enabled`, `deleteAfterRun` (defaults to true for `at`),
-`delivery`.
-\* `wakeMode` defaults to `"now"` when omitted.
-### cron.update params
+ノート：
+* `schedule.kind`：`at`（`at`）、`every`（`everyMs`）、または`cron`（`expr`、オプションの`tz`）。
+* `schedule.at`はISO 8601を受け入れます（タイムゾーンはオプション；省略時はUTCとして扱われます）。
+* `everyMs`はミリ秒です。
+* `sessionTarget`は`"main"`または`"isolated"`でなければならず、`payload.kind`と一致する必要があります。
+* オプションのフィールド：`agentId`、`description`、`enabled`、`deleteAfterRun`（`at`の場合はデフォルトでtrue）、`delivery`。
+* `wakeMode`は省略時に`"now"`がデフォルトです。
+### cron.updateパラメータ
 ```json
 {
 "jobId": "job-123",
@@ -236,77 +214,77 @@ Notes:
 }
 }
 ```
-Notes:
-\* `jobId` is canonical; `id` is accepted for compatibility.
-\* Use `agentId: null` in the patch to clear an agent binding.
-### cron.run and cron.remove params
+ノート：
+* `jobId`は標準です；互換性のために`id`が受け入れられます。
+* パッチでエージェントバインディングをクリアするには`agentId: null`を使用します。
+### cron.runおよびcron.removeパラメータ
 ```json
 { "jobId": "job-123", "mode": "force" }
 ```
 ```json
 { "jobId": "job-123" }
 ```
-## Storage & history
-\* Job store: `~/.openclaw/cron/jobs.json` (Gateway-managed JSON).
-\* Run history: `~/.openclaw/cron/runs/.jsonl` (JSONL, auto-pruned by size and line count).
-\* Isolated cron run sessions in `sessions.json` are pruned by `cron.sessionRetention` (default `24h`; set `false` to disable).
-\* Override store path: `cron.store` in config.
+## ストレージと履歴
+* ジョブストア：`~/.openclaw/cron/jobs.json`（Gateway管理のJSON）。
+* 実行履歴：`~/.openclaw/cron/runs/.jsonl`（JSONL、自動的にサイズと行数でプルーニングされます）。
+* アイソレートcron実行セッションは`sessions.json`にあり、`cron.sessionRetention`（デフォルト`24h`）でプルーニングされます；無効にするには`false`を設定します。
+* ストアパスのオーバーライド：設定内の`cron.store`。
 ## 設定
 ```json5
 {
 cron: {
-enabled: true, // default true
+enabled: true, // デフォルトはtrue
 store: "~/.openclaw/cron/jobs.json",
-maxConcurrentRuns: 1, // default 1
-webhook: "https://example.invalid/legacy", // deprecated fallback for stored notify:true jobs
-webhookToken: "replace-with-dedicated-webhook-token", // optional bearer token for webhook mode
-sessionRetention: "24h", // duration string or false
+maxConcurrentRuns: 1, // デフォルトは1
+webhook: "https://example.invalid/legacy", // 保存されたnotify:trueジョブのための非推奨のフォールバック
+webhookToken: "replace-with-dedicated-webhook-token", // Webhookモード用のオプショナルベアラートークン
+sessionRetention: "24h", // 期間文字列またはfalse
 runLog: {
-maxBytes: "2mb", // default 2\_000\_000 bytes
-keepLines: 2000, // default 2000
+maxBytes: "2mb", // デフォルトは2_000_000バイト
+keepLines: 2000, // デフォルトは2000
 },
 },
 }
 ```
-Run-log pruning behavior:
-\* `cron.runLog.maxBytes`: max run-log file size before pruning.
-\* `cron.runLog.keepLines`: when pruning, keep only the newest N lines.
-\* Both apply to `cron/runs/.jsonl` files.
-Webhook behavior:
-\* Preferred: set `delivery.mode: "webhook"` with `delivery.to: "https://..."` per job.
-\* Webhook URLs must be valid `http://` or `https://` URLs.
-\* When posted, payload is the cron finished event JSON.
-\* If `cron.webhookToken` is set, auth header is `Authorization: Bearer `.
-\* If `cron.webhookToken` is not set, no `Authorization` header is sent.
-\* Deprecated fallback: stored legacy jobs with `notify: true` still use `cron.webhook` when present.
-Disable cron entirely:
-\* `cron.enabled: false` (config)
-\* `OPENCLAW\_SKIP\_CRON=1` (env)
-## Maintenance
-Cron has two built-in maintenance paths: isolated run-session retention and run-log pruning.
-### Defaults
-\* `cron.sessionRetention`: `24h` (set `false` to disable run-session pruning)
-\* `cron.runLog.maxBytes`: `2\_000\_000` bytes
-\* `cron.runLog.keepLines`: `2000`
+実行ログのプルーニング挙動：
+* `cron.runLog.maxBytes`：プルーニング前の最大実行ログファイルサイズ。
+* `cron.runLog.keepLines`：プルーニング時に最新のN行のみを保持します。
+* 両方とも`cron/runs/.jsonl`ファイルに適用されます。
+Webhookの挙動：
+* 推奨：各ジョブに対して`delivery.mode: "webhook"`を設定し、`delivery.to: "https://..."`を指定します。
+* Webhook URLは有効な`http://`または`https://` URLでなければなりません。
+* 投稿されると、ペイロードはcron完了イベントのJSONです。
+* `cron.webhookToken`が設定されている場合、認証ヘッダーは`Authorization: Bearer `です。
+* `cron.webhookToken`が設定されていない場合、`Authorization`ヘッダーは送信されません。
+* 非推奨のフォールバック：保存されたレガシージョブは、存在する場合に`cron.webhook`を使用します。
+cronを完全に無効にする：
+* `cron.enabled: false`（設定）
+* `OPENCLAW_SKIP_CRON=1`（環境変数）
+## メンテナンス
+Cronには2つの組み込みメンテナンスポイントがあります：アイソレート実行セッションの保持と実行ログのプルーニング。
+### デフォルト
+* `cron.sessionRetention`：`24h`（実行セッションのプルーニングを無効にするには`false`を設定）
+* `cron.runLog.maxBytes`：`2_000_000`バイト
+* `cron.runLog.keepLines`：`2000`
 ### 仕組み
-\* Isolated runs create session entries (`...:cron::run:`) and transcript files.
-\* The reaper removes expired run-session entries older than `cron.sessionRetention`.
-\* For removed run sessions no longer referenced by the session store, OpenClaw archives transcript files and purges old deleted archives on the same retention window.
-\* After each run append, `cron/runs/.jsonl` is size-checked:
-\* if file size exceeds `runLog.maxBytes`, it is trimmed to the newest `runLog.keepLines` lines.
-### Performance caveat for high volume schedulers
-High-frequency cron setups can generate large run-session and run-log footprints. Maintenance is built in, but loose limits can still create avoidable IO and cleanup work.
-What to watch:
-\* long `cron.sessionRetention` windows with many isolated runs
-\* high `cron.runLog.keepLines` combined with large `runLog.maxBytes`
-\* many noisy recurring jobs writing to the same `cron/runs/.jsonl`
-What to do:
-\* keep `cron.sessionRetention` as short as your debugging/audit needs allow
-\* keep run logs bounded with moderate `runLog.maxBytes` and `runLog.keepLines`
-\* move noisy background jobs to isolated mode with delivery rules that avoid unnecessary chatter
-\* review growth periodically with `openclaw cron runs` and adjust retention before logs become large
-### Customize examples
-Keep run sessions for a week and allow bigger run logs:
+* アイソレート実行はセッションエントリ（`...:cron::run:`）とトランスクリプトファイルを作成します。
+* 収穫者は`cron.sessionRetention`より古い期限切れの実行セッションエントリを削除します。
+* セッションストアで参照されなくなった削除された実行セッションについて、OpenClawはトランスクリプトファイルをアーカイブし、同じ保持ウィンドウで古い削除されたアーカイブを削除します。
+* 各実行の追加後、`cron/runs/.jsonl`はサイズチェックされます：
+* ファイルサイズが`runLog.maxBytes`を超える場合、最新の`runLog.keepLines`行にトリミングされます。
+### 高ボリュームスケジューラのパフォーマンス注意点
+高頻度のcronセットアップは大きな実行セッションと実行ログのフットプリントを生成する可能性があります。メンテナンスは組み込まれていますが、緩い制限は回避可能なIOとクリーンアップ作業を引き起こす可能性があります。
+注意すべきこと：
+* 多くのアイソレート実行を持つ長い`cron.sessionRetention`ウィンドウ
+* 大きな`runLog.maxBytes`と組み合わせた高い`cron.runLog.keepLines`
+* 同じ`cron/runs/.jsonl`に書き込む多くの騒がしい定期ジョブ
+対策：
+* デバッグ/監査のニーズが許す限り短い`cron.sessionRetention`を維持
+* 中程度の`runLog.maxBytes`と`runLog.keepLines`で実行ログを制限
+* 不要なチャッターを避ける配信ルールで騒がしいバックグラウンドジョブをアイソレートモードに移動
+* 定期的に`openclaw cron runs`で成長を確認し、ログが大きくなる前に保持を調整
+### カスタマイズ例
+実行セッションを1週間保持し、より大きな実行ログを許可：
 ```json5
 {
 cron: {
@@ -318,7 +296,7 @@ keepLines: 5000,
 },
 }
 ```
-Disable isolated run-session pruning but keep run-log pruning:
+アイソレート実行セッションのプルーニングを無効にし、実行ログのプルーニングを維持：
 ```json5
 {
 cron: {
@@ -330,7 +308,7 @@ keepLines: 3000,
 },
 }
 ```
-Tune for high-volume cron usage (example):
+高ボリュームのcron使用に調整（例）：
 ```json5
 {
 cron: {
@@ -342,8 +320,8 @@ keepLines: 1500,
 },
 }
 ```
-## CLI quickstart
-One-shot reminder (UTC ISO, auto-delete after success):
+## CLIクイックスタート
+一度限りのリマインダー（UTC ISO、成功後に自動削除）：
 ```bash
 openclaw cron add \
 --name "Send reminder" \
@@ -353,7 +331,7 @@ openclaw cron add \
 --wake now \
 --delete-after-run
 ```
-One-shot reminder (main session, wake immediately):
+一度限りのリマインダー（メインセッション、即座に起こす）：
 ```bash
 openclaw cron add \
 --name "Calendar check" \
@@ -362,47 +340,47 @@ openclaw cron add \
 --system-event "Next heartbeat: check calendar." \
 --wake now
 ```
-Recurring isolated job (announce to WhatsApp):
+定期的なアイソレートジョブ（WhatsAppに発表）：
 ```bash
 openclaw cron add \
 --name "Morning status" \
---cron "0 7 \* \* \*" \
---tz "America/Los\_Angeles" \
+--cron "0 7 * * *" \
+--tz "America/Los_Angeles" \
 --session isolated \
 --message "Summarize inbox + calendar for today." \
 --announce \
 --channel whatsapp \
 --to "+15551234567"
 ```
-Recurring cron job with explicit 30-second stagger:
+明示的な30秒のスタッガーを持つ定期的なcronジョブ：
 ```bash
 openclaw cron add \
 --name "Minute watcher" \
---cron "0 \* \* \* \* \*" \
+--cron "0 * * * * *" \
 --tz "UTC" \
 --stagger 30s \
 --session isolated \
 --message "Run minute watcher checks." \
 --announce
 ```
-Recurring isolated job (deliver to a Telegram topic):
+定期的なアイソレートジョブ（Telegramトピックに配信）：
 ```bash
 openclaw cron add \
 --name "Nightly summary (topic)" \
---cron "0 22 \* \* \*" \
---tz "America/Los\_Angeles" \
+--cron "0 22 * * *" \
+--tz "America/Los_Angeles" \
 --session isolated \
 --message "Summarize today; send to the nightly topic." \
 --announce \
 --channel telegram \
 --to "-1001234567890:topic:123"
 ```
-Isolated job with model and thinking override:
+モデルと思考のオーバーライドを持つアイソレートジョブ：
 ```bash
 openclaw cron add \
 --name "Deep analysis" \
---cron "0 6 \* \* 1" \
---tz "America/Los\_Angeles" \
+--cron "0 6 * * 1" \
+--tz "America/Los_Angeles" \
 --session isolated \
 --message "Weekly deep analysis of project progress." \
 --model "opus" \
@@ -411,58 +389,57 @@ openclaw cron add \
 --channel whatsapp \
 --to "+15551234567"
 ```
-Agent selection (multi-agent setups):
+エージェント選択（マルチエージェントセットアップ）：
 ```bash
-# Pin a job to agent "ops" (falls back to default if that agent is missing)
-openclaw cron add --name "Ops sweep" --cron "0 6 \* \* \*" --session isolated --message "Check ops queue" --agent ops
-# Switch or clear the agent on an existing job
+# エージェント "ops" にジョブを固定（そのエージェントが欠落している場合はデフォルトにフォールバック）
+openclaw cron add --name "Ops sweep" --cron "0 6 * * *" --session isolated --message "Check ops queue" --agent ops
+# 既存のジョブのエージェントを切り替えまたはクリア
 openclaw cron edit  --agent ops
 openclaw cron edit  --clear-agent
 ```
-Manual run (force is the default, use `--due` to only run when due):
+手動実行（forceはデフォルト、`--due`を使用して期限が来たときのみ実行）：
 ```bash
 openclaw cron run 
 openclaw cron run  --due
 ```
-Edit an existing job (patch fields):
+既存のジョブを編集（フィールドをパッチ）：
 ```bash
 openclaw cron edit  \
 --message "Updated prompt" \
 --model "opus" \
 --thinking low
 ```
-Force an existing cron job to run exactly on schedule (no stagger):
+既存のcronジョブを正確にスケジュール通りに実行（スタッガーなし）：
 ```bash
 openclaw cron edit  --exact
 ```
-Run history:
+実行履歴：
 ```bash
 openclaw cron runs --id  --limit 50
 ```
-Immediate system event without creating a job:
+ジョブを作成せずに即時システムイベント：
 ```bash
 openclaw system event --mode now --text "Next heartbeat: check battery."
 ```
-## Gateway API surface
-\* `cron.list`, `cron.status`, `cron.add`, `cron.update`, `cron.remove`
-\* `cron.run` (force or due), `cron.runs`
-For immediate system events without a job, use [`openclaw system event`](/cli/system).
+## Gateway APIサーフェス
+* `cron.list`、`cron.status`、`cron.add`、`cron.update`、`cron.remove`
+* `cron.run`（forceまたはdue）、`cron.runs`
+ジョブなしで即時システムイベントを使用するには、[`openclaw system event`](/cli/system)を使用してください。
 ## トラブルシューティング
-### “Nothing runs”
-\* Check cron is enabled: `cron.enabled` and `OPENCLAW\_SKIP\_CRON`.
-\* Check the Gateway is running continuously (cron runs inside the Gateway process).
-\* For `cron` schedules: confirm timezone (`--tz`) vs the host timezone.
-### A recurring job keeps delaying after failures
-\* OpenClaw applies exponential retry backoff for recurring jobs after consecutive errors:
-30s, 1m, 5m, 15m, then 60m between retries.
-\* Backoff resets automatically after the next successful run.
-\* One-shot (`at`) jobs disable after a terminal run (`ok`, `error`, or `skipped`) and do not retry.
-### Telegram delivers to the wrong place
-\* For forum topics, use `-100…:topic:` so it’s explicit and unambiguous.
-\* If you see `telegram:...` prefixes in logs or stored “last route” targets, that’s normal;
-cron delivery accepts them and still parses topic IDs correctly.
-### Subagent announce delivery retries
-\* When a subagent run completes, the gateway announces the result to the requester session.
-\* If the announce flow returns `false` (e.g. requester session is busy), the gateway retries up to 3 times with tracking via `announceRetryCount`.
-\* Announces older than 5 minutes past `endedAt` are force-expired to prevent stale entries from looping indefinitely.
-\* If you see repeated announce deliveries in logs, check the subagent registry for entries with high `announceRetryCount` values.
+### “何も実行されない”
+* cronが有効になっているか確認：`cron.enabled`および`OPENCLAW_SKIP_CRON`。
+* Gatewayが継続的に実行されているか確認（cronはGatewayプロセス内で実行されます）。
+* `cron`スケジュールの場合：タイムゾーン（`--tz`）とホストタイムゾーンを確認します。
+### 繰り返しジョブが失敗後に遅延し続ける
+* OpenClawは連続エラーの後に繰り返しジョブに指数的なリトライバックオフを適用します：
+30秒、1分、5分、15分、次に60分の間隔でリトライします。
+* バックオフは次の成功した実行の後に自動的にリセットされます。
+* 一度限りの（`at`）ジョブは、端末実行（`ok`、`error`、または`skipped`）の後に無効になり、リトライしません。
+### Telegramが間違った場所に配信する
+* フォーラムトピックの場合、`-100…:topic:`を使用して明示的かつ明確にします。
+* ログや保存された「最後のルート」ターゲットに`telegram:...`接頭辞が表示される場合、それは正常です；cron配信はそれらを受け入れ、トピックIDを正しく解析します。
+### サブエージェントの発表配信リトライ
+* サブエージェントの実行が完了すると、Gatewayはリクエスタセッションに結果を発表します。
+* 発表フローが`false`を返す場合（例：リクエスタセッションがビジー）、Gatewayは最大3回リトライします。`announceRetryCount`で追跡します。
+* `endedAt`から5分以上経過した発表は強制的に期限切れにされ、古いエントリが無限にループするのを防ぎます。
+* ログに繰り返し発表配信が表示される場合は、高い`announceRetryCount`値を持つエントリがサブエージェントレジストリにあるか確認してください。

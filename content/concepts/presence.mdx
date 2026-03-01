@@ -6,94 +6,84 @@ title: "プレゼンス"
 
 # プレゼンス
 
-OpenClaw “presence” is a lightweight, best‑effort view of:
+OpenClawの「プレゼンス」は、以下の軽量で最善の努力によるビューです：
 
-* the **Gateway** itself, and
-* **clients connected to the Gateway** (mac app, WebChat, CLI, etc.)
+* **Gateway** 自体、および
+* **Gatewayに接続されたクライアント**（macアプリ、WebChat、CLIなど）
 
-Presence is used primarily to render the macOS app’s **Instances** tab and to
-provide quick operator visibility.
+プレゼンスは主にmacOSアプリの**インスタンス**タブを表示し、オペレーターの迅速な可視性を提供するために使用されます。
 
-## Presence fields (what shows up)
+## プレゼンスフィールド（表示される内容）
 
-Presence entries are structured objects with fields like:
+プレゼンスエントリは、次のようなフィールドを持つ構造化されたオブジェクトです：
 
-* `instanceId` (optional but strongly recommended): stable client identity (usually `connect.client.instanceId`)
-* `host`: human‑friendly host name
-* `ip`: best‑effort IP address
-* `version`: client version string
-* `deviceFamily` / `modelIdentifier`: hardware hints
-* `mode`: `ui`, `webchat`, `cli`, `backend`, `probe`, `test`, `node`, ...
-* `lastInputSeconds`: “seconds since last user input” (if known)
-* `reason`: `self`, `connect`, `node-connected`, `periodic`, ...
-* `ts`: last update timestamp (ms since epoch)
+* `instanceId`（オプションですが強く推奨）：安定したクライアントの識別子（通常は`connect.client.instanceId`）
+* `host`：人間に優しいホスト名
+* `ip`：最善の努力によるIPアドレス
+* `version`：クライアントバージョン文字列
+* `deviceFamily` / `modelIdentifier`：ハードウェアのヒント
+* `mode`：`ui`、`webchat`、`cli`、`backend`、`probe`、`test`、`node`、...
+* `lastInputSeconds`：最後のユーザー入力からの「秒数」（知られている場合）
+* `reason`：`self`、`connect`、`node-connected`、`periodic`、...
+* `ts`：最後の更新タイムスタンプ（エポックからのミリ秒）
 
-## Producers (where presence comes from)
+## プロデューサー（プレゼンスの出所）
 
-Presence entries are produced by multiple sources and **merged**.
+プレゼンスエントリは複数のソースから生成され、**マージ**されます。
 
-### 1) Gateway self entry
+### 1) Gateway自己エントリ
 
-The Gateway always seeds a “self” entry at startup so UIs show the gateway host
-even before any clients connect.
+Gatewayは常に起動時に「自己」エントリをシードするため、クライアントが接続する前でもUIにGatewayホストが表示されます。
 
-### 2) WebSocket connect
+### 2) WebSocket接続
 
-Every WS client begins with a `connect` request. On successful handshake the
-Gateway upserts a presence entry for that connection.
+すべてのWSクライアントは`connect`リクエストから始まります。ハンドシェイクが成功すると、Gatewayはその接続のためにプレゼンスエントリをアップサートします。
 
-#### Why one‑off CLI commands don’t show up
+#### 一度きりのCLIコマンドが表示されない理由
 
-The CLI often connects for short, one‑off commands. To avoid spamming the
-Instances list, `client.mode === "cli"` is **not** turned into a presence entry.
+CLIはしばしば短期間の一度きりのコマンドのために接続します。インスタンスリストがスパムされるのを避けるために、`client.mode === "cli"`は**プレゼンスエントリ**には変換されません。
 
-### 3) `system-event` beacons
+### 3) `system-event`ビーコンズ
 
-Clients can send richer periodic beacons via the `system-event` method. The mac
-app uses this to report host name, IP, and `lastInputSeconds`.
+クライアントは`system-event`メソッドを介してよりリッチな定期ビーコンズを送信できます。macアプリはこれを使用してホスト名、IP、および`lastInputSeconds`を報告します。
 
-### 4) Node connects (role: node)
+### 4) ノード接続（役割：ノード）
 
-When a node connects over the Gateway WebSocket with `role: node`, the Gateway
-upserts a presence entry for that node (same flow as other WS clients).
+ノードが`role: node`でGateway WebSocketを介して接続すると、Gatewayはそのノードのためにプレゼンスエントリをアップサートします（他のWSクライアントと同じフロー）。
 
-## Merge + dedupe rules (why `instanceId` matters)
+## マージ + 重複排除ルール（なぜ`instanceId`が重要か）
 
-Presence entries are stored in a single in‑memory map:
+プレゼンスエントリは単一のメモリ内マップに保存されます：
 
-* Entries are keyed by a **presence key**.
-* The best key is a stable `instanceId` (from `connect.client.instanceId`) that survives restarts.
-* Keys are case‑insensitive.
+* エントリは**プレゼンスキー**でキー付けされます。
+* 最良のキーは、再起動を生き残る安定した`instanceId`（`connect.client.instanceId`から）です。
+* キーは大文字と小文字を区別しません。
 
-If a client reconnects without a stable `instanceId`, it may show up as a
-**duplicate** row.
+クライアントが安定した`instanceId`なしで再接続すると、**重複**行として表示される可能性があります。
 
-## TTL and bounded size
+## TTLと制限サイズ
 
-Presence is intentionally ephemeral:
+プレゼンスは意図的に短命です：
 
-* **TTL:** entries older than 5 minutes are pruned
-* **Max entries:** 200 (oldest dropped first)
+* **TTL：** 5分以上古いエントリは削除されます
+* **最大エントリ数：** 200（最も古いものが最初に削除されます）
 
-This keeps the list fresh and avoids unbounded memory growth.
+これによりリストが新鮮に保たれ、無制限のメモリ成長を避けます。
 
-## Remote/tunnel caveat (loopback IPs)
+## リモート/トンネルの注意点（ループバックIP）
 
-When a client connects over an SSH tunnel / local port forward, the Gateway may
-see the remote address as `127.0.0.1`. To avoid overwriting a good client‑reported
-IP, loopback remote addresses are ignored.
+クライアントがSSHトンネル/ローカルポートフォワードを介して接続すると、Gatewayはリモートアドレスを`127.0.0.1`として認識することがあります。良好なクライアント報告のIPを上書きしないように、ループバックリモートアドレスは無視されます。
 
-## Consumers
+## コンシューマー
 
-### macOS Instances tab
+### macOSインスタンスタブ
 
-The macOS app renders the output of `system-presence` and applies a small status
-indicator (Active/Idle/Stale) based on the age of the last update.
+macOSアプリは`system-presence`の出力をレンダリングし、最後の更新の年齢に基づいて小さなステータスインジケーター（アクティブ/アイドル/古い）を適用します。
 
-## Debugging tips
+## デバッグのヒント
 
-* To see the raw list, call `system-presence` against the Gateway.
-* If you see duplicates:
-  * confirm clients send a stable `client.instanceId` in the handshake
-  * confirm periodic beacons use the same `instanceId`
-  * check whether the connection‑derived entry is missing `instanceId` (duplicates are expected)
+* 生のリストを見るには、Gatewayに対して`system-presence`を呼び出します。
+* 重複が見られる場合：
+  * クライアントがハンドシェイクで安定した`client.instanceId`を送信していることを確認します
+  * 定期ビーコンズが同じ`instanceId`を使用していることを確認します
+  * 接続から派生したエントリが`instanceId`を欠いているかどうかを確認します（重複は予想されます）

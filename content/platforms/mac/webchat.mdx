@@ -4,40 +4,35 @@ title: "WebChat"
 
 # WebChat
 
-# WebChat (macOS app)
+# WebChat (macOSアプリ)
 
-The macOS menu bar app embeds the WebChat UI as a native SwiftUI view. It
-connects to the Gateway and defaults to the **main session** for the selected
-agent (with a session switcher for other sessions).
+macOSメニューバーアプリは、WebChat UIをネイティブなSwiftUIビューとして埋め込んでいます。これはGatewayに接続し、選択されたAgentの**メインセッション**にデフォルトで接続します（他のセッション用のセッションスイッチャーがあります）。
 
-* **Local mode**: connects directly to the local Gateway WebSocket.
-* **Remote mode**: forwards the Gateway control port over SSH and uses that
-  tunnel as the data plane.
+* **ローカルモード**: ローカルGateway WebSocketに直接接続します。
+* **リモートモード**: SSHを介してGateway制御ポートを転送し、そのトンネルをデータプレーンとして使用します。
 
-## Launch & debugging
+## 起動とデバッグ
 
-* Manual: Lobster menu → “Open Chat”.
+* 手動: Lobsterメニュー → “Open Chat”。
 
-* Auto‑open for testing:
+* テスト用の自動オープン:
 
   ```bash
   dist/OpenClaw.app/Contents/MacOS/OpenClaw --webchat
   ```
 
-* Logs: `./scripts/clawlog.sh` (subsystem `ai.openclaw`, category `WebChatSwiftUI`).
+* ログ: `./scripts/clawlog.sh`（サブシステム `ai.openclaw`、カテゴリ `WebChatSwiftUI`）。
 
-## How it’s wired
+## 配線の仕組み
 
-* Data plane: Gateway WS methods `chat.history`, `chat.send`, `chat.abort`,
-  `chat.inject` and events `chat`, `agent`, `presence`, `tick`, `health`.
-* Session: defaults to the primary session (`main`, or `global` when scope is
-  global). The UI can switch between sessions.
-* Onboarding uses a dedicated session to keep first‑run setup separate.
+* データプレーン: Gateway WSメソッド `chat.history`、`chat.send`、`chat.abort`、`chat.inject` とイベント `chat`、`agent`、`presence`、`tick`、`health`。
+* セッション: プライマリセッション（`main`、またはスコープがグローバルな場合は `global`）にデフォルト設定されています。UIはセッション間を切り替えることができます。
+* オンボーディングは、初回設定を分離するために専用のセッションを使用します。
 
-## Security surface
+## セキュリティ面
 
-* Remote mode forwards only the Gateway WebSocket control port over SSH.
+* リモートモードは、Gateway WebSocket制御ポートのみをSSH経由で転送します。
 
-## Known limitations
+## 知られている制限事項
 
-* The UI is optimized for chat sessions (not a full browser sandbox).
+* UIはチャットセッション向けに最適化されており（完全なブラウザサンドボックスではありません）。

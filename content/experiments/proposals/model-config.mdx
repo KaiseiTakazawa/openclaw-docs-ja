@@ -6,30 +6,29 @@ title: "モデル設定探索"
 
 # Model Config (Exploration)
 
-This document captures **ideas** for future model configuration. It is not a
-shipping spec. For current behavior, see:
+このドキュメントは、将来のモデル設定に関する**アイデア**をまとめたものです。これは出荷用の仕様書ではありません。現在の動作については、以下を参照してください。
 
 * [Models](/concepts/models)
 * [Model failover](/concepts/model-failover)
 * [OAuth + profiles](/concepts/oauth)
 
-## Motivation
+## 動機
 
-Operators want:
+オペレーターは以下を望んでいます：
 
-* Multiple auth profiles per provider (personal vs work).
-* Simple `/model` selection with predictable fallbacks.
-* Clear separation between text models and image-capable models.
+* プロバイダーごとの複数の認証プロファイル（個人用と仕事用）。
+* 予測可能なフォールバックを伴うシンプルな`/model`選択。
+* テキストモデルと画像対応モデルの明確な区別。
 
-## Possible direction (high level)
+## 可能な方向性（高レベル）
 
-* Keep model selection simple: `provider/model` with optional aliases.
-* Let providers have multiple auth profiles, with an explicit order.
-* Use a global fallback list so all sessions fail over consistently.
-* Only override image routing when explicitly configured.
+* モデル選択をシンプルに保つ：`provider/model`とオプションのエイリアス。
+* プロバイダーが明示的な順序で複数の認証プロファイルを持つことを許可。
+* すべてのセッションが一貫してフォールバックするように、グローバルなフォールバックリストを使用。
+* 明示的に設定されている場合のみ画像ルーティングをオーバーライド。
 
-## Open questions
+## オープンな質問
 
-* Should profile rotation be per-provider or per-model?
-* How should the UI surface profile selection for a session?
-* What is the safest migration path from legacy config keys?
+* プロファイルのローテーションはプロバイダーごとにするべきか、それともモデルごとにするべきか？
+* UIはセッションのためにプロファイル選択をどのように表示すべきか？
+* レガシー設定キーからの最も安全な移行パスは何か？

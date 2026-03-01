@@ -4,187 +4,187 @@ title: "移行ガイド"
 
 # 移行ガイド
 
-# Migrating OpenClaw to a new machine
+# OpenClawを新しいマシンに移行する
 
-This guide migrates a OpenClaw Gateway from one machine to another **without redoing onboarding**.
+このガイドでは、**オンボーディングをやり直さずに** OpenClaw Gatewayを1台のマシンから別のマシンに移行します。
 
-The migration is simple conceptually:
+移行は概念的にはシンプルです：
 
-* Copy the **state directory** (`$OPENCLAW_STATE_DIR`, default: `~/.openclaw/`) — this includes config, auth, sessions, and channel state.
-* Copy your **workspace** (`~/.openclaw/workspace/` by default) — this includes your agent files (memory, prompts, etc.).
+* **状態ディレクトリ** (`$OPENCLAW_STATE_DIR`, デフォルト: `~/.openclaw/`) をコピーします — これには設定、認証、セッション、およびチャネルの状態が含まれます。
+* **ワークスペース** (`~/.openclaw/workspace/`がデフォルト) をコピーします — これにはエージェントファイル（メモリ、プロンプトなど）が含まれます。
 
-But there are common footguns around **profiles**, **permissions**, and **partial copies**.
+しかし、**プロファイル**、**権限**、および**部分コピー**に関しては一般的な落とし穴があります。
 
-## Before you start (what you are migrating)
+## 始める前に（移行するもの）
 
-### 1) Identify your state directory
+### 1) 状態ディレクトリを特定する
 
-Most installs use the default:
+ほとんどのインストールはデフォルトを使用します：
 
-* **State dir:** `~/.openclaw/`
+* **状態ディレクトリ:** `~/.openclaw/`
 
-But it may be different if you use:
+ただし、次のような場合は異なる場合があります：
 
-* `--profile <name>` (often becomes `~/.openclaw-<profile>/`)
+* `--profile <name>` （通常は `~/.openclaw-<profile>/` になります）
 * `OPENCLAW_STATE_DIR=/some/path`
 
-If you’re not sure, run on the **old** machine:
+不明な場合は、**古い**マシンで次のコマンドを実行します：
 
 ```bash
 openclaw status
 ```
 
-Look for mentions of `OPENCLAW_STATE_DIR` / profile in the output. If you run multiple gateways, repeat for each profile.
+出力に `OPENCLAW_STATE_DIR` / プロファイルの言及があるか確認してください。複数のゲートウェイを実行している場合は、各プロファイルについて繰り返してください。
 
-### 2) Identify your workspace
+### 2) ワークスペースを特定する
 
-Common defaults:
+一般的なデフォルト：
 
-* `~/.openclaw/workspace/` (recommended workspace)
-* a custom folder you created
+* `~/.openclaw/workspace/` （推奨ワークスペース）
+* あなたが作成したカスタムフォルダ
 
-Your workspace is where files like `MEMORY.md`, `USER.md`, and `memory/*.md` live.
+ワークスペースには、`MEMORY.md`、`USER.md`、および `memory/*.md` のようなファイルが存在します。
 
-### 3) Understand what you will preserve
+### 3) 保存するものを理解する
 
-If you copy **both** the state dir and workspace, you keep:
+**状態ディレクトリ**と**ワークスペース**の両方をコピーすると、次のものを保持します：
 
-* Gateway configuration (`openclaw.json`)
-* Auth profiles / API keys / OAuth tokens
-* Session history + agent state
-* Channel state (e.g. WhatsApp login/session)
-* Your workspace files (memory, skills notes, etc.)
+* Gatewayの設定 (`openclaw.json`)
+* 認証プロファイル / APIキー / OAuthトークン
+* セッション履歴 + エージェントの状態
+* チャネルの状態（例：WhatsAppのログイン/セッション）
+* あなたのワークスペースファイル（メモリ、スキルノートなど）
 
-If you copy **only** the workspace (e.g., via Git), you do **not** preserve:
+**ワークスペース**のみをコピーした場合（例：Git経由）、次のものは保持されません：
 
-* sessions
-* credentials
-* channel logins
+* セッション
+* 認証情報
+* チャネルのログイン情報
 
-Those live under `$OPENCLAW_STATE_DIR`.
+それらは `$OPENCLAW_STATE_DIR` の下にあります。
 
-## Migration steps (recommended)
+## 移行手順（推奨）
 
-### Step 0 — Make a backup (old machine)
+### ステップ0 — バックアップを作成する（古いマシン）
 
-On the **old** machine, stop the gateway first so files aren’t changing mid-copy:
+**古い**マシンで、まずゲートウェイを停止して、ファイルがコピー中に変更されないようにします：
 
 ```bash
 openclaw gateway stop
 ```
 
-(Optional but recommended) archive the state dir and workspace:
+（オプションですが推奨）状態ディレクトリとワークスペースをアーカイブします：
 
 ```bash
-# Adjust paths if you use a profile or custom locations
+# プロファイルやカスタムの場所を使用している場合はパスを調整してください
 cd ~
 tar -czf openclaw-state.tgz .openclaw
 
 tar -czf openclaw-workspace.tgz .openclaw/workspace
 ```
 
-If you have multiple profiles/state dirs (e.g. `~/.openclaw-main`, `~/.openclaw-work`), archive each.
+複数のプロファイル/状態ディレクトリ（例：`~/.openclaw-main`、`~/.openclaw-work`）がある場合は、それぞれをアーカイブします。
 
-### Step 1 — Install OpenClaw on the new machine
+### ステップ1 — 新しいマシンにOpenClawをインストールする
 
-On the **new** machine, install the CLI (and Node if needed):
+**新しい**マシンで、CLI（必要に応じてNodeも）をインストールします：
 
-* See: [Install](/install)
+* 詳細: [Install](/install)
 
-At this stage, it’s OK if onboarding creates a fresh `~/.openclaw/` — you will overwrite it in the next step.
+この段階では、オンボーディングが新しい `~/.openclaw/` を作成しても問題ありません — 次のステップで上書きします。
 
-### Step 2 — Copy the state dir + workspace to the new machine
+### ステップ2 — 状態ディレクトリ + ワークスペースを新しいマシンにコピーする
 
-Copy **both**:
+**両方**をコピーします：
 
-* `$OPENCLAW_STATE_DIR` (default `~/.openclaw/`)
-* your workspace (default `~/.openclaw/workspace/`)
+* `$OPENCLAW_STATE_DIR` （デフォルト `~/.openclaw/`）
+* あなたのワークスペース（デフォルト `~/.openclaw/workspace/`）
 
-Common approaches:
+一般的なアプローチ：
 
-* `scp` the tarballs and extract
-* `rsync -a` over SSH
-* external drive
+* `scp` でtarボールを転送して展開
+* SSH経由で `rsync -a`
+* 外部ドライブ
 
-After copying, ensure:
+コピー後は、次のことを確認してください：
 
-* Hidden directories were included (e.g. `.openclaw/`)
-* File ownership is correct for the user running the gateway
+* 隠しディレクトリが含まれていること（例：`.openclaw/`）
+* ゲートウェイを実行しているユーザーのファイル所有権が正しいこと
 
-### Step 3 — Run Doctor (migrations + service repair)
+### ステップ3 — Doctorを実行する（移行 + サービス修復）
 
-On the **new** machine:
+**新しい**マシンで：
 
 ```bash
 openclaw doctor
 ```
 
-Doctor is the “safe boring” command. It repairs services, applies config migrations, and warns about mismatches.
+Doctorは「安全で退屈な」コマンドです。サービスを修復し、設定の移行を適用し、不一致について警告します。
 
-Then:
+次に：
 
 ```bash
 openclaw gateway restart
 openclaw status
 ```
 
-## Common footguns (and how to avoid them)
+## 一般的な落とし穴（およびそれを避ける方法）
 
-### Footgun: profile / state-dir mismatch
+### 落とし穴: プロファイル / 状態ディレクトリの不一致
 
-If you ran the old gateway with a profile (or `OPENCLAW_STATE_DIR`), and the new gateway uses a different one, you’ll see symptoms like:
+古いゲートウェイをプロファイル（または `OPENCLAW_STATE_DIR`）で実行し、新しいゲートウェイが異なるものを使用している場合、次のような症状が見られます：
 
-* config changes not taking effect
-* channels missing / logged out
-* empty session history
+* 設定変更が反映されない
+* チャネルが欠落 / ログアウトされる
+* 空のセッション履歴
 
-Fix: run the gateway/service using the **same** profile/state dir you migrated, then rerun:
+修正: 移行した**同じ**プロファイル/状態ディレクトリを使用してゲートウェイ/サービスを実行し、次を再実行します：
 
 ```bash
 openclaw doctor
 ```
 
-### Footgun: copying only `openclaw.json`
+### 落とし穴: `openclaw.json` のみをコピーする
 
-`openclaw.json` is not enough. Many providers store state under:
+`openclaw.json` だけでは不十分です。多くのプロバイダーは状態を次の場所に保存します：
 
 * `$OPENCLAW_STATE_DIR/credentials/`
 * `$OPENCLAW_STATE_DIR/agents/<agentId>/...`
 
-Always migrate the entire `$OPENCLAW_STATE_DIR` folder.
+常に `$OPENCLAW_STATE_DIR` フォルダ全体を移行してください。
 
-### Footgun: permissions / ownership
+### 落とし穴: 権限 / 所有権
 
-If you copied as root or changed users, the gateway may fail to read credentials/sessions.
+rootとしてコピーしたり、ユーザーを変更した場合、ゲートウェイが認証情報/セッションを読み取れない可能性があります。
 
-Fix: ensure the state dir + workspace are owned by the user running the gateway.
+修正: 状態ディレクトリ + ワークスペースがゲートウェイを実行しているユーザーによって所有されていることを確認してください。
 
-### Footgun: migrating between remote/local modes
+### 落とし穴: リモート/ローカルモード間の移行
 
-* If your UI (WebUI/TUI) points at a **remote** gateway, the remote host owns the session store + workspace.
-* Migrating your laptop won’t move the remote gateway’s state.
+* UI（WebUI/TUI）が**リモート**ゲートウェイを指している場合、リモートホストがセッションストア + ワークスペースを所有します。
+* ノートパソコンを移行してもリモートゲートウェイの状態は移動しません。
 
-If you’re in remote mode, migrate the **gateway host**.
+リモートモードの場合は、**ゲートウェイホスト**を移行してください。
 
-### Footgun: secrets in backups
+### 落とし穴: バックアップ内の秘密
 
-`$OPENCLAW_STATE_DIR` contains secrets (API keys, OAuth tokens, WhatsApp creds). Treat backups like production secrets:
+`$OPENCLAW_STATE_DIR` には秘密（APIキー、OAuthトークン、WhatsAppの認証情報）が含まれています。バックアップは本番の秘密のように扱ってください：
 
-* store encrypted
-* avoid sharing over insecure channels
-* rotate keys if you suspect exposure
+* 暗号化して保存
+* 安全でないチャネルで共有を避ける
+* 露出が疑われる場合はキーをローテーションする
 
-## Verification checklist
+## 検証チェックリスト
 
-On the new machine, confirm:
+新しいマシンで確認してください：
 
-* `openclaw status` shows the gateway running
-* Your channels are still connected (e.g. WhatsApp doesn’t require re-pair)
-* The dashboard opens and shows existing sessions
-* Your workspace files (memory, configs) are present
+* `openclaw status` がゲートウェイが実行中であることを示す
+* あなたのチャネルがまだ接続されている（例：WhatsAppが再ペアリングを必要としない）
+* ダッシュボードが開き、既存のセッションを表示する
+* あなたのワークスペースファイル（メモリ、設定）が存在する
 
 ## 関連
 
 * [Doctor](/gateway/doctor)
 * [Gateway troubleshooting](/gateway/troubleshooting)
-* [Where does OpenClaw store its data?](/help/faq#where-does-openclaw-store-its-data)
+* [OpenClawはどこにデータを保存しますか？](/help/faq#where-does-openclaw-store-its-data)

@@ -4,36 +4,36 @@ title: "チャネル位置情報パース"
 
 # チャネル位置情報パース
 # Channel location parsing
-OpenClaw normalizes shared locations from chat channels into:
-\* human-readable text appended to the inbound body, and
-\* structured fields in the auto-reply context payload.
-Currently supported:
-\* \*\*Telegram\*\* (location pins + venues + live locations)
-\* \*\*WhatsApp\*\* (locationMessage + liveLocationMessage)
-\* \*\*Matrix\*\* (`m.location` with `geo\_uri`)
-## Text formatting
-Locations are rendered as friendly lines without brackets:
-\* Pin:
+OpenClawは、チャットチャネルから共有された位置情報を以下のように正規化します：
+\* インバウンドボディに追加される人間が読みやすいテキスト、および
+\* 自動返信コンテキストペイロード内の構造化されたフィールド。
+現在サポートされているもの：
+\* \*\*Telegram\*\*（位置ピン + 会場 + ライブ位置）
+\* \*\*WhatsApp\*\*（locationMessage + liveLocationMessage）
+\* \*\*Matrix\*\*（`m.location` と `geo\_uri`）
+## テキストフォーマット
+位置情報は、ブラケットなしのフレンドリーな行として表示されます：
+\* ピン：
 \* `📍 48.858844, 2.294351 ±12m`
-\* Named place:
-\* `📍 Eiffel Tower — Champ de Mars, Paris (48.858844, 2.294351 ±12m)`
-\* Live share:
-\* `🛰 Live location: 48.858844, 2.294351 ±12m`
-If the channel includes a caption/comment, it is appended on the next line:
+\* 名前付き場所：
+\* `📍 エッフェル塔 — シャン・ド・マルス、パリ (48.858844, 2.294351 ±12m)`
+\* ライブ共有：
+\* `🛰 ライブ位置： 48.858844, 2.294351 ±12m`
+チャネルにキャプション/コメントが含まれている場合、それは次の行に追加されます：
 ```
 📍 48.858844, 2.294351 ±12m
-Meet here
+ここで会いましょう
 ```
-## Context fields
-When a location is present, these fields are added to `ctx`:
-\* `LocationLat` (number)
-\* `LocationLon` (number)
-\* `LocationAccuracy` (number, meters; optional)
-\* `LocationName` (string; optional)
-\* `LocationAddress` (string; optional)
-\* `LocationSource` (`pin | place | live`)
-\* `LocationIsLive` (boolean)
-## Channel notes
-\* \*\*Telegram\*\*: venues map to `LocationName/LocationAddress`; live locations use `live\_period`.
-\* \*\*WhatsApp\*\*: `locationMessage.comment` and `liveLocationMessage.caption` are appended as the caption line.
-\* \*\*Matrix\*\*: `geo\_uri` is parsed as a pin location; altitude is ignored and `LocationIsLive` is always false.
+## コンテキストフィールド
+位置情報が存在する場合、これらのフィールドが`ctx`に追加されます：
+\* `LocationLat`（数値）
+\* `LocationLon`（数値）
+\* `LocationAccuracy`（数値、メートル；オプション）
+\* `LocationName`（文字列；オプション）
+\* `LocationAddress`（文字列；オプション）
+\* `LocationSource`（`pin | place | live`）
+\* `LocationIsLive`（ブール値）
+## チャネルノート
+\* \*\*Telegram\*\*：会場は`LocationName/LocationAddress`にマッピングされます；ライブ位置は`live\_period`を使用します。
+\* \*\*WhatsApp\*\*：`locationMessage.comment`と`liveLocationMessage.caption`はキャプション行として追加されます。
+\* \*\*Matrix\*\*：`geo\_uri`はピン位置として解析されます；高度は無視され、`LocationIsLive`は常にfalseです。

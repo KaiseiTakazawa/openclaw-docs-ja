@@ -4,31 +4,25 @@ title: "TypeBox"
 
 # TypeBox
 
-# TypeBox as protocol source of truth
+# TypeBoxをプロトコルの真実の源として
 
-Last updated: 2026-01-10
+最終更新日: 2026-01-10
 
-TypeBox is a TypeScript-first schema library. We use it to define the **Gateway
-WebSocket protocol** (handshake, request/response, server events). Those schemas
-drive **runtime validation**, **JSON Schema export**, and **Swift codegen** for
-the macOS app. One source of truth; everything else is generated.
+TypeBoxはTypeScriptファーストのスキーマライブラリです。私たちはこれを使用して**Gateway WebSocketプロトコル**（ハンドシェイク、リクエスト/レスポンス、サーバーイベント）を定義します。これらのスキーマは**ランタイムバリデーション**、**JSON Schemaエクスポート**、およびmacOSアプリ用の**Swiftコード生成**を駆動します。一つの真実の源；それ以外はすべて生成されます。
 
-If you want the higher-level protocol context, start with
-[Gateway architecture](/concepts/architecture).
+より高レベルのプロトコルコンテキストが必要な場合は、[Gatewayアーキテクチャ](/concepts/architecture)から始めてください。
 
-## Mental model (30 seconds)
+## メンタルモデル（30秒）
 
-Every Gateway WS message is one of three frames:
+すべてのGateway WSメッセージは3つのフレームのいずれかです：
 
-* **Request**: `{ type: "req", id, method, params }`
-* **Response**: `{ type: "res", id, ok, payload | error }`
-* **Event**: `{ type: "event", event, payload, seq?, stateVersion? }`
+* **リクエスト**: `{ type: "req", id, method, params }`
+* **レスポンス**: `{ type: "res", id, ok, payload | error }`
+* **イベント**: `{ type: "event", event, payload, seq?, stateVersion? }`
 
-The first frame **must** be a `connect` request. After that, clients can call
-methods (e.g. `health`, `send`, `chat.send`) and subscribe to events (e.g.
-`presence`, `tick`, `agent`).
+最初のフレームは**必ず**`connect`リクエストである必要があります。その後、クライアントはメソッド（例：`health`、`send`、`chat.send`）を呼び出し、イベント（例：`presence`、`tick`、`agent`）にサブスクライブできます。
 
-Connection flow (minimal):
+接続フロー（最小限）：
 
 ```
 Client                    Gateway
@@ -39,49 +33,46 @@ Client                    Gateway
   |<---- res:health ----------|
 ```
 
-Common methods + events:
+一般的なメソッド + イベント：
 
-| Category  | Examples                                                  | Notes                              |
-| --------- | --------------------------------------------------------- | ---------------------------------- |
-| Core      | `connect`, `health`, `status`                             | `connect` must be first            |
-| Messaging | `send`, `poll`, `agent`, `agent.wait`                     | side-effects need `idempotencyKey` |
-| Chat      | `chat.history`, `chat.send`, `chat.abort`, `chat.inject`  | WebChat uses these                 |
-| Sessions  | `sessions.list`, `sessions.patch`, `sessions.delete`      | session admin                      |
-| Nodes     | `node.list`, `node.invoke`, `node.pair.*`                 | Gateway WS + node actions          |
-| Events    | `tick`, `presence`, `agent`, `chat`, `health`, `shutdown` | server push                        |
+| カテゴリ  | 例                                                      | ノート                              |
+| --------- | ------------------------------------------------------- | ---------------------------------- |
+| コア      | `connect`、`health`、`status`                           | `connect`は最初でなければならない   |
+| メッセージ | `send`、`poll`、`agent`、`agent.wait`                   | 副作用には`idempotencyKey`が必要   |
+| チャット   | `chat.history`、`chat.send`、`chat.abort`、`chat.inject` | WebChatはこれらを使用              |
+| セッション | `sessions.list`、`sessions.patch`、`sessions.delete`    | セッション管理                     |
+| ノード     | `node.list`、`node.invoke`、`node.pair.*`               | Gateway WS + ノードアクション       |
+| イベント   | `tick`、`presence`、`agent`、`chat`、`health`、`shutdown` | サーバープッシュ                    |
 
-Authoritative list lives in `src/gateway/server.ts` (`METHODS`, `EVENTS`).
+権威あるリストは`src/gateway/server.ts`に存在します（`METHODS`、`EVENTS`）。
 
-## Where the schemas live
+## スキーマの所在
 
-* Source: `src/gateway/protocol/schema.ts`
-* Runtime validators (AJV): `src/gateway/protocol/index.ts`
-* Server handshake + method dispatch: `src/gateway/server.ts`
-* Node client: `src/gateway/client.ts`
-* Generated JSON Schema: `dist/protocol.schema.json`
-* Generated Swift models: `apps/macos/Sources/OpenClawProtocol/GatewayModels.swift`
+* ソース: `src/gateway/protocol/schema.ts`
+* ランタイムバリデータ（AJV）: `src/gateway/protocol/index.ts`
+* サーバーハンドシェイク + メソッドディスパッチ: `src/gateway/server.ts`
+* ノードクライアント: `src/gateway/client.ts`
+* 生成されたJSON Schema: `dist/protocol.schema.json`
+* 生成されたSwiftモデル: `apps/macos/Sources/OpenClawProtocol/GatewayModels.swift`
 
-## Current pipeline
+## 現在のパイプライン
 
 * `pnpm protocol:gen`
-  * writes JSON Schema (draft‑07) to `dist/protocol.schema.json`
+  * JSON Schema（draft‑07）を`dist/protocol.schema.json`に書き込みます
 * `pnpm protocol:gen:swift`
-  * generates Swift gateway models
+  * Swift Gatewayモデルを生成します
 * `pnpm protocol:check`
-  * runs both generators and verifies the output is committed
+  * 両方のジェネレーターを実行し、出力がコミットされていることを確認します
 
-## How the schemas are used at runtime
+## ランタイムでのスキーマの使用方法
 
-* **Server side**: every inbound frame is validated with AJV. The handshake only
-  accepts a `connect` request whose params match `ConnectParams`.
-* **Client side**: the JS client validates event and response frames before
-  using them.
-* **Method surface**: the Gateway advertises the supported `methods` and
-  `events` in `hello-ok`.
+* **サーバー側**: すべての受信フレームはAJVで検証されます。ハンドシェイクは`ConnectParams`に一致する`connect`リクエストのみを受け入れます。
+* **クライアント側**: JSクライアントは、使用する前にイベントとレスポンスフレームを検証します。
+* **メソッドサーフェス**: Gatewayは`hello-ok`でサポートされている`methods`と`events`を広告します。
 
-## Example frames
+## 例のフレーム
 
-Connect (first message):
+接続（最初のメッセージ）：
 
 ```json
 {
@@ -103,7 +94,7 @@ Connect (first message):
 }
 ```
 
-Hello-ok response:
+Hello-okレスポンス：
 
 ```json
 {
@@ -126,7 +117,7 @@ Hello-ok response:
 }
 ```
 
-Request + response:
+リクエスト + レスポンス：
 
 ```json
 { "type": "req", "id": "r1", "method": "health" }
@@ -136,15 +127,15 @@ Request + response:
 { "type": "res", "id": "r1", "ok": true, "payload": { "ok": true } }
 ```
 
-Event:
+イベント：
 
 ```json
 { "type": "event", "event": "tick", "payload": { "ts": 1730000000 }, "seq": 12 }
 ```
 
-## Minimal client (Node.js)
+## 最小クライアント（Node.js）
 
-Smallest useful flow: connect + health.
+最小限の有用なフロー：接続 + 健康チェック。
 
 ```ts
 import { WebSocket } from "ws";
@@ -184,13 +175,13 @@ ws.on("message", (data) => {
 });
 ```
 
-## Worked example: add a method end‑to‑end
+## 実際の例：メソッドをエンドツーエンドで追加
 
-Example: add a new `system.echo` request that returns `{ ok: true, text }`.
+例：`system.echo`リクエストを追加し、`{ ok: true, text }`を返します。
 
-1. **Schema (source of truth)**
+1. **スキーマ（真実の源）**
 
-Add to `src/gateway/protocol/schema.ts`:
+`src/gateway/protocol/schema.ts`に追加：
 
 ```ts
 export const SystemEchoParamsSchema = Type.Object(
@@ -204,7 +195,7 @@ export const SystemEchoResultSchema = Type.Object(
 );
 ```
 
-Add both to `ProtocolSchemas` and export types:
+両方を`ProtocolSchemas`に追加し、型をエクスポート：
 
 ```ts
   SystemEchoParams: SystemEchoParamsSchema,
@@ -216,17 +207,17 @@ export type SystemEchoParams = Static<typeof SystemEchoParamsSchema>;
 export type SystemEchoResult = Static<typeof SystemEchoResultSchema>;
 ```
 
-2. **Validation**
+2. **バリデーション**
 
-In `src/gateway/protocol/index.ts`, export an AJV validator:
+`src/gateway/protocol/index.ts`でAJVバリデータをエクスポート：
 
 ```ts
 export const validateSystemEchoParams = ajv.compile<SystemEchoParams>(SystemEchoParamsSchema);
 ```
 
-3. **Server behavior**
+3. **サーバーの動作**
 
-Add a handler in `src/gateway/server-methods/system.ts`:
+`src/gateway/server-methods/system.ts`にハンドラーを追加：
 
 ```ts
 export const systemHandlers: GatewayRequestHandlers = {
@@ -237,52 +228,49 @@ export const systemHandlers: GatewayRequestHandlers = {
 };
 ```
 
-Register it in `src/gateway/server-methods.ts` (already merges `systemHandlers`),
-then add `"system.echo"` to `METHODS` in `src/gateway/server.ts`.
+`src/gateway/server-methods.ts`に登録し（すでに`systemHandlers`をマージしています）、`src/gateway/server.ts`の`METHODS`に`"system.echo"`を追加します。
 
-4. **Regenerate**
+4. **再生成**
 
 ```bash
 pnpm protocol:check
 ```
 
-5. **Tests + docs**
+5. **テスト + ドキュメント**
 
-Add a server test in `src/gateway/server.*.test.ts` and note the method in docs.
+`src/gateway/server.*.test.ts`にサーバーテストを追加し、ドキュメントにメソッドを記載します。
 
-## Swift codegen behavior
+## Swiftコード生成の動作
 
-The Swift generator emits:
+Swiftジェネレーターは以下を出力します：
 
-* `GatewayFrame` enum with `req`, `res`, `event`, and `unknown` cases
-* Strongly typed payload structs/enums
-* `ErrorCode` values and `GATEWAY_PROTOCOL_VERSION`
+* `GatewayFrame`列挙体に`req`、`res`、`event`、および`unknown`ケース
+* 強く型付けされたペイロード構造体/列挙体
+* `ErrorCode`値と`GATEWAY_PROTOCOL_VERSION`
 
-Unknown frame types are preserved as raw payloads for forward compatibility.
+未知のフレームタイプは、将来の互換性のために生のペイロードとして保持されます。
 
-## Versioning + compatibility
+## バージョン管理 + 互換性
 
-* `PROTOCOL_VERSION` lives in `src/gateway/protocol/schema.ts`.
-* Clients send `minProtocol` + `maxProtocol`; the server rejects mismatches.
-* The Swift models keep unknown frame types to avoid breaking older clients.
+* `PROTOCOL_VERSION`は`src/gateway/protocol/schema.ts`に存在します。
+* クライアントは`minProtocol` + `maxProtocol`を送信し、サーバーは不一致を拒否します。
+* Swiftモデルは、古いクライアントを壊さないように未知のフレームタイプを保持します。
 
-## Schema patterns and conventions
+## スキーマパターンと規約
 
-* Most objects use `additionalProperties: false` for strict payloads.
-* `NonEmptyString` is the default for IDs and method/event names.
-* The top-level `GatewayFrame` uses a **discriminator** on `type`.
-* Methods with side effects usually require an `idempotencyKey` in params
-  (example: `send`, `poll`, `agent`, `chat.send`).
+* ほとんどのオブジェクトは厳密なペイロードのために`additionalProperties: false`を使用します。
+* `NonEmptyString`はIDおよびメソッド/イベント名のデフォルトです。
+* トップレベルの`GatewayFrame`は`type`に**識別子**を使用します。
+* 副作用のあるメソッドは通常、パラメータに`idempotencyKey`を必要とします（例：`send`、`poll`、`agent`、`chat.send`）。
 
-## Live schema JSON
+## ライブスキーマJSON
 
-Generated JSON Schema is in the repo at `dist/protocol.schema.json`. The
-published raw file is typically available at:
+生成されたJSON Schemaはリポジトリの`dist/protocol.schema.json`にあります。公開された生ファイルは通常、以下で入手可能です：
 
 * [https://raw.githubusercontent.com/openclaw/openclaw/main/dist/protocol.schema.json](https://raw.githubusercontent.com/openclaw/openclaw/main/dist/protocol.schema.json)
 
-## When you change schemas
+## スキーマを変更する場合
 
-1. Update the TypeBox schemas.
-2. Run `pnpm protocol:check`.
-3. Commit the regenerated schema + Swift models.
+1. TypeBoxスキーマを更新します。
+2. `pnpm protocol:check`を実行します。
+3. 再生成されたスキーマ + Swiftモデルをコミットします。

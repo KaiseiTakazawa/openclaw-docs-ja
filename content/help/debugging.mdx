@@ -6,16 +6,15 @@ title: "デバッグ"
 
 # デバッグ
 
-This page covers debugging helpers for streaming output, especially when a
-provider mixes reasoning into normal text.
+このページでは、特にプロバイダーが通常のテキストに推論を混ぜる場合のストリーミング出力のデバッグヘルパーについて説明します。
 
-## Runtime debug overrides
+## ランタイムデバッグオーバーライド
 
-Use `/debug` in chat to set **runtime-only** config overrides (memory, not disk).
-`/debug` is disabled by default; enable with `commands.debug: true`.
-This is handy when you need to toggle obscure settings without editing `openclaw.json`.
+チャットで `/debug` を使用して **ランタイム専用** の設定オーバーライド（メモリ、ディスクではない）を設定します。
+`/debug` はデフォルトで無効になっています。`commands.debug: true` で有効にします。
+これは、`openclaw.json` を編集せずに obscure な設定を切り替える必要があるときに便利です。
 
-Examples:
+例:
 
 ```
 /debug show
@@ -24,136 +23,129 @@ Examples:
 /debug reset
 ```
 
-`/debug reset` clears all overrides and returns to the on-disk config.
+`/debug reset` はすべてのオーバーライドをクリアし、ディスク上の設定に戻ります。
 
-## Gateway watch mode
+## Gateway ウォッチモード
 
-For fast iteration, run the gateway under the file watcher:
+迅速な反復のために、ファイルウォッチャーの下でゲートウェイを実行します：
 
 ```bash
 pnpm gateway:watch
 ```
 
-This maps to:
+これは次のようにマッピングされます：
 
 ```bash
 node --watch-path src --watch-path tsconfig.json --watch-path package.json --watch-preserve-output scripts/run-node.mjs gateway --force
 ```
 
-Add any gateway CLI flags after `gateway:watch` and they will be passed through
-on each restart.
+`gateway:watch` の後に任意のゲートウェイ CLI フラグを追加すると、それらは各再起動時に渡されます。
 
-## Dev profile + dev gateway (--dev)
+## 開発プロファイル + 開発ゲートウェイ (--dev)
 
-Use the dev profile to isolate state and spin up a safe, disposable setup for
-debugging. There are **two** `--dev` flags:
+開発プロファイルを使用して状態を隔離し、デバッグ用の安全で使い捨てのセットアップを立ち上げます。`--dev` フラグは **2つ** あります：
 
-* **Global `--dev` (profile):** isolates state under `~/.openclaw-dev` and
-  defaults the gateway port to `19001` (derived ports shift with it).
-* **`gateway --dev`: tells the Gateway to auto-create a default config +
-  workspace** when missing (and skip BOOTSTRAP.md).
+* **グローバル `--dev` (プロファイル):** 状態を `~/.openclaw-dev` に隔離し、ゲートウェイポートのデフォルトを `19001` に設定します（派生ポートもそれに合わせてシフトします）。
+* **`gateway --dev`: ゲートウェイにデフォルトの設定 + ワークスペースを自動作成するよう指示します** （欠如している場合、BOOTSTRAP.md をスキップします）。
 
-Recommended flow (dev profile + dev bootstrap):
+推奨フロー（開発プロファイル + 開発ブートストラップ）：
 
 ```bash
 pnpm gateway:dev
 OPENCLAW_PROFILE=dev openclaw tui
 ```
 
-If you don’t have a global install yet, run the CLI via `pnpm openclaw ...`.
+グローバルインストールがまだない場合は、CLI を `pnpm openclaw ...` で実行します。
 
-What this does:
+これが行うこと：
 
-1. **Profile isolation** (global `--dev`)
+1. **プロファイルの隔離**（グローバル `--dev`）
    * `OPENCLAW_PROFILE=dev`
    * `OPENCLAW_STATE_DIR=~/.openclaw-dev`
    * `OPENCLAW_CONFIG_PATH=~/.openclaw-dev/openclaw.json`
-   * `OPENCLAW_GATEWAY_PORT=19001` (browser/canvas shift accordingly)
+   * `OPENCLAW_GATEWAY_PORT=19001` （ブラウザ/キャンバスもそれに応じてシフト）
 
-2. **Dev bootstrap** (`gateway --dev`)
-   * Writes a minimal config if missing (`gateway.mode=local`, bind loopback).
-   * Sets `agent.workspace` to the dev workspace.
-   * Sets `agent.skipBootstrap=true` (no BOOTSTRAP.md).
-   * Seeds the workspace files if missing:
-     `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`.
-   * Default identity: **C3‑PO** (protocol droid).
-   * Skips channel providers in dev mode (`OPENCLAW_SKIP_CHANNELS=1`).
+2. **開発ブートストラップ**（`gateway --dev`）
+   * 欠如している場合は最小限の設定を書き込みます（`gateway.mode=local`、ループバックをバインド）。
+   * `agent.workspace` を開発ワークスペースに設定します。
+   * `agent.skipBootstrap=true` を設定します（BOOTSTRAP.md はなし）。
+   * 欠如している場合はワークスペースファイルをシードします：
+     `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`。
+   * デフォルトのアイデンティティ：**C3‑PO**（プロトコルドロイド）。
+   * 開発モードではチャネルプロバイダーをスキップします（`OPENCLAW_SKIP_CHANNELS=1`）。
 
-Reset flow (fresh start):
+リセットフロー（新しいスタート）：
 
 ```bash
 pnpm gateway:dev:reset
 ```
 
-Note: `--dev` is a **global** profile flag and gets eaten by some runners.
-If you need to spell it out, use the env var form:
+注意：`--dev` は **グローバル** プロファイルフラグであり、一部のランナーによって消費されます。
+明示的に指定する必要がある場合は、環境変数形式を使用します：
 
 ```bash
 OPENCLAW_PROFILE=dev openclaw gateway --dev --reset
 ```
 
-`--reset` wipes config, credentials, sessions, and the dev workspace (using
-`trash`, not `rm`), then recreates the default dev setup.
+`--reset` は設定、認証情報、セッション、および開発ワークスペースを消去し（`trash` を使用、`rm` ではない）、デフォルトの開発セットアップを再作成します。
 
-Tip: if a non‑dev gateway is already running (launchd/systemd), stop it first:
+ヒント：非開発ゲートウェイがすでに実行中の場合（launchd/systemd）、最初に停止します：
 
 ```bash
 openclaw gateway stop
 ```
 
-## Raw stream logging (OpenClaw)
+## 生ストリームログ（OpenClaw）
 
-OpenClaw can log the **raw assistant stream** before any filtering/formatting.
-This is the best way to see whether reasoning is arriving as plain text deltas
-(or as separate thinking blocks).
+OpenClaw は、フィルタリング/フォーマットの前に **生アシスタントストリーム** をログに記録できます。
+これは、推論がプレーンテキストのデルタとして到着しているか（または別々の思考ブロックとして）を確認する最良の方法です。
 
-Enable it via CLI:
+CLI を介して有効にします：
 
 ```bash
 pnpm gateway:watch --raw-stream
 ```
 
-Optional path override:
+オプションのパスオーバー：
 
 ```bash
 pnpm gateway:watch --raw-stream --raw-stream-path ~/.openclaw/logs/raw-stream.jsonl
 ```
 
-Equivalent env vars:
+同等の環境変数：
 
 ```bash
 OPENCLAW_RAW_STREAM=1
 OPENCLAW_RAW_STREAM_PATH=~/.openclaw/logs/raw-stream.jsonl
 ```
 
-Default file:
+デフォルトファイル：
 
 `~/.openclaw/logs/raw-stream.jsonl`
 
-## Raw chunk logging (pi-mono)
+## 生チャンクログ（pi-mono）
 
-To capture **raw OpenAI-compat chunks** before they are parsed into blocks,
-pi-mono exposes a separate logger:
+**生の OpenAI 互換チャンク** をブロックに解析する前にキャプチャするために、pi-mono は別のロガーを公開します：
 
 ```bash
 PI_RAW_STREAM=1
 ```
 
-Optional path:
+オプションのパス：
 
 ```bash
 PI_RAW_STREAM_PATH=~/.pi-mono/logs/raw-openai-completions.jsonl
 ```
 
-Default file:
+デフォルトファイル：
 
 `~/.pi-mono/logs/raw-openai-completions.jsonl`
 
-> Note: this is only emitted by processes using pi-mono’s
-> `openai-completions` provider.
+> 注意：これは pi-mono の
+> `openai-completions` プロバイダーを使用しているプロセスによってのみ発生します。
 
-## Safety notes
+## 安全に関する注意事項
 
-* Raw stream logs can include full prompts, tool output, and user data.
-* Keep logs local and delete them after debugging.
-* If you share logs, scrub secrets and PII first.
+* 生ストリームログには、完全なプロンプト、ツール出力、およびユーザーデータが含まれる可能性があります。
+* ログはローカルに保管し、デバッグ後に削除してください。
+* ログを共有する場合は、秘密情報や個人情報を最初に削除してください。

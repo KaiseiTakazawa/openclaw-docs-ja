@@ -6,8 +6,7 @@ title: "Doctor"
 
 # Doctor
 
-`openclaw doctor` is the repair + migration tool for OpenClaw. It fixes stale
-config/state, checks health, and provides actionable repair steps.
+`openclaw doctor` は OpenClaw の修復 + 移行ツールです。古い設定や状態を修正し、健康状態をチェックし、実行可能な修復手順を提供します。
 
 ## クイックスタート
 
@@ -15,268 +14,216 @@ config/state, checks health, and provides actionable repair steps.
 openclaw doctor
 ```
 
-### Headless / automation
+### ヘッドレス / 自動化
 
 ```bash
 openclaw doctor --yes
 ```
 
-Accept defaults without prompting (including restart/service/sandbox repair steps when applicable).
+プロンプトなしでデフォルトを受け入れます（適用可能な場合は再起動/サービス/サンドボックス修復手順を含む）。
 
 ```bash
 openclaw doctor --repair
 ```
 
-Apply recommended repairs without prompting (repairs + restarts where safe).
+プロンプトなしで推奨される修復を適用します（安全な場合は修復 + 再起動）。
 
 ```bash
 openclaw doctor --repair --force
 ```
 
-Apply aggressive repairs too (overwrites custom supervisor configs).
+積極的な修復も適用します（カスタムスーパーバイザ設定を上書きします）。
 
 ```bash
 openclaw doctor --non-interactive
 ```
 
-Run without prompts and only apply safe migrations (config normalization + on-disk state moves). Skips restart/service/sandbox actions that require human confirmation.
-Legacy state migrations run automatically when detected.
+プロンプトなしで実行し、安全な移行のみを適用します（設定の正規化 + ディスク上の状態移動）。人間の確認が必要な再起動/サービス/サンドボックスアクションをスキップします。
+レガシー状態の移行は検出時に自動的に実行されます。
 
 ```bash
 openclaw doctor --deep
 ```
 
-Scan system services for extra gateway installs (launchd/systemd/schtasks).
+追加のゲートウェイインストールをスキャンします（launchd/systemd/schtasks）。
 
-If you want to review changes before writing, open the config file first:
+変更を適用する前に確認したい場合は、最初に設定ファイルを開いてください：
 
 ```bash
 cat ~/.openclaw/openclaw.json
 ```
 
-## What it does (summary)
+## 何をするか（概要）
 
-* Optional pre-flight update for git installs (interactive only).
-* UI protocol freshness check (rebuilds Control UI when the protocol schema is newer).
-* Health check + restart prompt.
-* Skills status summary (eligible/missing/blocked).
-* Config normalization for legacy values.
-* OpenCode Zen provider override warnings (`models.providers.opencode`).
-* Legacy on-disk state migration (sessions/agent dir/WhatsApp auth).
-* State integrity and permissions checks (sessions, transcripts, state dir).
-* Config file permission checks (chmod 600) when running locally.
-* Model auth health: checks OAuth expiry, can refresh expiring tokens, and reports auth-profile cooldown/disabled states.
-* Extra workspace dir detection (`~/openclaw`).
-* Sandbox image repair when sandboxing is enabled.
-* Legacy service migration and extra gateway detection.
-* Gateway runtime checks (service installed but not running; cached launchd label).
-* Channel status warnings (probed from the running gateway).
-* Supervisor config audit (launchd/systemd/schtasks) with optional repair.
-* Gateway runtime best-practice checks (Node vs Bun, version-manager paths).
-* Gateway port collision diagnostics (default `18789`).
-* Security warnings for open DM policies.
-* Gateway auth warnings when no `gateway.auth.token` is set (local mode; offers token generation).
-* systemd linger check on Linux.
-* Source install checks (pnpm workspace mismatch, missing UI assets, missing tsx binary).
-* Writes updated config + wizard metadata.
+* Git インストール用のオプションのプレフライトアップデート（対話形式のみ）。
+* UI プロトコルの新鮮さチェック（プロトコルスキーマが新しい場合、Control UI を再構築します）。
+* 健康チェック + 再起動プロンプト。
+* スキルの状態概要（適格/欠落/ブロック）。
+* レガシー値の設定の正規化。
+* OpenCode Zen プロバイダーのオーバーライド警告（`models.providers.opencode`）。
+* レガシーなディスク上の状態移行（セッション/エージェントディレクトリ/WhatsApp 認証）。
+* 状態の整合性と権限チェック（セッション、トランスクリプト、状態ディレクトリ）。
+* ローカルで実行する際の設定ファイルの権限チェック（chmod 600）。
+* モデル認証の健康状態：OAuth の有効期限をチェックし、期限切れのトークンを更新でき、認証プロファイルのクールダウン/無効状態を報告します。
+* 追加のワークスペースディレクトリ検出（`~/openclaw`）。
+* サンドボックスが有効な場合のサンドボックスイメージ修復。
+* レガシーサービスの移行と追加のゲートウェイ検出。
+* ゲートウェイのランタイムチェック（サービスがインストールされているが実行されていない; キャッシュされた launchd ラベル）。
+* チャンネルの状態警告（実行中のゲートウェイからプローブ）。
+* スーパーバイザ設定の監査（launchd/systemd/schtasks）とオプションの修復。
+* ゲートウェイのランタイムベストプラクティスチェック（Node と Bun、バージョンマネージャのパス）。
+* ゲートウェイのポート衝突診断（デフォルト `18789`）。
+* 開放された DM ポリシーに対するセキュリティ警告。
+* `gateway.auth.token` が設定されていない場合のゲートウェイ認証警告（ローカルモード; トークン生成を提供）。
+* Linux での systemd リンガーチェック。
+* ソースインストールチェック（pnpm ワークスペースの不一致、UI アセットの欠落、tsx バイナリの欠落）。
+* 更新された設定 + ウィザードメタデータを書き込みます。
 
-## Detailed behavior and rationale
+## 詳細な動作と理由
 
-### 0) Optional update (git installs)
+### 0) オプションのアップデート（git インストール）
 
-If this is a git checkout and doctor is running interactively, it offers to
-update (fetch/rebase/build) before running doctor.
+これは git チェックアウトであり、doctor が対話形式で実行されている場合、実行前に更新（フェッチ/リベース/ビルド）を提案します。
 
-### 1) Config normalization
+### 1) 設定の正規化
 
-If the config contains legacy value shapes (for example `messages.ackReaction`
-without a channel-specific override), doctor normalizes them into the current
-schema.
+設定にレガシー値の形状（例えば、チャンネル特有のオーバーライドなしの `messages.ackReaction`）が含まれている場合、doctor はそれらを現在のスキーマに正規化します。
 
-### 2) Legacy config key migrations
+### 2) レガシー設定キーの移行
 
-When the config contains deprecated keys, other commands refuse to run and ask
-you to run `openclaw doctor`.
+設定に非推奨のキーが含まれている場合、他のコマンドは実行を拒否し、`openclaw doctor` を実行するように求めます。
 
-Doctor will:
+Doctor は以下を行います：
 
-* Explain which legacy keys were found.
-* Show the migration it applied.
-* Rewrite `~/.openclaw/openclaw.json` with the updated schema.
+* 発見されたレガシーキーを説明します。
+* 適用した移行を表示します。
+* 更新されたスキーマで `~/.openclaw/openclaw.json` を再書き込みます。
 
-The Gateway also auto-runs doctor migrations on startup when it detects a
-legacy config format, so stale configs are repaired without manual intervention.
+ゲートウェイは、レガシー設定フォーマットを検出すると、起動時に自動的に doctor 移行を実行するため、古い設定は手動での介入なしに修復されます。
 
-Current migrations:
+現在の移行：
 
 * `routing.allowFrom` → `channels.whatsapp.allowFrom`
 * `routing.groupChat.requireMention` → `channels.whatsapp/telegram/imessage.groups."*".requireMention`
 * `routing.groupChat.historyLimit` → `messages.groupChat.historyLimit`
 * `routing.groupChat.mentionPatterns` → `messages.groupChat.mentionPatterns`
 * `routing.queue` → `messages.queue`
-* `routing.bindings` → top-level `bindings`
+* `routing.bindings` → トップレベルの `bindings`
 * `routing.agents`/`routing.defaultAgentId` → `agents.list` + `agents.list[].default`
 * `routing.agentToAgent` → `tools.agentToAgent`
 * `routing.transcribeAudio` → `tools.media.audio.models`
 * `bindings[].match.accountID` → `bindings[].match.accountId`
-* For channels with named `accounts` but missing `accounts.default`, move account-scoped top-level single-account channel values into `channels.<channel>.accounts.default` when present
+* 名前付き `accounts` を持つチャンネルで `accounts.default` が欠落している場合、アカウントスコープのトップレベルの単一アカウントチャンネル値を `channels.<channel>.accounts.default` に移動します（存在する場合）
 * `identity` → `agents.list[].identity`
-* `agent.*` → `agents.defaults` + `tools.*` (tools/elevated/exec/sandbox/subagents)
+* `agent.*` → `agents.defaults` + `tools.*`（tools/elevated/exec/sandbox/subagents）
 * `agent.model`/`allowedModels`/`modelAliases`/`modelFallbacks`/`imageModelFallbacks`
   → `agents.defaults.models` + `agents.defaults.model.primary/fallbacks` + `agents.defaults.imageModel.primary/fallbacks`
 * `browser.ssrfPolicy.allowPrivateNetwork` → `browser.ssrfPolicy.dangerouslyAllowPrivateNetwork`
 
-### 2b) OpenCode Zen provider overrides
+### 2b) OpenCode Zen プロバイダーのオーバーライド
 
-If you’ve added `models.providers.opencode` (or `opencode-zen`) manually, it
-overrides the built-in OpenCode Zen catalog from `@mariozechner/pi-ai`. That can
-force every model onto a single API or zero out costs. Doctor warns so you can
-remove the override and restore per-model API routing + costs.
+`models.providers.opencode`（または `opencode-zen`）を手動で追加した場合、それは `@mariozechner/pi-ai` からの組み込みの OpenCode Zen カタログをオーバーライドします。それはすべてのモデルを単一の API に強制したり、コストをゼロにすることができます。Doctor は警告を出し、オーバーライドを削除してモデルごとの API ルーティング + コストを復元するように促します。
 
-### 3) Legacy state migrations (disk layout)
+### 3) レガシー状態の移行（ディスクレイアウト）
 
-Doctor can migrate older on-disk layouts into the current structure:
+Doctor は古いディスク上のレイアウトを現在の構造に移行できます：
 
-* Sessions store + transcripts:
-  * from `~/.openclaw/sessions/` to `~/.openclaw/agents/<agentId>/sessions/`
-* Agent dir:
-  * from `~/.openclaw/agent/` to `~/.openclaw/agents/<agentId>/agent/`
-* WhatsApp auth state (Baileys):
-  * from legacy `~/.openclaw/credentials/*.json` (except `oauth.json`)
-  * to `~/.openclaw/credentials/whatsapp/<accountId>/...` (default account id: `default`)
+* セッションストア + トランスクリプト：
+  * `~/.openclaw/sessions/` から `~/.openclaw/agents/<agentId>/sessions/` へ
+* エージェントディレクトリ：
+  * `~/.openclaw/agent/` から `~/.openclaw/agents/<agentId>/agent/` へ
+* WhatsApp 認証状態（Baileys）：
+  * レガシー `~/.openclaw/credentials/*.json`（`oauth.json` を除く）から
+  * `~/.openclaw/credentials/whatsapp/<accountId>/...` へ（デフォルトアカウントID：`default`）
 
-These migrations are best-effort and idempotent; doctor will emit warnings when
-it leaves any legacy folders behind as backups. The Gateway/CLI also auto-migrates
-the legacy sessions + agent dir on startup so history/auth/models land in the
-per-agent path without a manual doctor run. WhatsApp auth is intentionally only
-migrated via `openclaw doctor`.
+これらの移行はベストエフォートであり、冪等です。doctor は、レガシーフォルダをバックアップとして残す場合に警告を出します。ゲートウェイ/CLI も起動時にレガシーセッション + エージェントディレクトリを自動的に移行し、履歴/認証/モデルが手動での doctor 実行なしにエージェントパスに配置されるようにします。WhatsApp 認証は意図的に `openclaw doctor` を介してのみ移行されます。
 
-### 4) State integrity checks (session persistence, routing, and safety)
+### 4) 状態の整合性チェック（セッションの永続性、ルーティング、安全性）
 
-The state directory is the operational brainstem. If it vanishes, you lose
-sessions, credentials, logs, and config (unless you have backups elsewhere).
+状態ディレクトリは運用上の脳幹です。これが消えると、セッション、認証情報、ログ、設定を失います（他にバックアップがない限り）。
 
-Doctor checks:
+Doctor は以下をチェックします：
 
-* **State dir missing**: warns about catastrophic state loss, prompts to recreate
-  the directory, and reminds you that it cannot recover missing data.
-* **State dir permissions**: verifies writability; offers to repair permissions
-  (and emits a `chown` hint when owner/group mismatch is detected).
-* **Session dirs missing**: `sessions/` and the session store directory are
-  required to persist history and avoid `ENOENT` crashes.
-* **Transcript mismatch**: warns when recent session entries have missing
-  transcript files.
-* **Main session “1-line JSONL”**: flags when the main transcript has only one
-  line (history is not accumulating).
-* **Multiple state dirs**: warns when multiple `~/.openclaw` folders exist across
-  home directories or when `OPENCLAW_STATE_DIR` points elsewhere (history can
-  split between installs).
-* **Remote mode reminder**: if `gateway.mode=remote`, doctor reminds you to run
-  it on the remote host (the state lives there).
-* **Config file permissions**: warns if `~/.openclaw/openclaw.json` is
-  group/world readable and offers to tighten to `600`.
+* **状態ディレクトリが欠落**：壊滅的な状態損失について警告し、ディレクトリを再作成するように促し、欠落データを回復できないことを思い出させます。
+* **状態ディレクトリの権限**：書き込み可能性を確認し、権限を修復する提案を行います（所有者/グループの不一致が検出された場合は `chown` ヒントを出します）。
+* **セッションディレクトリが欠落**：`sessions/` とセッションストアディレクトリは履歴を永続化し、`ENOENT` クラッシュを避けるために必要です。
+* **トランスクリプトの不一致**：最近のセッションエントリに欠落しているトランスクリプトファイルがある場合に警告します。
+* **メインセッションの「1行 JSONL」**：メイントランスクリプトに1行しかない場合にフラグを立てます（履歴が蓄積されていません）。
+* **複数の状態ディレクトリ**：複数の `~/.openclaw` フォルダがホームディレクトリに存在する場合や、`OPENCLAW_STATE_DIR` が他の場所を指している場合に警告します（履歴がインストール間で分割される可能性があります）。
+* **リモートモードのリマインダー**：`gateway.mode=remote` の場合、doctor はリモートホストで実行するように思い出させます（状態はそこにあります）。
+* **設定ファイルの権限**：`~/.openclaw/openclaw.json` がグループ/全体で読み取り可能な場合に警告し、`600` に引き締める提案を行います。
 
-### 5) Model auth health (OAuth expiry)
+### 5) モデル認証の健康状態（OAuth の有効期限）
 
-Doctor inspects OAuth profiles in the auth store, warns when tokens are
-expiring/expired, and can refresh them when safe. If the Anthropic Claude Code
-profile is stale, it suggests running `claude setup-token` (or pasting a setup-token).
-Refresh prompts only appear when running interactively (TTY); `--non-interactive`
-skips refresh attempts.
+Doctor は認証ストア内の OAuth プロファイルを検査し、トークンが期限切れ/期限切れになる際に警告し、安全な場合はそれらを更新できます。Anthropic Claude Code プロファイルが古くなっている場合、`claude setup-token` を実行することを提案します（またはセットアップトークンを貼り付けます）。更新プロンプトは対話形式で実行している場合（TTY）のみ表示され、`--non-interactive` は更新の試行をスキップします。
 
-Doctor also reports auth profiles that are temporarily unusable due to:
+Doctor はまた、次の理由で一時的に使用できない認証プロファイルを報告します：
 
-* short cooldowns (rate limits/timeouts/auth failures)
-* longer disables (billing/credit failures)
+* 短いクールダウン（レート制限/タイムアウト/認証失敗）
+* より長い無効（請求/クレジット失敗）
 
-### 6) Hooks model validation
+### 6) フックモデルの検証
 
-If `hooks.gmail.model` is set, doctor validates the model reference against the
-catalog and allowlist and warns when it won’t resolve or is disallowed.
+`hooks.gmail.model` が設定されている場合、doctor はカタログおよび許可リストに対してモデル参照を検証し、解決できない場合や許可されていない場合に警告します。
 
-### 7) Sandbox image repair
+### 7) サンドボックスイメージ修復
 
-When sandboxing is enabled, doctor checks Docker images and offers to build or
-switch to legacy names if the current image is missing.
+サンドボックスが有効な場合、doctor は Docker イメージをチェックし、現在のイメージが欠落している場合はビルドまたはレガシー名に切り替える提案を行います。
 
-### 8) Gateway service migrations and cleanup hints
+### 8) ゲートウェイサービスの移行とクリーンアップヒント
 
-Doctor detects legacy gateway services (launchd/systemd/schtasks) and
-offers to remove them and install the OpenClaw service using the current gateway
-port. It can also scan for extra gateway-like services and print cleanup hints.
-Profile-named OpenClaw gateway services are considered first-class and are not
-flagged as "extra."
+Doctor はレガシーゲートウェイサービス（launchd/systemd/schtasks）を検出し、それらを削除し、現在のゲートウェイポートを使用して OpenClaw サービスをインストールする提案を行います。また、追加のゲートウェイのようなサービスをスキャンし、クリーンアップのヒントを表示することもできます。プロファイル名付きの OpenClaw ゲートウェイサービスはファーストクラスと見なされ、「追加」としてフラグ付けされません。
 
-### 9) Security warnings
+### 9) セキュリティ警告
 
-Doctor emits warnings when a provider is open to DMs without an allowlist, or
-when a policy is configured in a dangerous way.
+Doctor は、プロバイダーが許可リストなしで DM に開放されている場合や、ポリシーが危険な方法で構成されている場合に警告を出します。
 
-### 10) systemd linger (Linux)
+### 10) systemd リンガー（Linux）
 
-If running as a systemd user service, doctor ensures lingering is enabled so the
-gateway stays alive after logout.
+systemd ユーザーサービスとして実行されている場合、doctor はログアウト後もゲートウェイが生き続けるようにリンガーが有効であることを確認します。
 
-### 11) Skills status
+### 11) スキルの状態
 
-Doctor prints a quick summary of eligible/missing/blocked skills for the current
-workspace.
+Doctor は現在のワークスペースに対して適格/欠落/ブロックされたスキルの簡単な概要を印刷します。
 
-### 12) Gateway auth checks (local token)
+### 12) ゲートウェイ認証チェック（ローカルトークン）
 
-Doctor warns when `gateway.auth` is missing on a local gateway and offers to
-generate a token. Use `openclaw doctor --generate-gateway-token` to force token
-creation in automation.
+Doctor はローカルゲートウェイで `gateway.auth` が欠落している場合に警告し、トークン生成を提案します。自動化でトークン作成を強制するには、`openclaw doctor --generate-gateway-token` を使用します。
 
-### 13) Gateway health check + restart
+### 13) ゲートウェイ健康チェック + 再起動
 
-Doctor runs a health check and offers to restart the gateway when it looks
-unhealthy.
+Doctor は健康チェックを実行し、ゲートウェイが不健康に見える場合は再起動を提案します。
 
-### 14) Channel status warnings
+### 14) チャンネル状態警告
 
-If the gateway is healthy, doctor runs a channel status probe and reports
-warnings with suggested fixes.
+ゲートウェイが健康である場合、doctor はチャンネル状態のプローブを実行し、警告と提案された修正を報告します。
 
-### 15) Supervisor config audit + repair
+### 15) スーパーバイザ設定の監査 + 修復
 
-Doctor checks the installed supervisor config (launchd/systemd/schtasks) for
-missing or outdated defaults (e.g., systemd network-online dependencies and
-restart delay). When it finds a mismatch, it recommends an update and can
-rewrite the service file/task to the current defaults.
+Doctor はインストールされたスーパーバイザ設定（launchd/systemd/schtasks）をチェックし、欠落または古いデフォルト（例：systemd ネットワークオンライン依存関係と再起動遅延）を確認します。不一致が見つかった場合、更新を推奨し、サービスファイル/タスクを現在のデフォルトに書き換えることができます。
 
-Notes:
+ノート：
 
-* `openclaw doctor` prompts before rewriting supervisor config.
-* `openclaw doctor --yes` accepts the default repair prompts.
-* `openclaw doctor --repair` applies recommended fixes without prompts.
-* `openclaw doctor --repair --force` overwrites custom supervisor configs.
-* You can always force a full rewrite via `openclaw gateway install --force`.
+* `openclaw doctor` はスーパーバイザ設定を書き換える前にプロンプトを表示します。
+* `openclaw doctor --yes` はデフォルトの修復プロンプトを受け入れます。
+* `openclaw doctor --repair` はプロンプトなしで推奨される修正を適用します。
+* `openclaw doctor --repair --force` はカスタムスーパーバイザ設定を上書きします。
+* `openclaw gateway install --force` を使用して常に完全な書き換えを強制できます。
 
-### 16) Gateway runtime + port diagnostics
+### 16) ゲートウェイランタイム + ポート診断
 
-Doctor inspects the service runtime (PID, last exit status) and warns when the
-service is installed but not actually running. It also checks for port collisions
-on the gateway port (default `18789`) and reports likely causes (gateway already
-running, SSH tunnel).
+Doctor はサービスのランタイム（PID、最後の終了ステータス）を検査し、サービスがインストールされているが実際には実行されていない場合に警告します。また、ゲートウェイポート（デフォルト `18789`）でのポート衝突をチェックし、可能性のある原因（ゲートウェイがすでに実行中、SSH トンネル）を報告します。
 
-### 17) Gateway runtime best practices
+### 17) ゲートウェイランタイムベストプラクティス
 
-Doctor warns when the gateway service runs on Bun or a version-managed Node path
-(`nvm`, `fnm`, `volta`, `asdf`, etc.). WhatsApp + Telegram channels require Node,
-and version-manager paths can break after upgrades because the service does not
-load your shell init. Doctor offers to migrate to a system Node install when
-available (Homebrew/apt/choco).
+Doctor は、ゲートウェイサービスが Bun またはバージョン管理された Node パス（`nvm`、`fnm`、`volta`、`asdf` など）で実行されている場合に警告します。WhatsApp + Telegram チャンネルは Node を必要とし、バージョン管理されたパスはアップグレード後に壊れる可能性があります。Doctor は、利用可能な場合にシステム Node インストールに移行する提案を行います（Homebrew/apt/choco）。
 
-### 18) Config write + wizard metadata
+### 18) 設定の書き込み + ウィザードメタデータ
 
-Doctor persists any config changes and stamps wizard metadata to record the
-doctor run.
+Doctor は設定の変更を永続化し、doctor 実行を記録するためにウィザードメタデータをスタンプします。
 
-### 19) Workspace tips (backup + memory system)
+### 19) ワークスペースのヒント（バックアップ + メモリシステム）
 
-Doctor suggests a workspace memory system when missing and prints a backup tip
-if the workspace is not already under git.
+Doctor は、欠落している場合にワークスペースメモリシステムを提案し、ワークスペースがすでに git の下にない場合はバックアップのヒントを印刷します。
 
-See [/concepts/agent-workspace](/concepts/agent-workspace) for a full guide to
-workspace structure and git backup (recommended private GitHub or GitLab).
+ワークスペース構造と git バックアップの完全ガイドについては、[/concepts/agent-workspace](/concepts/agent-workspace) を参照してください（推奨されるプライベート GitHub または GitLab）。

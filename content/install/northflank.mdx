@@ -1,55 +1,54 @@
 ---
-title: "Deploy on Northflank"
+title: "Northflankにデプロイ"
 ---
 
-# Deploy on Northflank
+# Northflankにデプロイ
 
-Deploy OpenClaw on Northflank with a one-click template and finish setup in your browser.
-This is the easiest “no terminal on the server” path: Northflank runs the Gateway for you,
-and you configure everything via the `/setup` web wizard.
+OpenClawをNorthflankにワンクリックテンプレートでデプロイし、ブラウザでセットアップを完了します。  
+これは「サーバー上でターミナルなし」の最も簡単な方法です：NorthflankがGatewayを実行し、すべてを`/setup`ウェブウィザードを通じて設定します。
 
-## How to get started
+## 始め方
 
-1. Click [Deploy OpenClaw](https://northflank.com/stacks/deploy-openclaw) to open the template.
-2. Create an [account on Northflank](https://app.northflank.com/signup) if you don’t already have one.
-3. Click **Deploy OpenClaw now**.
-4. Set the required environment variable: `SETUP_PASSWORD`.
-5. Click **Deploy stack** to build and run the OpenClaw template.
-6. Wait for the deployment to complete, then click **View resources**.
-7. Open the OpenClaw service.
-8. Open the public OpenClaw URL and complete setup at `/setup`.
-9. Open the Control UI at `/openclaw`.
+1. [Deploy OpenClaw](https://northflank.com/stacks/deploy-openclaw)をクリックしてテンプレートを開きます。
+2. まだアカウントを持っていない場合は、[Northflankにアカウントを作成](https://app.northflank.com/signup)します。
+3. **Deploy OpenClaw now**をクリックします。
+4. 必要な環境変数を設定します：`SETUP_PASSWORD`。
+5. **Deploy stack**をクリックしてOpenClawテンプレートをビルドして実行します。
+6. デプロイが完了するまで待ち、次に**View resources**をクリックします。
+7. OpenClawサービスを開きます。
+8. 公開されたOpenClawのURLを開き、`/setup`でセットアップを完了します。
+9. `/openclaw`でControl UIを開きます。
 
-## What you get
+## 取得できるもの
 
-* Hosted OpenClaw Gateway + Control UI
-* Web setup wizard at `/setup` (no terminal commands)
-* Persistent storage via Northflank Volume (`/data`) so config/credentials/workspace survive redeploys
+* ホスティングされたOpenClaw Gateway + Control UI
+* `/setup`でのウェブセットアップウィザード（ターミナルコマンドなし）
+* Northflank Volume（`/data`）を介した永続ストレージにより、設定/資格情報/ワークスペースが再デプロイ後も生き残ります
 
-## Setup flow
+## セットアップフロー
 
-1. Visit `https://<your-northflank-domain>/setup` and enter your `SETUP_PASSWORD`.
-2. Choose a model/auth provider and paste your key.
-3. (Optional) Add Telegram/Discord/Slack tokens.
-4. Click **Run setup**.
-5. Open the Control UI at `https://<your-northflank-domain>/openclaw`
+1. `https://<your-northflank-domain>/setup`にアクセスし、`SETUP_PASSWORD`を入力します。
+2. モデル/認証プロバイダーを選択し、キーを貼り付けます。
+3. （オプション）Telegram/Discord/Slackトークンを追加します。
+4. **Run setup**をクリックします。
+5. `https://<your-northflank-domain>/openclaw`でControl UIを開きます。
 
-If Telegram DMs are set to pairing, the setup wizard can approve the pairing code.
+TelegramのDMがペアリングに設定されている場合、セットアップウィザードがペアリングコードを承認できます。
 
-## Getting chat tokens
+## チャットトークンの取得
 
-### Telegram bot token
+### Telegramボットトークン
 
-1. Message `@BotFather` in Telegram
-2. Run `/newbot`
-3. Copy the token (looks like `123456789:AA...`)
-4. Paste it into `/setup`
+1. Telegramで`@BotFather`にメッセージを送信します。
+2. `/newbot`を実行します。
+3. トークンをコピーします（`123456789:AA...`のように見えます）。
+4. `/setup`に貼り付けます。
 
-### Discord bot token
+### Discordボットトークン
 
-1. Go to [https://discord.com/developers/applications](https://discord.com/developers/applications)
-2. **New Application** → choose a name
-3. **Bot** → **Add Bot**
-4. **Enable MESSAGE CONTENT INTENT** under Bot → Privileged Gateway Intents (required or the bot will crash on startup)
-5. Copy the **Bot Token** and paste into `/setup`
-6. Invite the bot to your server (OAuth2 URL Generator; scopes: `bot`, `applications.commands`)
+1. [https://discord.com/developers/applications](https://discord.com/developers/applications)にアクセスします。
+2. **New Application** → 名前を選択します。
+3. **Bot** → **Add Bot**を選択します。
+4. Bot → Privileged Gateway Intentsの下で**MESSAGE CONTENT INTENTを有効にします**（必須。そうしないとボットが起動時にクラッシュします）。
+5. **Bot Token**をコピーし、`/setup`に貼り付けます。
+6. ボットをサーバーに招待します（OAuth2 URL Generator; スコープ: `bot`, `applications.commands`）。

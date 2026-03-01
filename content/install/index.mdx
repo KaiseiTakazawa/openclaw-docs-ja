@@ -6,29 +6,29 @@ title: "インストール"
 
 # インストール
 
-Already followed [Getting Started](/start/getting-started)? You're all set — this page is for alternative install methods, platform-specific instructions, and maintenance.
+すでに[Getting Started](/start/getting-started)をフォローしましたか？すべて準備完了です — このページは代替のインストール方法、プラットフォーム固有の指示、およびメンテナンスに関するものです。
 
-## System requirements
+## システム要件
 
-* **[Node 22+](/install/node)** (the [installer script](#install-methods) will install it if missing)
-* macOS, Linux, or Windows
-* `pnpm` only if you build from source
-
-
-  On Windows, we strongly recommend running OpenClaw under [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
+* **[Node 22+](/install/node)** （[インストーラスクリプト](#install-methods)が不足している場合はインストールします）
+* macOS、Linux、またはWindows
+* ソースからビルドする場合のみ`pnpm`
 
 
-## Install methods
+  Windowsでは、OpenClawを[WSL2](https://learn.microsoft.com/en-us/windows/wsl/install)で実行することを強く推奨します。
 
 
-  The **installer script** is the recommended way to install OpenClaw. It handles Node detection, installation, and onboarding in one step.
+## インストール方法
 
 
-  For VPS/cloud hosts, avoid third-party "1-click" marketplace images when possible. Prefer a clean base OS image (for example Ubuntu LTS), then install OpenClaw yourself with the installer script.
+  **インストーラスクリプト**はOpenClawをインストールするための推奨方法です。Nodeの検出、インストール、およびオンボーディングを1ステップで処理します。
+
+
+  VPS/クラウドホストの場合、可能な限りサードパーティの「1クリック」マーケットプレイスイメージは避けてください。クリーンなベースOSイメージ（例えばUbuntu LTS）を選択し、その後インストーラスクリプトを使って自分でOpenClawをインストールしてください。
 
 
   
-    Downloads the CLI, installs it globally via npm, and launches the onboarding wizard.
+    CLIをダウンロードし、npmを介してグローバルにインストールし、オンボーディングウィザードを起動します。
 
     
       
@@ -44,9 +44,9 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
       
     
 
-    That's it — the script handles Node detection, installation, and onboarding.
+    これで完了です — スクリプトがNodeの検出、インストール、およびオンボーディングを処理します。
 
-    To skip onboarding and just install the binary:
+    オンボーディングをスキップしてバイナリをインストールするには：
 
     
       
@@ -62,11 +62,11 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
       
     
 
-    For all flags, env vars, and CI/automation options, see [Installer internals](/install/installer).
+    すべてのフラグ、環境変数、およびCI/自動化オプションについては、[Installer internals](/install/installer)を参照してください。
   
 
   
-    If you already have Node 22+ and prefer to manage the install yourself:
+    すでにNode 22+を持っていて、インストールを自分で管理したい場合：
 
     
       
@@ -76,36 +76,36 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
         ```
 
         
-          If you have libvips installed globally (common on macOS via Homebrew) and `sharp` fails, force prebuilt binaries:
+          libvipsがグローバルにインストールされている場合（macOSではHomebrew経由で一般的）で、`sharp`が失敗する場合は、プリビルドバイナリを強制します：
 
           ```bash
           SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install -g openclaw@latest
           ```
 
-          If you see `sharp: Please add node-gyp to your dependencies`, either install build tooling (macOS: Xcode CLT + `npm install -g node-gyp`) or use the env var above.
+          `sharp: Please add node-gyp to your dependencies`というメッセージが表示された場合は、ビルドツールをインストールするか（macOS: Xcode CLT + `npm install -g node-gyp`）、上記の環境変数を使用してください。
         
       
 
       
         ```bash
         pnpm add -g openclaw@latest
-        pnpm approve-builds -g        # approve openclaw, node-llama-cpp, sharp, etc.
+        pnpm approve-builds -g        # openclaw、node-llama-cpp、sharpなどを承認
         openclaw onboard --install-daemon
         ```
 
         
-          pnpm requires explicit approval for packages with build scripts. After the first install shows the "Ignored build scripts" warning, run `pnpm approve-builds -g` and select the listed packages.
+          pnpmはビルドスクリプトを持つパッケージの明示的な承認を必要とします。最初のインストールで「Ignored build scripts」という警告が表示された後、`pnpm approve-builds -g`を実行し、リストされたパッケージを選択します。
         
       
     
   
 
   
-    For contributors or anyone who wants to run from a local checkout.
+    コントリビューターやローカルチェックアウトから実行したい人向け。
 
     
       
-        Clone the [OpenClaw repo](https://github.com/openclaw/openclaw) and build:
+        [OpenClawリポジトリ](https://github.com/openclaw/openclaw)をクローンし、ビルドします：
 
         ```bash
         git clone https://github.com/openclaw/openclaw.git
@@ -117,13 +117,13 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
       
 
       
-        Make the `openclaw` command available globally:
+        `openclaw`コマンドをグローバルに利用可能にします：
 
         ```bash
         pnpm link --global
         ```
 
-        Alternatively, skip the link and run commands via `pnpm openclaw ...` from inside the repo.
+        あるいは、リンクをスキップしてリポジトリ内から`pnpm openclaw ...`を介してコマンドを実行します。
       
 
       
@@ -133,16 +133,12 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
       
     
 
-    For deeper development workflows, see [Setup](/start/setup).
+    より深い開発ワークフローについては、[Setup](/start/setup)を参照してください。
   
 
 
-## Other install methods
+## その他のインストール方法
 
-
-  
-
-  
 
   
 
@@ -150,29 +146,33 @@ Already followed [Getting Started](/start/getting-started)? You're all set — t
 
   
 
+  
 
-## After install
+  
 
-Verify everything is working:
+
+## インストール後
+
+すべてが正常に動作しているか確認します：
 
 ```bash
-openclaw doctor         # check for config issues
-openclaw status         # gateway status
-openclaw dashboard      # open the browser UI
+openclaw doctor         # 設定の問題をチェック
+openclaw status         # Gatewayの状態
+openclaw dashboard      # ブラウザUIを開く
 ```
 
-If you need custom runtime paths, use:
+カスタムランタイムパスが必要な場合は、以下を使用します：
 
-* `OPENCLAW_HOME` for home-directory based internal paths
-* `OPENCLAW_STATE_DIR` for mutable state location
-* `OPENCLAW_CONFIG_PATH` for config file location
+* `OPENCLAW_HOME`：ホームディレクトリベースの内部パス
+* `OPENCLAW_STATE_DIR`：可変状態の場所
+* `OPENCLAW_CONFIG_PATH`：設定ファイルの場所
 
-See [Environment vars](/help/environment) for precedence and full details.
+優先順位と詳細については、[Environment vars](/help/environment)を参照してください。
 
-## Troubleshooting: `openclaw` not found
+## トラブルシューティング: `openclaw`が見つからない
 
 
-  Quick diagnosis:
+  簡単な診断：
 
   ```bash
   node -v
@@ -181,25 +181,24 @@ See [Environment vars](/help/environment) for precedence and full details.
   echo "$PATH"
   ```
 
-  If `$(npm prefix -g)/bin` (macOS/Linux) or `$(npm prefix -g)` (Windows) is **not** in your `$PATH`, your shell can't find global npm binaries (including `openclaw`).
+  `$(npm prefix -g)/bin`（macOS/Linux）または`$(npm prefix -g)`（Windows）が**$PATH**に含まれていない場合、シェルはグローバルnpmバイナリ（`openclaw`を含む）を見つけることができません。
 
-  Fix — add it to your shell startup file (`~/.zshrc` or `~/.bashrc`):
+  修正方法 — シェルのスタートアップファイル（`~/.zshrc`または`~/.bashrc`）に追加します：
 
   ```bash
   export PATH="$(npm prefix -g)/bin:$PATH"
   ```
 
-  On Windows, add the output of `npm prefix -g` to your PATH.
+  Windowsでは、`npm prefix -g`の出力をPATHに追加します。
 
-  Then open a new terminal (or `rehash` in zsh / `hash -r` in bash).
-
-
-## Update / uninstall
+  その後、新しいターミナルを開くか（zshでは`rehash`、bashでは`hash -r`を実行します）。
 
 
-  
+## 更新 / アンインストール
+
 
   
 
   
 
+  

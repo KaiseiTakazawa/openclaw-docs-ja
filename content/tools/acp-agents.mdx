@@ -6,90 +6,90 @@ title: "ACP エージェント"
 
 # ACP agents
 
-[Agent Client Protocol (ACP)](https://agentclientprotocol.com/) sessions let OpenClaw run external coding harnesses (for example Pi, Claude Code, Codex, OpenCode, and Gemini CLI) through an ACP backend plugin.
+[Agent Client Protocol (ACP)](https://agentclientprotocol.com/) セッションは、OpenClaw が外部コーディングハーネス（例えば Pi、Claude Code、Codex、OpenCode、Gemini CLI）を ACP バックエンドプラグインを通じて実行できるようにします。
 
-If you ask OpenClaw in plain language to "run this in Codex" or "start Claude Code in a thread", OpenClaw should route that request to the ACP runtime (not the native sub-agent runtime).
+OpenClaw に「これを Codex で実行して」または「スレッドで Claude Code を開始して」といった平易な言葉で尋ねると、OpenClaw はそのリクエストを ACP ランタイム（ネイティブサブエージェントランタイムではなく）にルーティングするべきです。
 
-## Fast operator flow
+## 高速オペレーターフロー
 
-Use this when you want a practical `/acp` runbook:
+実用的な `/acp` ランブックが必要なときに使用します：
 
-1. Spawn a session:
+1. セッションを生成する：
    * `/acp spawn codex --mode persistent --thread auto`
-2. Work in the bound thread (or target that session key explicitly).
-3. Check runtime state:
+2. バウンドスレッドで作業する（またはそのセッションキーを明示的にターゲットにする）。
+3. ランタイム状態を確認する：
    * `/acp status`
-4. Tune runtime options as needed:
+4. 必要に応じてランタイムオプションを調整する：
    * `/acp model <provider/model>`
    * `/acp permissions <profile>`
    * `/acp timeout <seconds>`
-5. Nudge an active session without replacing context:
+5. コンテキストを置き換えずにアクティブなセッションを調整する：
    * `/acp steer tighten logging and continue`
-6. Stop work:
-   * `/acp cancel` (stop current turn), or
-   * `/acp close` (close session + remove bindings)
+6. 作業を停止する：
+   * `/acp cancel`（現在のターンを停止）、または
+   * `/acp close`（セッションを閉じてバインディングを削除）
 
-## Quick start for humans
+## 人間向けのクイックスタート
 
-Examples of natural requests:
+自然なリクエストの例：
 
-* "Start a persistent Codex session in a thread here and keep it focused."
-* "Run this as a one-shot Claude Code ACP session and summarize the result."
-* "Use Gemini CLI for this task in a thread, then keep follow-ups in that same thread."
+* 「ここでスレッド内に持続的な Codex セッションを開始し、集中させておいてください。」
+* 「これを一度きりの Claude Code ACP セッションとして実行し、結果を要約してください。」
+* 「このタスクに Gemini CLI をスレッドで使用し、その後のフォローアップを同じスレッドで続けてください。」
 
-What OpenClaw should do:
+OpenClaw が行うべきこと：
 
-1. Pick `runtime: "acp"`.
-2. Resolve the requested harness target (`agentId`, for example `codex`).
-3. If thread binding is requested and the current channel supports it, bind the ACP session to the thread.
-4. Route follow-up thread messages to that same ACP session until unfocused/closed/expired.
+1. `runtime: "acp"` を選択する。
+2. リクエストされたハーネスターゲット（例えば `agentId` として `codex`）を解決する。
+3. スレッドバインディングが要求され、現在のチャネルがそれをサポートしている場合、ACP セッションをスレッドにバインドする。
+4. フォローアップスレッドメッセージをその同じ ACP セッションにルーティングし、焦点を外す/閉じる/期限切れになるまで続ける。
 
-## ACP versus sub-agents
+## ACP とサブエージェントの違い
 
-Use ACP when you want an external harness runtime. Use sub-agents when you want OpenClaw-native delegated runs.
+外部ハーネスランタイムが必要な場合は ACP を使用します。OpenClaw ネイティブの委任実行が必要な場合はサブエージェントを使用します。
 
-| Area          | ACP session                           | Sub-agent run                      |
+| エリア          | ACP セッション                           | サブエージェント実行                      |
 | ------------- | ------------------------------------- | ---------------------------------- |
-| Runtime       | ACP backend plugin (for example acpx) | OpenClaw native sub-agent runtime  |
-| Session key   | `agent:<agentId>:acp:<uuid>`          | `agent:<agentId>:subagent:<uuid>`  |
-| Main commands | `/acp ...`                            | `/subagents ...`                   |
-| Spawn tool    | `sessions_spawn` with `runtime:"acp"` | `sessions_spawn` (default runtime) |
+| ランタイム       | ACP バックエンドプラグイン（例えば acpx） | OpenClaw ネイティブサブエージェントランタイム  |
+| セッションキー   | `agent:<agentId>:acp:<uuid>`          | `agent:<agentId>:subagent:<uuid>`  |
+| 主なコマンド | `/acp ...`                            | `/subagents ...`                   |
+| スポーンツール    | `sessions_spawn` で `runtime:"acp"` | `sessions_spawn`（デフォルトランタイム） |
 
-See also [Sub-agents](/tools/subagents).
+さらに詳しくは [Sub-agents](/tools/subagents) を参照してください。
 
-## Thread-bound sessions (channel-agnostic)
+## スレッドバウンドセッション（チャネル非依存）
 
-When thread bindings are enabled for a channel adapter, ACP sessions can be bound to threads:
+チャネルアダプタに対してスレッドバインディングが有効な場合、ACP セッションはスレッドにバインドできます：
 
-* OpenClaw binds a thread to a target ACP session.
-* Follow-up messages in that thread route to the bound ACP session.
-* ACP output is delivered back to the same thread.
-* Unfocus/close/archive/idle-timeout or max-age expiry removes the binding.
+* OpenClaw はスレッドをターゲット ACP セッションにバインドします。
+* そのスレッド内のフォローアップメッセージはバインドされた ACP セッションにルーティングされます。
+* ACP の出力は同じスレッドに返されます。
+* 焦点を外す/閉じる/アーカイブ/アイドルタイムアウトまたは最大年齢の期限切れがバインディングを削除します。
 
-Thread binding support is adapter-specific. If the active channel adapter does not support thread bindings, OpenClaw returns a clear unsupported/unavailable message.
+スレッドバインディングのサポートはアダプタ固有です。アクティブなチャネルアダプタがスレッドバインディングをサポートしていない場合、OpenClaw は明確なサポートされていない/利用できないメッセージを返します。
 
-Required feature flags for thread-bound ACP:
+スレッドバウンド ACP に必要な機能フラグ：
 
 * `acp.enabled=true`
 * `acp.dispatch.enabled=true`
-* Channel-adapter ACP thread-spawn flag enabled (adapter-specific)
+* チャネルアダプタ ACP スレッドスポーンフラグが有効（アダプタ固有）
   * Discord: `channels.discord.threadBindings.spawnAcpSessions=true`
 
-### Thread supporting channels
+### スレッドをサポートするチャネル
 
-* Any channel adapter that exposes session/thread binding capability.
-* Current built-in support: Discord.
-* Plugin channels can add support through the same binding interface.
+* セッション/スレッドバインディング機能を公開する任意のチャネルアダプタ。
+* 現在のビルトインサポート: Discord。
+* プラグインチャネルは同じバインディングインターフェースを通じてサポートを追加できます。
 
-## Start ACP sessions (interfaces)
+## ACP セッションの開始（インターフェース）
 
-### From `sessions_spawn`
+### `sessions_spawn` から
 
-Use `runtime: "acp"` to start an ACP session from an agent turn or tool call.
+エージェントターンまたはツールコールから ACP セッションを開始するには `runtime: "acp"` を使用します。
 
 ```json
 {
-  "task": "Open the repo and summarize failing tests",
+  "task": "リポジトリを開いて失敗したテストを要約する",
   "runtime": "acp",
   "agentId": "codex",
   "thread": true,
@@ -97,28 +97,28 @@ Use `runtime: "acp"` to start an ACP session from an agent turn or tool call.
 }
 ```
 
-Notes:
+注意：
 
-* `runtime` defaults to `subagent`, so set `runtime: "acp"` explicitly for ACP sessions.
-* If `agentId` is omitted, OpenClaw uses `acp.defaultAgent` when configured.
-* `mode: "session"` requires `thread: true` to keep a persistent bound conversation.
+* `runtime` はデフォルトで `subagent` となるため、ACP セッションのために `runtime: "acp"` を明示的に設定してください。
+* `agentId` が省略されると、OpenClaw は設定されている場合 `acp.defaultAgent` を使用します。
+* `mode: "session"` は持続的なバウンド会話を維持するために `thread: true` を必要とします。
 
-Interface details:
+インターフェースの詳細：
 
-* `task` (required): initial prompt sent to the ACP session.
-* `runtime` (required for ACP): must be `"acp"`.
-* `agentId` (optional): ACP target harness id. Falls back to `acp.defaultAgent` if set.
-* `thread` (optional, default `false`): request thread binding flow where supported.
-* `mode` (optional): `run` (one-shot) or `session` (persistent).
-  * default is `run`
-  * if `thread: true` and mode omitted, OpenClaw may default to persistent behavior per runtime path
-  * `mode: "session"` requires `thread: true`
-* `cwd` (optional): requested runtime working directory (validated by backend/runtime policy).
-* `label` (optional): operator-facing label used in session/banner text.
+* `task`（必須）：ACP セッションに送信される初期プロンプト。
+* `runtime`（ACP に必須）：`"acp"` でなければなりません。
+* `agentId`（オプション）：ACP ターゲットハーネス ID。設定されている場合は `acp.defaultAgent` にフォールバックします。
+* `thread`（オプション、デフォルト `false`）：サポートされている場合にスレッドバインディングフローを要求します。
+* `mode`（オプション）：`run`（一度きり）または `session`（持続的）。
+  * デフォルトは `run`
+  * `thread: true` でモードが省略されると、OpenClaw はランタイムパスごとに持続的な動作をデフォルトにする場合があります
+  * `mode: "session"` は `thread: true` を必要とします。
+* `cwd`（オプション）：要求されたランタイム作業ディレクトリ（バックエンド/ランタイムポリシーによって検証されます）。
+* `label`（オプション）：セッション/バナーのテキストに使用されるオペレーター向けのラベル。
 
-### From `/acp` command
+### `/acp` コマンドから
 
-Use `/acp spawn` for explicit operator control from chat when needed.
+必要に応じてチャットから明示的なオペレーターコントロールのために `/acp spawn` を使用します。
 
 ```text
 /acp spawn codex --mode persistent --thread auto
@@ -126,48 +126,48 @@ Use `/acp spawn` for explicit operator control from chat when needed.
 /acp spawn codex --thread here
 ```
 
-Key flags:
+主要なフラグ：
 
 * `--mode persistent|oneshot`
 * `--thread auto|here|off`
 * `--cwd <absolute-path>`
 * `--label <name>`
 
-See [Slash Commands](/tools/slash-commands).
+[Slash Commands](/tools/slash-commands) を参照してください。
 
-## Session target resolution
+## セッションターゲット解決
 
-Most `/acp` actions accept an optional session target (`session-key`, `session-id`, or `session-label`).
+ほとんどの `/acp` アクションはオプションのセッションターゲット（`session-key`、`session-id`、または `session-label`）を受け入れます。
 
-Resolution order:
+解決順序：
 
-1. Explicit target argument (or `--session` for `/acp steer`)
-   * tries key
-   * then UUID-shaped session id
-   * then label
-2. Current thread binding (if this conversation/thread is bound to an ACP session)
-3. Current requester session fallback
+1. 明示的なターゲット引数（または `/acp steer` のための `--session`）
+   * キーを試す
+   * 次に UUID 形式のセッション ID
+   * 次にラベル
+2. 現在のスレッドバインディング（この会話/スレッドが ACP セッションにバインドされている場合）
+3. 現在のリクエスターセッションのフォールバック
 
-If no target resolves, OpenClaw returns a clear error (`Unable to resolve session target: ...`).
+ターゲットが解決できない場合、OpenClaw は明確なエラーを返します（`Unable to resolve session target: ...`）。
 
-## Spawn thread modes
+## スポーンスレッドモード
 
-`/acp spawn` supports `--thread auto|here|off`.
+`/acp spawn` は `--thread auto|here|off` をサポートします。
 
-| Mode   | Behavior                                                                                            |
+| モード   | 挙動                                                                                            |
 | ------ | --------------------------------------------------------------------------------------------------- |
-| `auto` | In an active thread: bind that thread. Outside a thread: create/bind a child thread when supported. |
-| `here` | Require current active thread; fail if not in one.                                                  |
-| `off`  | No binding. Session starts unbound.                                                                 |
+| `auto` | アクティブなスレッド内：そのスレッドをバインドします。スレッド外：サポートされている場合に子スレッドを作成/バインドします。 |
+| `here` | 現在のアクティブスレッドを要求し、そうでない場合は失敗します。                                                  |
+| `off`  | バインディングなし。セッションは未バインドで開始します。                                                                 |
 
-Notes:
+注意：
 
-* On non-thread binding surfaces, default behavior is effectively `off`.
-* Thread-bound spawn requires channel policy support (for Discord: `channels.discord.threadBindings.spawnAcpSessions=true`).
+* 非スレッドバインディングの表面では、デフォルトの挙動は実質的に `off` です。
+* スレッドバウンドスポーンはチャネルポリシーサポートを必要とします（Discord の場合：`channels.discord.threadBindings.spawnAcpSessions=true`）。
 
-## ACP controls
+## ACP コントロール
 
-Available command family:
+利用可能なコマンドファミリー：
 
 * `/acp spawn`
 * `/acp cancel`
@@ -185,47 +185,47 @@ Available command family:
 * `/acp doctor`
 * `/acp install`
 
-`/acp status` shows the effective runtime options and, when available, both runtime-level and backend-level session identifiers.
+`/acp status` は有効なランタイムオプションを表示し、利用可能な場合はランタイムレベルおよびバックエンドレベルのセッション識別子の両方を表示します。
 
-Some controls depend on backend capabilities. If a backend does not support a control, OpenClaw returns a clear unsupported-control error.
+一部のコントロールはバックエンドの機能に依存します。バックエンドがコントロールをサポートしていない場合、OpenClaw は明確なサポートされていないコントロールエラーを返します。
 
-## ACP command cookbook
+## ACP コマンドクックブック
 
-| Command              | What it does                                              | Example                                                        |
+| コマンド              | 何をするか                                              | 例                                                              |
 | -------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
-| `/acp spawn`         | Create ACP session; optional thread bind.                 | `/acp spawn codex --mode persistent --thread auto --cwd /repo` |
-| `/acp cancel`        | Cancel in-flight turn for target session.                 | `/acp cancel agent:codex:acp:<uuid>`                           |
-| `/acp steer`         | Send steer instruction to running session.                | `/acp steer --session support inbox prioritize failing tests`  |
-| `/acp close`         | Close session and unbind thread targets.                  | `/acp close`                                                   |
-| `/acp status`        | Show backend, mode, state, runtime options, capabilities. | `/acp status`                                                  |
-| `/acp set-mode`      | Set runtime mode for target session.                      | `/acp set-mode plan`                                           |
-| `/acp set`           | Generic runtime config option write.                      | `/acp set model openai/gpt-5.2`                                |
-| `/acp cwd`           | Set runtime working directory override.                   | `/acp cwd /Users/user/Projects/repo`                           |
-| `/acp permissions`   | Set approval policy profile.                              | `/acp permissions strict`                                      |
-| `/acp timeout`       | Set runtime timeout (seconds).                            | `/acp timeout 120`                                             |
-| `/acp model`         | Set runtime model override.                               | `/acp model anthropic/claude-opus-4-5`                         |
-| `/acp reset-options` | Remove session runtime option overrides.                  | `/acp reset-options`                                           |
-| `/acp sessions`      | List recent ACP sessions from store.                      | `/acp sessions`                                                |
-| `/acp doctor`        | Backend health, capabilities, actionable fixes.           | `/acp doctor`                                                  |
-| `/acp install`       | Print deterministic install and enable steps.             | `/acp install`                                                 |
+| `/acp spawn`         | ACP セッションを作成します。オプションでスレッドをバインドします。                 | `/acp spawn codex --mode persistent --thread auto --cwd /repo` |
+| `/acp cancel`        | ターゲットセッションの進行中のターンをキャンセルします。                 | `/acp cancel agent:codex:acp:<uuid>`                           |
+| `/acp steer`         | 実行中のセッションにステア指示を送信します。                | `/acp steer --session support inbox prioritize failing tests`  |
+| `/acp close`         | セッションを閉じてスレッドターゲットのバインディングを解除します。                  | `/acp close`                                                   |
+| `/acp status`        | バックエンド、モード、状態、ランタイムオプション、機能を表示します。 | `/acp status`                                                  |
+| `/acp set-mode`      | ターゲットセッションのランタイムモードを設定します。                      | `/acp set-mode plan`                                           |
+| `/acp set`           | 一般的なランタイム構成オプションを書き込みます。                      | `/acp set model openai/gpt-5.2`                                |
+| `/acp cwd`           | ランタイム作業ディレクトリのオーバーライドを設定します。                   | `/acp cwd /Users/user/Projects/repo`                           |
+| `/acp permissions`   | 承認ポリシープロファイルを設定します。                              | `/acp permissions strict`                                      |
+| `/acp timeout`       | ランタイムタイムアウト（秒）を設定します。                            | `/acp timeout 120`                                             |
+| `/acp model`         | ランタイムモデルのオーバーライドを設定します。                               | `/acp model anthropic/claude-opus-4-5`                         |
+| `/acp reset-options` | セッションのランタイムオプションのオーバーライドを削除します。                  | `/acp reset-options`                                           |
+| `/acp sessions`      | ストアから最近の ACP セッションをリストします。                      | `/acp sessions`                                                |
+| `/acp doctor`        | バックエンドの健康状態、機能、実行可能な修正を表示します。           | `/acp doctor`                                                  |
+| `/acp install`       | 決定論的なインストールおよび有効化手順を表示します。             | `/acp install`                                                 |
 
-## Runtime options mapping
+## ランタイムオプションマッピング
 
-`/acp` has convenience commands and a generic setter.
+`/acp` には便利なコマンドと一般的なセッターがあります。
 
-Equivalent operations:
+同等の操作：
 
-* `/acp model <id>` maps to runtime config key `model`.
-* `/acp permissions <profile>` maps to runtime config key `approval_policy`.
-* `/acp timeout <seconds>` maps to runtime config key `timeout`.
-* `/acp cwd <path>` updates runtime cwd override directly.
-* `/acp set <key> <value>` is the generic path.
-  * Special case: `key=cwd` uses the cwd override path.
-* `/acp reset-options` clears all runtime overrides for target session.
+* `/acp model <id>` はランタイム構成キー `model` にマッピングされます。
+* `/acp permissions <profile>` はランタイム構成キー `approval_policy` にマッピングされます。
+* `/acp timeout <seconds>` はランタイム構成キー `timeout` にマッピングされます。
+* `/acp cwd <path>` はランタイム cwd オーバーライドを直接更新します。
+* `/acp set <key> <value>` は一般的なパスです。
+  * 特殊ケース：`key=cwd` は cwd オーバーライドパスを使用します。
+* `/acp reset-options` はターゲットセッションのすべてのランタイムオーバーライドをクリアします。
 
-## acpx harness support (current)
+## acpx ハーネスサポート（現在）
 
-Current acpx built-in harness aliases:
+現在の acpx ビルトインハーネスエイリアス：
 
 * `pi`
 * `claude`
@@ -233,13 +233,13 @@ Current acpx built-in harness aliases:
 * `opencode`
 * `gemini`
 
-When OpenClaw uses the acpx backend, prefer these values for `agentId` unless your acpx config defines custom agent aliases.
+OpenClaw が acpx バックエンドを使用する場合、カスタムエージェントエイリアスが定義されていない限り、これらの値を `agentId` に優先して使用してください。
 
-Direct acpx CLI usage can also target arbitrary adapters via `--agent <command>`, but that raw escape hatch is an acpx CLI feature (not the normal OpenClaw `agentId` path).
+直接的な acpx CLI 使用は `--agent <command>` を介して任意のアダプタをターゲットにすることもできますが、その生のエスケープハッチは acpx CLI 機能（通常の OpenClaw `agentId` パスではありません）です。
 
-## Required config
+## 必要な設定
 
-Core ACP baseline:
+コア ACP ベースライン：
 
 ```json5
 {
@@ -261,7 +261,7 @@ Core ACP baseline:
 }
 ```
 
-Thread binding config is channel-adapter specific. Example for Discord:
+スレッドバインディング設定はチャネルアダプタ固有です。Discord の例：
 
 ```json5
 {
@@ -283,61 +283,61 @@ Thread binding config is channel-adapter specific. Example for Discord:
 }
 ```
 
-If thread-bound ACP spawn does not work, verify the adapter feature flag first:
+スレッドバウンド ACP スポーンが機能しない場合は、まずアダプタ機能フラグを確認してください：
 
 * Discord: `channels.discord.threadBindings.spawnAcpSessions=true`
 
-See [Configuration Reference](/gateway/configuration-reference).
+[Configuration Reference](/gateway/configuration-reference) を参照してください。
 
-## Plugin setup for acpx backend
+## acpx バックエンドのプラグイン設定
 
-Install and enable plugin:
+プラグインをインストールして有効にします：
 
 ```bash
 openclaw plugins install @openclaw/acpx
 openclaw config set plugins.entries.acpx.enabled true
 ```
 
-Local workspace install during development:
+開発中のローカルワークスペースインストール：
 
 ```bash
 openclaw plugins install ./extensions/acpx
 ```
 
-Then verify backend health:
+その後、バックエンドの健康状態を確認します：
 
 ```text
 /acp doctor
 ```
 
-### Pinned acpx install strategy (current behavior)
+### ピン留めされた acpx インストール戦略（現在の動作）
 
-`@openclaw/acpx` now enforces a strict plugin-local pinning model:
+`@openclaw/acpx` は現在、厳格なプラグインローカルピン留めモデルを強制します：
 
-1. The extension pins an exact acpx dependency in `extensions/acpx/package.json`.
-2. Runtime command is fixed to the plugin-local binary (`extensions/acpx/node_modules/.bin/acpx`), not global `PATH`.
-3. Plugin config does not expose `command` or `commandArgs`, so runtime command drift is blocked.
-4. Startup registers the ACP backend immediately as not-ready.
-5. A background ensure job verifies `acpx --version` against the pinned version.
-6. If missing/mismatched, it runs plugin-local install (`npm install --omit=dev --no-save acpx@<pinned>`) and re-verifies before healthy.
+1. 拡張機能は `extensions/acpx/package.json` に正確な acpx 依存関係をピン留めします。
+2. ランタイムコマンドはプラグインローカルバイナリ（`extensions/acpx/node_modules/.bin/acpx`）に固定され、グローバル `PATH` ではありません。
+3. プラグイン設定は `command` または `commandArgs` を公開しないため、ランタイムコマンドのドリフトがブロックされます。
+4. スタートアップは ACP バックエンドを即座に未準備として登録します。
+5. バックグラウンドの確認ジョブが `acpx --version` をピン留めされたバージョンと照合します。
+6. 不足または不一致の場合、プラグインローカルインストールを実行し（`npm install --omit=dev --no-save acpx@<pinned>`）、健康状態を再確認します。
 
-Notes:
+注意：
 
-* OpenClaw startup stays non-blocking while acpx ensure runs.
-* If network/install fails, backend remains unavailable and `/acp doctor` reports an actionable fix.
+* OpenClaw のスタートアップは acpx 確認が実行されている間、ブロッキングされません。
+* ネットワーク/インストールが失敗した場合、バックエンドは利用できなくなり、`/acp doctor` は実行可能な修正を報告します。
 
-See [Plugins](/tools/plugin).
+[Plugins](/tools/plugin) を参照してください。
 
 ## トラブルシューティング
 
-| Symptom                                                                 | Likely cause                                   | Fix                                                        |
+| 症状                                                                 | 考えられる原因                                   | 修正                                                        |
 | ----------------------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------- |
-| `ACP runtime backend is not configured`                                 | Backend plugin missing or disabled.            | Install and enable backend plugin, then run `/acp doctor`. |
-| `ACP is disabled by policy (acp.enabled=false)`                         | ACP globally disabled.                         | Set `acp.enabled=true`.                                    |
-| `ACP dispatch is disabled by policy (acp.dispatch.enabled=false)`       | Dispatch from normal thread messages disabled. | Set `acp.dispatch.enabled=true`.                           |
-| `ACP agent "<id>" is not allowed by policy`                             | Agent not in allowlist.                        | Use allowed `agentId` or update `acp.allowedAgents`.       |
-| `Unable to resolve session target: ...`                                 | Bad key/id/label token.                        | Run `/acp sessions`, copy exact key/label, retry.          |
-| `--thread here requires running /acp spawn inside an active ... thread` | `--thread here` used outside a thread context. | Move to target thread or use `--thread auto`/`off`.        |
-| `Only <user-id> can rebind this thread.`                                | Another user owns thread binding.              | Rebind as owner or use a different thread.                 |
-| `Thread bindings are unavailable for <channel>.`                        | Adapter lacks thread binding capability.       | Use `--thread off` or move to supported adapter/channel.   |
-| Missing ACP metadata for bound session                                  | Stale/deleted ACP session metadata.            | Recreate with `/acp spawn`, then rebind/focus thread.      |
+| `ACP runtime backend is not configured`                                 | バックエンドプラグインが欠落または無効。            | バックエンドプラグインをインストールして有効にし、`/acp doctor` を実行します。 |
+| `ACP is disabled by policy (acp.enabled=false)`                         | ACP がグローバルに無効。                         | `acp.enabled=true` を設定します。                                    |
+| `ACP dispatch is disabled by policy (acp.dispatch.enabled=false)`       | 通常のスレッドメッセージからのディスパッチが無効。 | `acp.dispatch.enabled=true` を設定します。                           |
+| `ACP agent "<id>" is not allowed by policy`                             | エージェントが許可リストにない。                        | 許可された `agentId` を使用するか、`acp.allowedAgents` を更新します。       |
+| `Unable to resolve session target: ...`                                 | 不正なキー/ID/ラベルトークン。                        | `/acp sessions` を実行し、正確なキー/ラベルをコピーして再試行します。          |
+| `--thread here requires running /acp spawn inside an active ... thread` | `--thread here` がスレッドコンテキスト外で使用された。 | ターゲットスレッドに移動するか、`--thread auto`/`off` を使用します。        |
+| `Only <user-id> can rebind this thread.`                                | 別のユーザーがスレッドバインディングを所有している。              | 所有者として再バインドするか、別のスレッドを使用します。                 |
+| `Thread bindings are unavailable for <channel>.`                        | アダプタがスレッドバインディング機能を欠いている。       | `--thread off` を使用するか、サポートされているアダプタ/チャネルに移動します。   |
+| バインドされたセッションの ACP メタデータが欠落している                                  | 古い/削除された ACP セッションメタデータ。            | `/acp spawn` で再作成し、その後再バインド/フォーカススレッドを行います。      |

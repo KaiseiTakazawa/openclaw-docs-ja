@@ -6,9 +6,9 @@ title: "daemon"
 
 # `openclaw daemon`
 
-Legacy alias for Gateway service management commands.
+Gatewayサービス管理コマンドのレガシーエイリアスです。
 
-`openclaw daemon ...` maps to the same service control surface as `openclaw gateway ...` service commands.
+`openclaw daemon ...`は、`openclaw gateway ...`サービスコマンドと同じサービス制御インターフェースにマッピングされます。
 
 ## 使い方
 
@@ -23,19 +23,19 @@ openclaw daemon uninstall
 
 ## サブコマンド
 
-* `status`: show service install state and probe Gateway health
-* `install`: install service (`launchd`/`systemd`/`schtasks`)
-* `uninstall`: remove service
-* `start`: start service
-* `stop`: stop service
-* `restart`: restart service
+* `status`: サービスのインストール状態を表示し、Gatewayの健康状態を確認します
+* `install`: サービスをインストールします（`launchd`/`systemd`/`schtasks`）
+* `uninstall`: サービスを削除します
+* `start`: サービスを開始します
+* `stop`: サービスを停止します
+* `restart`: サービスを再起動します
 
 ## 共通オプション
 
 * `status`: `--url`, `--token`, `--password`, `--timeout`, `--no-probe`, `--deep`, `--json`
 * `install`: `--port`, `--runtime <node|bun>`, `--token`, `--force`, `--json`
-* lifecycle (`uninstall|start|stop|restart`): `--json`
+* ライフサイクル（`uninstall|start|stop|restart`）: `--json`
 
 ## 推奨
 
-Use [`openclaw gateway`](/cli/gateway) for current docs and examples.
+現在のドキュメントと例については、[`openclaw gateway`](/cli/gateway)を使用してください。

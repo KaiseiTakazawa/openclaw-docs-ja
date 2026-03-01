@@ -3,11 +3,12 @@ title: "WhatsApp"
 ---
 
 # WhatsApp
-# WhatsApp (Web channel)
-Status: production-ready via WhatsApp Web (Baileys). Gateway owns linked session(s).
-Default DM policy is pairing for unknown senders.
-Cross-channel diagnostics and repair playbooks.
-Full channel config patterns and examples.
+# WhatsApp (Webチャネル)
+ステータス: WhatsApp Web (Baileys) を介して本番環境で使用可能。Gateway はリンクされたセッションを所有します。
+デフォルトのDMポリシーは不明な送信者に対してペアリングです。
+クロスチャネルの診断および修復手順。
+完全なチャネル構成パターンと例。
+
 ## クイックセットアップ
 ```json5
 {
@@ -24,7 +25,7 @@ groupAllowFrom: ["+15551234567"],
 ```bash
 openclaw channels login --channel whatsapp
 ```
-For a specific account:
+特定のアカウントの場合:
 ```bash
 openclaw channels login --channel whatsapp --account work
 ```
@@ -34,14 +35,15 @@ openclaw gateway
 ```bash
 openclaw pairing list whatsapp
 openclaw pairing approve whatsapp ```` ```
-Pairing requests expire after 1 hour. Pending requests are capped at 3 per channel. ````
-OpenClaw recommends running WhatsApp on a separate number when possible. (The channel metadata and onboarding flow are optimized for that setup, but personal-number setups are also supported.)
-## Deployment patterns
-This is the cleanest operational mode:
-\* separate WhatsApp identity for OpenClaw
-\* clearer DM allowlists and routing boundaries
-\* lower chance of self-chat confusion
-Minimal policy pattern:
+ペアリングリクエストは1時間後に期限切れになります。保留中のリクエストはチャネルごとに最大3件までです。 ````
+OpenClaw は、可能な限り別の番号で WhatsApp を実行することを推奨します。（チャネルメタデータとオンボーディングフローはそのセットアップに最適化されていますが、個人番号のセットアップもサポートされています。）
+
+## デプロイメントパターン
+これは最もクリーンな運用モードです:
+\* OpenClaw 用の別の WhatsApp アイデンティティ
+\* より明確な DM アロウリストとルーティング境界
+\* 自己チャットの混乱の可能性が低い
+最小限のポリシーパターン:
 ```json5
 {
 channels: {
@@ -52,85 +54,89 @@ allowFrom: ["+15551234567"],
 },
 }
 ```
-Onboarding supports personal-number mode and writes a self-chat-friendly baseline:
+オンボーディングは個人番号モードをサポートし、自己チャットに優しいベースラインを書き込みます:
 \* `dmPolicy: "allowlist"`
-\* `allowFrom` includes your personal number
+\* `allowFrom` にあなたの個人番号が含まれます
 \* `selfChatMode: true`
-In runtime, self-chat protections key off the linked self number and `allowFrom`.
-The messaging platform channel is WhatsApp Web-based (`Baileys`) in current OpenClaw channel architecture.
-There is no separate Twilio WhatsApp messaging channel in the built-in chat-channel registry.
-## Runtime model
-\* Gateway owns the WhatsApp socket and reconnect loop.
-\* Outbound sends require an active WhatsApp listener for the target account.
-\* Status and broadcast chats are ignored (`@status`, `@broadcast`).
-\* Direct chats use DM session rules (`session.dmScope`; default `main` collapses DMs to the agent main session).
-\* Group sessions are isolated (`agent::whatsapp:group:`).
-## Access control and activation
-`channels.whatsapp.dmPolicy` controls direct chat access:
-\* `pairing` (default)
+ランタイムでは、自己チャット保護はリンクされた自己番号と `allowFrom` に基づいています。
+メッセージングプラットフォームチャネルは、現在の OpenClaw チャネルアーキテクチャにおいて WhatsApp Web ベース（`Baileys`）です。
+組み込みのチャットチャネルレジストリには、別の Twilio WhatsApp メッセージングチャネルはありません。
+
+## ランタイムモデル
+\* Gateway は WhatsApp ソケットと再接続ループを所有します。
+\* アウトバウンド送信には、ターゲットアカウントのアクティブな WhatsApp リスナーが必要です。
+\* ステータスおよびブロードキャストチャットは無視されます（`@status`, `@broadcast`）。
+\* ダイレクトチャットは DM セッションルールを使用します（`session.dmScope`; デフォルトの `main` は DMs をエージェントのメインセッションに統合します）。
+\* グループセッションは分離されています（`agent::whatsapp:group:`）。
+
+## アクセス制御とアクティベーション
+`channels.whatsapp.dmPolicy` はダイレクトチャットアクセスを制御します:
+\* `pairing`（デフォルト）
 \* `allowlist`
-\* `open` (requires `allowFrom` to include `"\*"`)
+\* `open`（`allowFrom` に `"\*"` を含める必要があります）
 \* `disabled`
-`allowFrom` accepts E.164-style numbers (normalized internally).
-Multi-account override: `channels.whatsapp.accounts..dmPolicy` (and `allowFrom`) take precedence over channel-level defaults for that account.
-Runtime behavior details:
-\* pairings are persisted in channel allow-store and merged with configured `allowFrom`
-\* if no allowlist is configured, the linked self number is allowed by default
-\* outbound `fromMe` DMs are never auto-paired
-Group access has two layers:
-1. \*\*Group membership allowlist\*\* (`channels.whatsapp.groups`)
-\* if `groups` is omitted, all groups are eligible
-\* if `groups` is present, it acts as a group allowlist (`"\*"` allowed)
-2. \*\*Group sender policy\*\* (`channels.whatsapp.groupPolicy` + `groupAllowFrom`)
-\* `open`: sender allowlist bypassed
-\* `allowlist`: sender must match `groupAllowFrom` (or `\*`)
-\* `disabled`: block all group inbound
-Sender allowlist fallback:
-\* if `groupAllowFrom` is unset, runtime falls back to `allowFrom` when available
-\* sender allowlists are evaluated before mention/reply activation
-Note: if no `channels.whatsapp` block exists at all, runtime group-policy fallback is `allowlist` (with a warning log), even if `channels.defaults.groupPolicy` is set.
-Group replies require mention by default.
-Mention detection includes:
-\* explicit WhatsApp mentions of the bot identity
-\* configured mention regex patterns (`agents.list[].groupChat.mentionPatterns`, fallback `messages.groupChat.mentionPatterns`)
-\* implicit reply-to-bot detection (reply sender matches bot identity)
-Security note:
-\* quote/reply only satisfies mention gating; it does \*\*not\*\* grant sender authorization
-\* with `groupPolicy: "allowlist"`, non-allowlisted senders are still blocked even if they reply to an allowlisted user's message
-Session-level activation command:
+`allowFrom` は E.164 スタイルの番号を受け入れます（内部で正規化されます）。
+マルチアカウントオーバーライド: `channels.whatsapp.accounts..dmPolicy`（および `allowFrom`）は、そのアカウントのチャネルレベルのデフォルトよりも優先されます。
+ランタイムの動作詳細:
+\* ペアリングはチャネルアローストアに保持され、構成された `allowFrom` とマージされます。
+\* アロウリストが構成されていない場合、リンクされた自己番号はデフォルトで許可されます。
+\* アウトバウンドの `fromMe` DMs は自動的にペアリングされることはありません。
+グループアクセスには2つのレイヤーがあります:
+1. \*\*グループメンバーシップアロウリスト\*\*（`channels.whatsapp.groups`）
+\* `groups` が省略されている場合、すべてのグループが対象となります。
+\* `groups` が存在する場合、それはグループアロウリストとして機能します（`"\*"` が許可されます）。
+2. \*\*グループ送信者ポリシー\*\*（`channels.whatsapp.groupPolicy` + `groupAllowFrom`）
+\* `open`: 送信者アロウリストがバイパスされます。
+\* `allowlist`: 送信者は `groupAllowFrom`（または `\*`）と一致する必要があります。
+\* `disabled`: すべてのグループインバウンドをブロックします。
+送信者アロウリストのフォールバック:
+\* `groupAllowFrom` が設定されていない場合、ランタイムは利用可能な場合に `allowFrom` にフォールバックします。
+\* 送信者アロウリストは、メンション/返信アクティベーションの前に評価されます。
+注意: `channels.whatsapp` ブロックが全く存在しない場合、ランタイムグループポリシーフォールバックは `allowlist` です（警告ログ付き）、たとえ `channels.defaults.groupPolicy` が設定されていても。
+グループ返信にはデフォルトでメンションが必要です。
+メンション検出には以下が含まれます:
+\* ボットアイデンティティの明示的な WhatsApp メンション
+\* 構成されたメンション正規表現パターン（`agents.list[].groupChat.mentionPatterns`、フォールバック `messages.groupChat.mentionPatterns`）
+\* ボットへの暗黙の返信検出（返信送信者がボットアイデンティティと一致）
+セキュリティノート:
+\* 引用/返信はメンションゲーティングを満たすだけであり、送信者の認可を与えるものではありません。
+\* `groupPolicy: "allowlist"` の場合、非アロウリスト送信者はアロウリストされたユーザーのメッセージに返信してもブロックされます。
+セッションレベルのアクティベーションコマンド:
 \* `/activation mention`
 \* `/activation always`
-`activation` updates session state (not global config). It is owner-gated.
-## Personal-number and self-chat behavior
-When the linked self number is also present in `allowFrom`, WhatsApp self-chat safeguards activate:
-\* skip read receipts for self-chat turns
-\* ignore mention-JID auto-trigger behavior that would otherwise ping yourself
-\* if `messages.responsePrefix` is unset, self-chat replies default to `[{identity.name}]` or `[openclaw]`
-## Message normalization and context
-Incoming WhatsApp messages are wrapped in the shared inbound envelope.
-If a quoted reply exists, context is appended in this form:
+`activation` はセッション状態を更新します（グローバル設定ではありません）。これはオーナーゲートされています。
+
+## 個人番号と自己チャットの動作
+リンクされた自己番号が `allowFrom` にも存在する場合、WhatsApp の自己チャット保護が有効になります:
+\* 自己チャットターンの既読通知をスキップします。
+\* 自分自身をピンとすることになるメンション-JID 自動トリガー動作を無視します。
+\* `messages.responsePrefix` が設定されていない場合、自己チャットの返信はデフォルトで `[{identity.name}]` または `[openclaw]` になります。
+
+## メッセージの正規化とコンテキスト
+受信した WhatsApp メッセージは共有されたインバウンドエンベロープにラップされます。
+引用返信が存在する場合、コンテキストは以下の形式で追加されます:
 ```text
 [Replying to  id:]
 [/Replying]
 ```
-Reply metadata fields are also populated when available (`ReplyToId`, `ReplyToBody`, `ReplyToSender`, sender JID/E.164).
-Media-only inbound messages are normalized with placeholders such as:
+返信メタデータフィールドも利用可能な場合に populated されます（`ReplyToId`, `ReplyToBody`, `ReplyToSender`, 送信者 JID/E.164）。
+メディアのみのインバウンドメッセージは、以下のようなプレースホルダーで正規化されます:
 \* ``
 \* ``
 \* ``
 \* ``
 \* ``
-Location and contact payloads are normalized into textual context before routing.
-For groups, unprocessed messages can be buffered and injected as context when the bot is finally triggered.
-\* default limit: `50`
-\* config: `channels.whatsapp.historyLimit`
-\* fallback: `messages.groupChat.historyLimit`
-\* `0` disables
-Injection markers:
+位置情報および連絡先ペイロードは、ルーティング前にテキストコンテキストに正規化されます。
+グループの場合、未処理のメッセージはバッファリングされ、ボットが最終的にトリガーされるときにコンテキストとして注入される可能性があります。
+\* デフォルト制限: `50`
+\* 設定: `channels.whatsapp.historyLimit`
+\* フォールバック: `messages.groupChat.historyLimit`
+\* `0` は無効にします。
+注入マーカー:
 \* `[Chat messages since your last reply - for context]`
 \* `[Current message - respond to this]`
-Read receipts are enabled by default for accepted inbound WhatsApp messages.
-Disable globally:
+受信した WhatsApp メッセージに対して既読通知はデフォルトで有効です。
+グローバルに無効にするには:
 ```json5
 {
 channels: {
@@ -140,7 +146,7 @@ sendReadReceipts: false,
 },
 }
 ```
-Per-account override:
+アカウントごとのオーバーライド:
 ```json5
 {
 channels: {
@@ -154,22 +160,24 @@ sendReadReceipts: false,
 },
 }
 ```
-Self-chat turns skip read receipts even when globally enabled.
-## Delivery, chunking, and media
-\* default chunk limit: `channels.whatsapp.textChunkLimit = 4000`
+自己チャットターンは、グローバルに有効になっている場合でも既読通知をスキップします。
+
+## 配信、チャンク化、およびメディア
+\* デフォルトのチャンク制限: `channels.whatsapp.textChunkLimit = 4000`
 \* `channels.whatsapp.chunkMode = "length" | "newline"`
-\* `newline` mode prefers paragraph boundaries (blank lines), then falls back to length-safe chunking
-\* supports image, video, audio (PTT voice-note), and document payloads
-\* `audio/ogg` is rewritten to `audio/ogg; codecs=opus` for voice-note compatibility
-\* animated GIF playback is supported via `gifPlayback: true` on video sends
-\* captions are applied to the first media item when sending multi-media reply payloads
-\* media source can be HTTP(S), `file://`, or local paths
-\* inbound media save cap: `channels.whatsapp.mediaMaxMb` (default `50`)
-\* outbound media cap for auto-replies: `agents.defaults.mediaMaxMb` (default `5MB`)
-\* images are auto-optimized (resize/quality sweep) to fit limits
-\* on media send failure, first-item fallback sends text warning instead of dropping the response silently
-## Acknowledgment reactions
-WhatsApp supports immediate ack reactions on inbound receipt via `channels.whatsapp.ackReaction`.
+\* `newline` モードは段落の境界（空行）を優先し、その後、長さに安全なチャンク化にフォールバックします。
+\* 画像、動画、音声（PTT ボイスノート）、およびドキュメントペイロードをサポートします。
+\* `audio/ogg` はボイスノートの互換性のために `audio/ogg; codecs=opus` に書き換えられます。
+\* アニメーション GIF の再生は、動画送信時に `gifPlayback: true` を介してサポートされます。
+\* マルチメディア返信ペイロードを送信する際には、最初のメディアイテムにキャプションが適用されます。
+\* メディアソースは HTTP(S)、`file://`、またはローカルパスである可能性があります。
+\* インバウンドメディア保存制限: `channels.whatsapp.mediaMaxMb`（デフォルト `50`）
+\* アウトバウンドメディア制限（自動返信用）: `agents.defaults.mediaMaxMb`（デフォルト `5MB`）
+\* 画像は制限に合わせて自動最適化されます（リサイズ/品質スイープ）。
+\* メディア送信失敗時には、最初のアイテムのフォールバックがテキスト警告を送信し、応答を静かにドロップすることはありません。
+
+## 確認リアクション
+WhatsApp は、受信確認に対する即時の確認リアクションを `channels.whatsapp.ackReaction` を介してサポートします。
 ```json5
 {
 channels: {
@@ -183,60 +191,65 @@ group: "mentions", // always | mentions | never
 },
 }
 ```
-Behavior notes:
-\* sent immediately after inbound is accepted (pre-reply)
-\* failures are logged but do not block normal reply delivery
-\* group mode `mentions` reacts on mention-triggered turns; group activation `always` acts as bypass for this check
-\* WhatsApp uses `channels.whatsapp.ackReaction` (legacy `messages.ackReaction` is not used here)
-## Multi-account and credentials
-\* account ids come from `channels.whatsapp.accounts`
-\* default account selection: `default` if present, otherwise first configured account id (sorted)
-\* account ids are normalized internally for lookup
-\* current auth path: `~/.openclaw/credentials/whatsapp//creds.json`
-\* backup file: `creds.json.bak`
-\* legacy default auth in `~/.openclaw/credentials/` is still recognized/migrated for default-account flows
-`openclaw channels logout --channel whatsapp [--account ]` clears WhatsApp auth state for that account.
-In legacy auth directories, `oauth.json` is preserved while Baileys auth files are removed.
-## Tools, actions, and config writes
-\* Agent tool support includes WhatsApp reaction action (`react`).
-\* Action gates:
+動作ノート:
+\* 受信が受け入れられた後すぐに送信されます（返信前）。
+\* 失敗はログに記録されますが、通常の返信配信をブロックしません。
+\* グループモード `mentions` はメンショントリガーされたターンに反応します。グループアクティベーション `always` はこのチェックのバイパスとして機能します。
+\* WhatsApp は `channels.whatsapp.ackReaction` を使用します（レガシー `messages.ackReaction` はここでは使用されません）。
+
+## マルチアカウントと認証情報
+\* アカウント ID は `channels.whatsapp.accounts` から取得されます。
+\* デフォルトのアカウント選択: `default` が存在する場合はそれを使用し、そうでなければ最初に構成されたアカウント ID（ソート済み）を使用します。
+\* アカウント ID は内部で正規化されてルックアップされます。
+\* 現在の認証パス: `~/.openclaw/credentials/whatsapp//creds.json`
+\* バックアップファイル: `creds.json.bak`
+\* レガシーデフォルト認証は `~/.openclaw/credentials/` においても認識され、デフォルトアカウントフローのために移行されます。
+`openclaw channels logout --channel whatsapp [--account ]` は、そのアカウントの WhatsApp 認証状態をクリアします。
+レガシー認証ディレクトリでは、`oauth.json` は保持され、Baileys 認証ファイルは削除されます。
+
+## ツール、アクション、および構成の書き込み
+\* エージェントツールサポートには WhatsApp リアクションアクション（`react`）が含まれます。
+\* アクションゲート:
 \* `channels.whatsapp.actions.reactions`
 \* `channels.whatsapp.actions.polls`
-\* Channel-initiated config writes are enabled by default (disable via `channels.whatsapp.configWrites=false`).
-## Troubleshooting
-Symptom: channel status reports not linked.
-Fix:
+\* チャネル開始の構成書き込みはデフォルトで有効です（`channels.whatsapp.configWrites=false` で無効にできます）。
+
+## トラブルシューティング
+症状: チャネルステータスレポートがリンクされていない。
+修正:
 ```bash
 openclaw channels login --channel whatsapp
 openclaw channels status
 ```
-Symptom: linked account with repeated disconnects or reconnect attempts.
-Fix:
+症状: 繰り返し切断または再接続を試みるリンクされたアカウント。
+修正:
 ```bash
 openclaw doctor
 openclaw logs --follow
 ```
-If needed, re-link with `channels login`.
-Outbound sends fail fast when no active gateway listener exists for the target account.
-Make sure gateway is running and the account is linked.
-Check in this order:
+必要に応じて、`channels login` で再リンクします。
+アウトバウンド送信は、ターゲットアカウントのアクティブなゲートウェイリスナーが存在しない場合、すぐに失敗します。
+ゲートウェイが実行中であり、アカウントがリンクされていることを確認してください。
+以下の順で確認します:
 \* `groupPolicy`
 \* `groupAllowFrom` / `allowFrom`
-\* `groups` allowlist entries
-\* mention gating (`requireMention` + mention patterns)
-\* duplicate keys in `openclaw.json` (JSON5): later entries override earlier ones, so keep a single `groupPolicy` per scope
-WhatsApp gateway runtime should use Node. Bun is flagged as incompatible for stable WhatsApp/Telegram gateway operation.
-## Configuration reference pointers
-Primary reference:
-\* [Configuration reference - WhatsApp](/gateway/configuration-reference#whatsapp)
-High-signal WhatsApp fields:
-\* access: `dmPolicy`, `allowFrom`, `groupPolicy`, `groupAllowFrom`, `groups`
-\* delivery: `textChunkLimit`, `chunkMode`, `mediaMaxMb`, `sendReadReceipts`, `ackReaction`
-\* multi-account: `accounts..enabled`, `accounts..authDir`, account-level overrides
-\* operations: `configWrites`, `debounceMs`, `web.enabled`, `web.heartbeatSeconds`, `web.reconnect.\*`
-\* session behavior: `session.dmScope`, `historyLimit`, `dmHistoryLimit`, `dms..historyLimit`
-## Related
-\* [Pairing](/channels/pairing)
-\* [Channel routing](/channels/channel-routing)
-\* [Multi-agent routing](/concepts/multi-agent)
-\* [Troubleshooting](/channels/troubleshooting)
+\* `groups` アロウリストエントリ
+\* メンションゲーティング（`requireMention` + メンションパターン）
+\* `openclaw.json` 内の重複キー（JSON5）：後のエントリが前のものを上書きするため、スコープごとに単一の `groupPolicy` を保持してください。
+WhatsApp ゲートウェイのランタイムは Node を使用する必要があります。Bun は安定した WhatsApp/Telegram ゲートウェイ操作には互換性がないとされています。
+
+## 構成リファレンスのポイント
+主なリファレンス:
+\* [構成リファレンス - WhatsApp](/gateway/configuration-reference#whatsapp)
+高信号 WhatsApp フィールド:
+\* アクセス: `dmPolicy`, `allowFrom`, `groupPolicy`, `groupAllowFrom`, `groups`
+\* 配信: `textChunkLimit`, `chunkMode`, `mediaMaxMb`, `sendReadReceipts`, `ackReaction`
+\* マルチアカウント: `accounts..enabled`, `accounts..authDir`, アカウントレベルのオーバーライド
+\* 操作: `configWrites`, `debounceMs`, `web.enabled`, `web.heartbeatSeconds`, `web.reconnect.\*`
+\* セッション動作: `session.dmScope`, `historyLimit`, `dmHistoryLimit`, `dms..historyLimit`
+
+## 関連
+\* [ペアリング](/channels/pairing)
+\* [チャネルルーティング](/channels/channel-routing)
+\* [マルチエージェントルーティング](/concepts/multi-agent)
+\* [トラブルシューティング](/channels/troubleshooting)
